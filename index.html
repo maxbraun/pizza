@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pizza Dough Calculator</title>
+  <style>
+    :root {
+      --bg: #0f0f0f;
+      --surface: #1a1a1a;
+      --surface2: #242424;
+      --border: #333;
+      --accent: #e85d04;
+      --accent-dim: #9d2f00;
+      --text: #f0ede8;
+      --text-dim: #888;
+      --green: #4caf50;
+      --radius: 12px;
+      --transition: 0.15s ease;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .logo-icon { font-size: 1.5rem; }
+
+    .lang-toggle {
+      display: flex;
+      gap: 4px;
+      background: var(--surface2);
+      border-radius: 8px;
+      padding: 4px;
+    }
+
+    .lang-btn {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all var(--transition);
+    }
+
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 32px 24px 80px;
+    }
+
+    h2 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 14px;
+    }
+
+    section { margin-bottom: 36px; }
+
+    /* Recipe cards */
+    .recipe-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+    }
+
+    .recipe-card {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      cursor: pointer;
+      transition: all var(--transition);
+      position: relative;
+    }
+
+    .recipe-card:hover { border-color: var(--accent-dim); }
+
+    .recipe-card.selected {
+      border-color: var(--accent);
+      background: #1e1208;
+    }
+
+    .recipe-card .check {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+    }
+
+    .recipe-card.selected .check { display: flex; }
+
+    .recipe-name {
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 4px;
+    }
+
+    .recipe-tag {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      background: #2a1800;
+      color: var(--accent);
+      border-radius: 4px;
+      padding: 2px 7px;
+      margin-bottom: 10px;
+    }
+
+    .recipe-meta {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      line-height: 1.7;
+    }
+
+    /* Controls */
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 480px) { .controls-grid { grid-template-columns: 1fr; } }
+
+    .field label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .input-wrap {
+      display: flex;
+      align-items: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      transition: border-color var(--transition);
+    }
+
+    .input-wrap:focus-within { border-color: var(--accent); }
+
+    .input-wrap button {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 1.2rem;
+      padding: 0 14px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      transition: color var(--transition);
+      user-select: none;
+    }
+
+    .input-wrap button:hover { color: var(--accent); }
+
+    .input-wrap input {
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 1.1rem;
+      font-weight: 600;
+      text-align: center;
+      width: 100%;
+      height: 48px;
+      outline: none;
+    }
+
+    input[type=number]::-webkit-inner-spin-button { display: none; }
+
+    .unit {
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      padding-right: 14px;
+      white-space: nowrap;
+    }
+
+    /* Results */
+    .result-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .result-header {
+      background: var(--surface2);
+      padding: 14px 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .ingredient-row {
+      display: flex;
+      align-items: center;
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      transition: background var(--transition);
+    }
+
+    .ingredient-row:hover { background: var(--surface2); }
+
+    .ingredient-row.optional { opacity: 0.65; }
+
+    .ing-name {
+      flex: 1;
+      font-weight: 500;
+    }
+
+    .ing-pct {
+      color: var(--text-dim);
+      font-size: 0.82rem;
+      margin-right: 20px;
+      width: 48px;
+      text-align: right;
+    }
+
+    .ing-amount {
+      font-weight: 700;
+      font-size: 1.05rem;
+      width: 80px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .ing-unit {
+      color: var(--text-dim);
+      font-size: 0.82rem;
+      margin-left: 6px;
+      width: 26px;
+    }
+
+    .optional-badge {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      background: var(--surface2);
+      border-radius: 4px;
+      padding: 1px 6px;
+      margin-left: 8px;
+    }
+
+    .total-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      background: #1e1208;
+      border-top: 2px solid var(--accent);
+    }
+
+    .total-label { font-weight: 700; font-size: 1rem; }
+
+    .total-amount {
+      font-weight: 800;
+      font-size: 1.15rem;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Nutrition */
+    .nutrition-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    @media (max-width: 560px) { .nutrition-grid { grid-template-columns: repeat(2, 1fr); } }
+
+    .nutrition-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: center;
+    }
+
+    .nutrition-value {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .nutrition-label {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* Fermentation */
+    .ferment-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 12px;
+    }
+
+    .ferment-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+    }
+
+    .ferment-time {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .ferment-desc {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    .ferment-star {
+      display: inline-block;
+      color: #f5a623;
+      margin-left: 6px;
+      font-size: 0.8rem;
+    }
+
+    .source-link {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      margin-top: 8px;
+    }
+
+    .source-link a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .source-link a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-icon">🍕</span>
+    <span class="app-title">Pizza Dough Calculator</span>
+  </div>
+  <div class="lang-toggle">
+    <button class="lang-btn active" onclick="setLang('en')" id="btn-en">EN</button>
+    <button class="lang-btn" onclick="setLang('de')" id="btn-de">DE</button>
+  </div>
+</header>
+
+<main>
+
+  <section>
+    <h2 data-i18n="section_recipe"></h2>
+    <div class="recipe-grid" id="recipe-grid"></div>
+  </section>
+
+  <section>
+    <h2 data-i18n="section_quantity"></h2>
+    <div class="controls-grid">
+      <div class="field">
+        <label data-i18n="label_balls"></label>
+        <div class="input-wrap">
+          <button onclick="adj('balls', -1)">−</button>
+          <input type="number" id="balls" value="2" min="1" max="50" oninput="calculate()" />
+          <button onclick="adj('balls', +1)">+</button>
+        </div>
+      </div>
+      <div class="field">
+        <label data-i18n="label_weight"></label>
+        <div class="input-wrap">
+          <button onclick="adj('weight', -10)">−</button>
+          <input type="number" id="weight" value="280" min="100" max="1000" oninput="calculate()" />
+          <button onclick="adj('weight', +10)">+</button>
+          <span class="unit">g</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-i18n="section_ingredients"></h2>
+    <div class="result-card">
+      <div class="result-header">
+        <span data-i18n="col_ingredient"></span>
+        <div style="display:flex;gap:48px">
+          <span data-i18n="col_pct"></span>
+          <span data-i18n="col_amount"></span>
+        </div>
+      </div>
+      <div id="ingredient-list"></div>
+      <div class="total-row">
+        <span class="total-label" data-i18n="label_total"></span>
+        <span class="total-amount" id="total-weight"></span>
+      </div>
+    </div>
+    <div class="source-link" id="source-link"></div>
+  </section>
+
+  <section>
+    <h2 data-i18n="section_nutrition"></h2>
+    <div class="nutrition-grid" id="nutrition-grid"></div>
+  </section>
+
+  <section>
+    <h2 data-i18n="section_fermentation"></h2>
+    <div class="ferment-grid" id="ferment-grid"></div>
+  </section>
+
+</main>
+
+<script>
+// ─── i18n ──────────────────────────────────────────────────────────────────
+const STRINGS = {
+  en: {
+    app_title:         "Pizza Dough Calculator",
+    section_recipe:    "Recipe",
+    section_quantity:  "Quantity",
+    section_ingredients: "Ingredients",
+    section_nutrition: "Nutrition per dough ball",
+    section_fermentation: "Fermentation guide",
+    label_balls:       "Dough balls",
+    label_weight:      "Weight per ball",
+    col_ingredient:    "Ingredient",
+    col_pct:           "%",
+    col_amount:        "Amount",
+    label_total:       "Total dough",
+    badge_optional:    "optional",
+    unit_g:            "g",
+    unit_kcal:         "kcal",
+    nutr_protein:      "Protein",
+    nutr_carbs:        "Carbs",
+    nutr_fat:          "Fat",
+    nutr_calories:     "Calories",
+    source_prefix:     "Recipe based on",
+  },
+  de: {
+    app_title:         "Pizzateig-Rechner",
+    section_recipe:    "Rezept",
+    section_quantity:  "Menge",
+    section_ingredients: "Zutaten",
+    section_nutrition: "Nährwerte pro Teigling",
+    section_fermentation: "Gärführung",
+    label_balls:       "Teiglinge",
+    label_weight:      "Gewicht pro Teigling",
+    col_ingredient:    "Zutat",
+    col_pct:           "%",
+    col_amount:        "Menge",
+    label_total:       "Teig gesamt",
+    badge_optional:    "optional",
+    unit_g:            "g",
+    unit_kcal:         "kcal",
+    nutr_protein:      "Eiweiß",
+    nutr_carbs:        "Kohlenhydrate",
+    nutr_fat:          "Fett",
+    nutr_calories:     "Kalorien",
+    source_prefix:     "Rezept basierend auf",
+  },
+};
+
+let lang = "en";
+
+function t(key) { return STRINGS[lang][key] ?? key; }
+
+function setLang(l) {
+  lang = l;
+  document.documentElement.lang = l;
+  document.getElementById("btn-en").classList.toggle("active", l === "en");
+  document.getElementById("btn-de").classList.toggle("active", l === "de");
+  document.querySelector(".app-title").textContent = t("app_title");
+  document.title = t("app_title");
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  renderRecipes();
+  calculate();
+}
+
+// ─── Recipes ───────────────────────────────────────────────────────────────
+// Baker's percentages: all relative to total flour (= 100 %)
+const RECIPES = [
+  {
+    id: "high-protein",
+    name:     { en: "High Protein",      de: "High Protein" },
+    tag:      { en: "New York Style",    de: "New Yorker Art" },
+    metaDesc: {
+      en: "24 g protein per ball · High-heat bake · 72 h cold ferment",
+      de: "24 g Eiweiß pro Teigling · Heißes Backen · 72 h Kaltgare",
+    },
+    source: {
+      label: "fwegoslices.com",
+      url:   "https://www.fwegoslices.com",
+    },
+    // Each ingredient: key, name (en/de), baker % relative to flour, optional flag
+    ingredients: [
+      { key: "bread_flour",  en: "Bread flour (85%)",           de: "Weizenmehl Type 550 (85%)",    pct: 85,   optional: false },
+      { key: "vital_gluten", en: "Vital wheat gluten (15%)",    de: "Weizengkleber (15%)",           pct: 15,   optional: false },
+      { key: "water",        en: "Water",                       de: "Wasser",                        pct: 70,   optional: false },
+      { key: "salt",         en: "Salt",                        de: "Salz",                          pct: 3,    optional: false },
+      { key: "yeast",        en: "Instant yeast",               de: "Trockenhefe (Instant)",         pct: 0.25, optional: false },
+      { key: "malt",         en: "Diastatic malt powder",       de: "Diastatisches Malzmehl",        pct: 0.7,  optional: true  },
+      { key: "sweetener",    en: "Sweetener (erythritol)",      de: "Süßungsmittel (Erythrit)",      pct: 2,    optional: false },
+    ],
+    // Nutrition per 280 g reference ball (from source)
+    nutritionRef: {
+      ballWeight: 280,
+      kcal: 371, protein: 24, carbs: 65, fat: 2,
+    },
+    fermentation: [
+      { time: { en: "Same day",  de: "Gleicher Tag" },  desc: { en: "1–1.5 h room temp, then shape and bake",         de: "1–1,5 h Zimmertemperatur, dann formen und backen" } },
+      { time: { en: "24 hours",  de: "24 Stunden" },    desc: { en: "1 h room temp, then refrigerate overnight",       de: "1 h Zimmertemperatur, dann über Nacht kühlen" } },
+      { time: { en: "48 hours",  de: "48 Stunden" },    desc: { en: "Better flavor and structure develops",            de: "Besseres Aroma und Struktur" } },
+      { time: { en: "72 hours ⭐", de: "72 Stunden ⭐" }, desc: { en: "Optimal — best flavor and extensibility",        de: "Optimal — bestes Aroma und Dehnbarkeit" } },
+      { time: { en: "5 days",    de: "5 Tage" },        desc: { en: "Maximum cold ferment, very complex flavor",       de: "Maximale Kaltgare, sehr komplexes Aroma" } },
+    ],
+  },
+];
+
+let selectedRecipe = RECIPES[0];
+
+function renderRecipes() {
+  const grid = document.getElementById("recipe-grid");
+  grid.innerHTML = "";
+  RECIPES.forEach(recipe => {
+    const card = document.createElement("div");
+    card.className = "recipe-card" + (recipe.id === selectedRecipe.id ? " selected" : "");
+    card.innerHTML = `
+      <div class="check">✓</div>
+      <div class="recipe-name">${recipe.name[lang]}</div>
+      <div class="recipe-tag">${recipe.tag[lang]}</div>
+      <div class="recipe-meta">${recipe.metaDesc[lang]}</div>
+    `;
+    card.onclick = () => { selectedRecipe = recipe; renderRecipes(); calculate(); };
+    grid.appendChild(card);
+  });
+}
+
+// ─── Calculator ────────────────────────────────────────────────────────────
+function calculate() {
+  const balls  = Math.max(1, parseInt(document.getElementById("balls").value)  || 1);
+  const weight = Math.max(50, parseInt(document.getElementById("weight").value) || 280);
+  const r = selectedRecipe;
+
+  // Total dough weight for all balls
+  const totalDough = balls * weight;
+
+  // Sum of all baker's percentages (flour = 100 %)
+  const flourPct = 100; // bread_flour + vital_gluten already sum to 100
+  const sumPct = r.ingredients.reduce((acc, ing) => acc + ing.pct, 0);
+  // sumPct includes the sub-components, so flour is already counted as 100
+  // We need total mass factor: totalDough = flour * (sumPct / 100)
+  const flourGrams = totalDough / (sumPct / 100);
+
+  // Render ingredient rows
+  const list = document.getElementById("ingredient-list");
+  list.innerHTML = "";
+  r.ingredients.forEach(ing => {
+    const grams = flourGrams * (ing.pct / 100);
+    const row = document.createElement("div");
+    row.className = "ingredient-row" + (ing.optional ? " optional" : "");
+    row.innerHTML = `
+      <div class="ing-name">
+        ${ing[lang]}
+        ${ing.optional ? `<span class="optional-badge">${t("badge_optional")}</span>` : ""}
+      </div>
+      <div class="ing-pct">${ing.pct < 1 ? ing.pct.toFixed(2) : ing.pct}%</div>
+      <div class="ing-amount">${fmt(grams)}</div>
+      <div class="ing-unit">${t("unit_g")}</div>
+    `;
+    list.appendChild(row);
+  });
+
+  document.getElementById("total-weight").textContent =
+    `${fmt(totalDough)} ${t("unit_g")}`;
+
+  // Source link
+  const src = r.source;
+  document.getElementById("source-link").innerHTML = src
+    ? `${t("source_prefix")} <a href="${src.url}" target="_blank" rel="noopener">${src.label}</a>`
+    : "";
+
+  // Nutrition (scaled from reference ball weight)
+  const nr = r.nutritionRef;
+  const scale = weight / nr.ballWeight;
+  const nutGrid = document.getElementById("nutrition-grid");
+  nutGrid.innerHTML = `
+    <div class="nutrition-card">
+      <div class="nutrition-value">${Math.round(nr.kcal * scale)}</div>
+      <div class="nutrition-label">${t("nutr_calories")} ${t("unit_kcal")}</div>
+    </div>
+    <div class="nutrition-card">
+      <div class="nutrition-value">${Math.round(nr.protein * scale)}&thinsp;g</div>
+      <div class="nutrition-label">${t("nutr_protein")}</div>
+    </div>
+    <div class="nutrition-card">
+      <div class="nutrition-value">${Math.round(nr.carbs * scale)}&thinsp;g</div>
+      <div class="nutrition-label">${t("nutr_carbs")}</div>
+    </div>
+    <div class="nutrition-card">
+      <div class="nutrition-value">${Math.round(nr.fat * scale)}&thinsp;g</div>
+      <div class="nutrition-label">${t("nutr_fat")}</div>
+    </div>
+  `;
+
+  // Fermentation guide
+  const ferGrid = document.getElementById("ferment-grid");
+  ferGrid.innerHTML = r.fermentation.map(f => `
+    <div class="ferment-card">
+      <div class="ferment-time">${f.time[lang]}</div>
+      <div class="ferment-desc">${f.desc[lang]}</div>
+    </div>
+  `).join("");
+}
+
+function fmt(n) {
+  return n < 10 ? n.toFixed(1) : Math.round(n).toString();
+}
+
+function adj(field, delta) {
+  const el = document.getElementById(field);
+  const val = parseInt(el.value) || 0;
+  const min = parseInt(el.min);
+  const max = parseInt(el.max);
+  el.value = Math.min(max, Math.max(min, val + delta));
+  calculate();
+}
+
+// ─── Init ──────────────────────────────────────────────────────────────────
+renderRecipes();
+calculate();
+</script>
+</body>
+</html>
