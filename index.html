@@ -390,6 +390,107 @@
     }
 
     .source-link a:hover { text-decoration: underline; }
+
+    /* Sliders */
+    .slider-list { display: flex; flex-direction: column; gap: 20px; }
+
+    .slider-row {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+    }
+
+    .slider-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .slider-label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .slider-value-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .slider-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      min-width: 48px;
+      text-align: right;
+    }
+
+    .slider-reset {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+      transition: all var(--transition);
+    }
+
+    .slider-reset:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .slider-track-wrap { position: relative; }
+
+    input[type=range] {
+      --fill: 0%;
+      appearance: none;
+      -webkit-appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: linear-gradient(to right, var(--accent) var(--fill), var(--border) var(--fill));
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      border: 3px solid var(--bg);
+      box-shadow: 0 0 0 1px var(--accent);
+      transition: transform var(--transition);
+    }
+
+    input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+
+    input[type=range]::-moz-range-thumb {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      border: 3px solid var(--bg);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+
+    .slider-range-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+    }
   </style>
 </head>
 <body>
@@ -432,6 +533,58 @@
           <span class="unit">g</span>
         </div>
       </div>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-i18n="section_adjust"></h2>
+    <div class="slider-list">
+
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="slider-label" data-i18n="label_hydration"></span>
+          <div class="slider-value-wrap">
+            <span class="slider-value" id="val-hydration"></span>
+            <button class="slider-reset" onclick="resetSlider('hydration')" data-i18n="btn_reset"></button>
+          </div>
+        </div>
+        <div class="slider-track-wrap">
+          <input type="range" id="sl-hydration" min="50" max="85" step="1"
+                 oninput="onSlider('hydration')" />
+        </div>
+        <div class="slider-range-labels"><span>50%</span><span>85%</span></div>
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="slider-label" data-i18n="label_salt"></span>
+          <div class="slider-value-wrap">
+            <span class="slider-value" id="val-salt"></span>
+            <button class="slider-reset" onclick="resetSlider('salt')" data-i18n="btn_reset"></button>
+          </div>
+        </div>
+        <div class="slider-track-wrap">
+          <input type="range" id="sl-salt" min="1.5" max="5" step="0.1"
+                 oninput="onSlider('salt')" />
+        </div>
+        <div class="slider-range-labels"><span>1.5%</span><span>5%</span></div>
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="slider-label" data-i18n="label_yeast"></span>
+          <div class="slider-value-wrap">
+            <span class="slider-value" id="val-yeast"></span>
+            <button class="slider-reset" onclick="resetSlider('yeast')" data-i18n="btn_reset"></button>
+          </div>
+        </div>
+        <div class="slider-track-wrap">
+          <input type="range" id="sl-yeast" min="0.05" max="0.8" step="0.01"
+                 oninput="onSlider('yeast')" />
+        </div>
+        <div class="slider-range-labels"><span>0.05%</span><span>0.8%</span></div>
+      </div>
+
     </div>
   </section>
 
@@ -490,6 +643,11 @@ const STRINGS = {
     nutr_fat:          "Fat",
     nutr_calories:     "Calories",
     source_prefix:     "Recipe based on",
+    section_adjust:    "Adjust",
+    label_hydration:   "Hydration",
+    label_salt:        "Salt",
+    label_yeast:       "Yeast",
+    btn_reset:         "Reset",
   },
   de: {
     app_title:         "Pizzateig-Rechner",
@@ -512,6 +670,11 @@ const STRINGS = {
     nutr_fat:          "Fett",
     nutr_calories:     "Kalorien",
     source_prefix:     "Rezept basierend auf",
+    section_adjust:    "Anpassen",
+    label_hydration:   "Hydration",
+    label_salt:        "Salz",
+    label_yeast:       "Hefe",
+    btn_reset:         "Reset",
   },
 };
 
@@ -575,6 +738,62 @@ const RECIPES = [
 
 let selectedRecipe = RECIPES[0];
 
+// Maps slider id → ingredient key in the recipe
+const SLIDER_MAP = {
+  hydration: "water",
+  salt:      "salt",
+  yeast:     "yeast",
+};
+
+function sliderDefault(sliderId) {
+  const ingKey = SLIDER_MAP[sliderId];
+  const ing = selectedRecipe.ingredients.find(i => i.key === ingKey);
+  return ing ? ing.pct : 0;
+}
+
+function initSliders() {
+  Object.keys(SLIDER_MAP).forEach(sid => {
+    const el = document.getElementById("sl-" + sid);
+    el.value = sliderDefault(sid);
+    updateSliderTrack(el);
+    updateSliderValue(sid);
+  });
+}
+
+function resetSlider(sid) {
+  const el = document.getElementById("sl-" + sid);
+  el.value = sliderDefault(sid);
+  updateSliderTrack(el);
+  updateSliderValue(sid);
+  calculate();
+}
+
+function onSlider(sid) {
+  const el = document.getElementById("sl-" + sid);
+  updateSliderTrack(el);
+  updateSliderValue(sid);
+  calculate();
+}
+
+function updateSliderTrack(el) {
+  const min = parseFloat(el.min);
+  const max = parseFloat(el.max);
+  const val = parseFloat(el.value);
+  const pct = ((val - min) / (max - min)) * 100;
+  el.style.setProperty("--fill", pct + "%");
+}
+
+function updateSliderValue(sid) {
+  const el = document.getElementById("sl-" + sid);
+  const val = parseFloat(el.value);
+  const decimals = val < 1 ? 2 : 1;
+  document.getElementById("val-" + sid).textContent = val.toFixed(decimals) + "%";
+}
+
+function getSliderPct(sliderId) {
+  return parseFloat(document.getElementById("sl-" + sliderId).value);
+}
+
 function renderRecipes() {
   const grid = document.getElementById("recipe-grid");
   grid.innerHTML = "";
@@ -587,7 +806,7 @@ function renderRecipes() {
       <div class="recipe-tag">${recipe.tag[lang]}</div>
       <div class="recipe-meta">${recipe.metaDesc[lang]}</div>
     `;
-    card.onclick = () => { selectedRecipe = recipe; renderRecipes(); calculate(); };
+    card.onclick = () => { selectedRecipe = recipe; renderRecipes(); initSliders(); calculate(); };
     grid.appendChild(card);
   });
 }
@@ -601,18 +820,23 @@ function calculate() {
   // Total dough weight for all balls
   const totalDough = balls * weight;
 
-  // Sum of all baker's percentages (flour = 100 %)
-  const flourPct = 100; // bread_flour + vital_gluten already sum to 100
-  const sumPct = r.ingredients.reduce((acc, ing) => acc + ing.pct, 0);
-  // sumPct includes the sub-components, so flour is already counted as 100
-  // We need total mass factor: totalDough = flour * (sumPct / 100)
+  // Build effective percentages: recipe defaults overridden by sliders
+  const effectivePct = {};
+  r.ingredients.forEach(ing => { effectivePct[ing.key] = ing.pct; });
+  Object.entries(SLIDER_MAP).forEach(([sid, ingKey]) => {
+    if (ingKey in effectivePct) effectivePct[ingKey] = getSliderPct(sid);
+  });
+
+  // Sum of all effective baker's percentages (flour = 100 %)
+  const sumPct = r.ingredients.reduce((acc, ing) => acc + effectivePct[ing.key], 0);
   const flourGrams = totalDough / (sumPct / 100);
 
   // Render ingredient rows
   const list = document.getElementById("ingredient-list");
   list.innerHTML = "";
   r.ingredients.forEach(ing => {
-    const grams = flourGrams * (ing.pct / 100);
+    const pct = effectivePct[ing.key];
+    const grams = flourGrams * (pct / 100);
     const row = document.createElement("div");
     row.className = "ingredient-row" + (ing.optional ? " optional" : "");
     row.innerHTML = `
@@ -620,7 +844,7 @@ function calculate() {
         ${ing[lang]}
         ${ing.optional ? `<span class="optional-badge">${t("badge_optional")}</span>` : ""}
       </div>
-      <div class="ing-pct">${ing.pct < 1 ? ing.pct.toFixed(2) : ing.pct}%</div>
+      <div class="ing-pct">${pct < 1 ? pct.toFixed(2) : pct.toFixed(1)}%</div>
       <div class="ing-amount">${fmt(grams)}</div>
       <div class="ing-unit">${t("unit_g")}</div>
     `;
@@ -684,6 +908,7 @@ function adj(field, delta) {
 
 // ─── Init ──────────────────────────────────────────────────────────────────
 renderRecipes();
+initSliders();
 calculate();
 </script>
 </body>
