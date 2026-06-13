@@ -6,491 +6,152 @@
   <title>Pizza Dough Calculator</title>
   <style>
     :root {
-      --bg: #0f0f0f;
-      --surface: #1a1a1a;
-      --surface2: #242424;
-      --border: #333;
-      --accent: #e85d04;
-      --accent-dim: #9d2f00;
-      --text: #f0ede8;
-      --text-dim: #888;
-      --green: #4caf50;
-      --radius: 12px;
-      --transition: 0.15s ease;
+      --bg: #0f0f0f; --surface: #1a1a1a; --surface2: #242424; --border: #333;
+      --accent: #e85d04; --accent-dim: #9d2f00; --accent-bg: #1e1208;
+      --text: #f0ede8; --text-dim: #888; --text-dimmer: #555;
+      --green: #4caf50; --star: #f5a623; --danger: #c0392b;
+      --radius: 12px; --transition: 0.15s ease;
     }
-
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 16px; line-height: 1.5; min-height: 100vh; }
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      font-size: 16px;
-      line-height: 1.5;
-      min-height: 100vh;
-    }
+    /* ── Header ── */
+    header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .logo { display: flex; align-items: center; gap: 10px; font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; }
+    .logo-icon { font-size: 1.4rem; }
+    .lang-toggle { display: flex; gap: 4px; background: var(--surface2); border-radius: 8px; padding: 4px; }
+    .lang-btn { background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 5px 11px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; transition: all var(--transition); }
+    .lang-btn.active { background: var(--accent); color: #fff; }
 
-    header {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 16px 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
+    /* ── Layout ── */
+    main { max-width: 860px; margin: 0 auto; padding: 32px 24px 100px; }
+    section { margin-bottom: 40px; }
+    h2 { font-size: 0.78rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px; }
 
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 1.2rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-    }
-
-    .logo-icon { font-size: 1.5rem; }
-
-    .lang-toggle {
-      display: flex;
-      gap: 4px;
-      background: var(--surface2);
-      border-radius: 8px;
-      padding: 4px;
-    }
-
-    .lang-btn {
-      background: none;
-      border: none;
-      color: var(--text-dim);
-      cursor: pointer;
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      transition: all var(--transition);
-    }
-
-    .lang-btn.active {
-      background: var(--accent);
-      color: #fff;
-    }
-
-    main {
-      max-width: 860px;
-      margin: 0 auto;
-      padding: 32px 24px 80px;
-    }
-
-    h2 {
-      font-size: 1.05rem;
-      font-weight: 600;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      margin-bottom: 14px;
-    }
-
-    section { margin-bottom: 36px; }
-
-    /* Recipe cards */
-    .recipe-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 12px;
-    }
-
-    .recipe-card {
-      background: var(--surface);
-      border: 2px solid var(--border);
-      border-radius: var(--radius);
-      padding: 18px 20px;
-      cursor: pointer;
-      transition: all var(--transition);
-      position: relative;
-    }
-
+    /* ── Recipe cards ── */
+    .recipe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+    .recipe-card { background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius); padding: 16px 18px; cursor: pointer; transition: all var(--transition); position: relative; }
     .recipe-card:hover { border-color: var(--accent-dim); }
-
-    .recipe-card.selected {
-      border-color: var(--accent);
-      background: #1e1208;
-    }
-
-    .recipe-card .check {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: var(--accent);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.7rem;
-    }
-
+    .recipe-card.selected { border-color: var(--accent); background: var(--accent-bg); }
+    .recipe-card .check { position: absolute; top: 10px; right: 10px; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); display: none; align-items: center; justify-content: center; font-size: 0.65rem; }
     .recipe-card.selected .check { display: flex; }
+    .recipe-name { font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; }
+    .recipe-tag { display: inline-block; font-size: 0.68rem; font-weight: 700; background: #2a1800; color: var(--accent); border-radius: 4px; padding: 1px 6px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .recipe-meta { font-size: 0.78rem; color: var(--text-dim); line-height: 1.6; }
 
-    .recipe-name {
-      font-weight: 700;
-      font-size: 1rem;
-      margin-bottom: 4px;
-    }
-
-    .recipe-tag {
-      display: inline-block;
-      font-size: 0.72rem;
-      font-weight: 600;
-      background: #2a1800;
-      color: var(--accent);
-      border-radius: 4px;
-      padding: 2px 7px;
-      margin-bottom: 10px;
-    }
-
-    .recipe-meta {
-      font-size: 0.82rem;
-      color: var(--text-dim);
-      line-height: 1.7;
-    }
-
-    /* Controls */
-    .controls-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-
+    /* ── Quantity controls ── */
+    .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     @media (max-width: 480px) { .controls-grid { grid-template-columns: 1fr; } }
-
-    .field label {
-      display: block;
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--text-dim);
-      margin-bottom: 8px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .input-wrap {
-      display: flex;
-      align-items: center;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      overflow: hidden;
-      transition: border-color var(--transition);
-    }
-
+    .field label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-dim); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .input-wrap { display: flex; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; transition: border-color var(--transition); }
     .input-wrap:focus-within { border-color: var(--accent); }
-
-    .input-wrap button {
-      background: none;
-      border: none;
-      color: var(--text-dim);
-      cursor: pointer;
-      font-size: 1.2rem;
-      padding: 0 14px;
-      height: 48px;
-      display: flex;
-      align-items: center;
-      transition: color var(--transition);
-      user-select: none;
-    }
-
+    .input-wrap button { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 1.15rem; padding: 0 13px; height: 46px; display: flex; align-items: center; transition: color var(--transition); user-select: none; }
     .input-wrap button:hover { color: var(--accent); }
-
-    .input-wrap input {
-      background: none;
-      border: none;
-      color: var(--text);
-      font-size: 1.1rem;
-      font-weight: 600;
-      text-align: center;
-      width: 100%;
-      height: 48px;
-      outline: none;
-    }
-
+    .input-wrap input { background: none; border: none; color: var(--text); font-size: 1.05rem; font-weight: 600; text-align: center; width: 100%; height: 46px; outline: none; }
     input[type=number]::-webkit-inner-spin-button { display: none; }
+    .unit { color: var(--text-dim); font-size: 0.82rem; padding-right: 13px; white-space: nowrap; }
 
-    .unit {
-      color: var(--text-dim);
-      font-size: 0.85rem;
-      padding-right: 14px;
-      white-space: nowrap;
-    }
+    /* ── Sliders ── */
+    .slider-list { display: flex; flex-direction: column; gap: 14px; }
+    .slider-row { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 18px; }
+    .slider-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
+    .slider-label { font-size: 0.75rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+    .slider-value-wrap { display: flex; align-items: center; gap: 8px; }
+    .slider-value { font-size: 1.05rem; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 52px; text-align: right; }
+    .slider-reset { background: none; border: 1px solid var(--border); color: var(--text-dimmer); cursor: pointer; font-size: 0.68rem; padding: 2px 7px; border-radius: 4px; transition: all var(--transition); }
+    .slider-reset:hover { border-color: var(--accent); color: var(--accent); }
+    input[type=range] { --fill: 0%; appearance: none; -webkit-appearance: none; width: 100%; height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--accent) var(--fill), var(--border) var(--fill)); outline: none; cursor: pointer; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 3px solid var(--bg); box-shadow: 0 0 0 1px var(--accent); transition: transform var(--transition); }
+    input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+    input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 3px solid var(--bg); box-shadow: 0 0 0 1px var(--accent); }
+    .slider-range-labels { display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.68rem; color: var(--text-dimmer); }
 
-    /* Results */
-    .result-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
+    /* ── Fermentation controls ── */
+    .ferment-controls { display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
+    .toggle-group { display: flex; gap: 4px; background: var(--surface2); border-radius: 8px; padding: 4px; width: fit-content; }
+    .toggle-btn { background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 6px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; transition: all var(--transition); }
+    .toggle-btn.active { background: var(--accent); color: #fff; }
 
-    .result-header {
-      background: var(--surface2);
-      padding: 14px 20px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .ingredient-row {
-      display: flex;
-      align-items: center;
-      padding: 14px 20px;
-      border-top: 1px solid var(--border);
-      transition: background var(--transition);
-    }
-
+    /* ── Ingredient table ── */
+    .result-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .result-header { background: var(--surface2); padding: 12px 18px; font-size: 0.72rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; display: flex; justify-content: space-between; }
+    .ingredient-row { display: flex; align-items: center; padding: 13px 18px; border-top: 1px solid var(--border); transition: background var(--transition); }
     .ingredient-row:hover { background: var(--surface2); }
-
-    .ingredient-row.optional { opacity: 0.65; }
-
-    .ing-name {
-      flex: 1;
-      font-weight: 500;
-    }
-
-    .ing-pct {
-      color: var(--text-dim);
-      font-size: 0.82rem;
-      margin-right: 20px;
-      width: 48px;
-      text-align: right;
-    }
-
-    .ing-amount {
-      font-weight: 700;
-      font-size: 1.05rem;
-      width: 80px;
-      text-align: right;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .ing-unit {
-      color: var(--text-dim);
-      font-size: 0.82rem;
-      margin-left: 6px;
-      width: 26px;
-    }
-
-    .optional-badge {
-      font-size: 0.7rem;
-      color: var(--text-dim);
-      background: var(--surface2);
-      border-radius: 4px;
-      padding: 1px 6px;
-      margin-left: 8px;
-    }
-
-    .total-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 20px;
-      background: #1e1208;
-      border-top: 2px solid var(--accent);
-    }
-
-    .total-label { font-weight: 700; font-size: 1rem; }
-
-    .total-amount {
-      font-weight: 800;
-      font-size: 1.15rem;
-      color: var(--accent);
-      font-variant-numeric: tabular-nums;
-    }
-
-    /* Nutrition */
-    .nutrition-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-    }
-
-    @media (max-width: 560px) { .nutrition-grid { grid-template-columns: repeat(2, 1fr); } }
-
-    .nutrition-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
-      text-align: center;
-    }
-
-    .nutrition-value {
-      font-size: 1.4rem;
-      font-weight: 800;
-      color: var(--text);
-      font-variant-numeric: tabular-nums;
-    }
-
-    .nutrition-label {
-      font-size: 0.78rem;
-      color: var(--text-dim);
-      margin-top: 4px;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    /* Fermentation */
-    .ferment-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-      gap: 12px;
-    }
-
-    .ferment-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px 18px;
-    }
-
-    .ferment-time {
-      font-size: 1rem;
-      font-weight: 700;
-      margin-bottom: 4px;
-    }
-
-    .ferment-desc {
-      font-size: 0.8rem;
-      color: var(--text-dim);
-      line-height: 1.5;
-    }
-
-    .ferment-star {
-      display: inline-block;
-      color: #f5a623;
-      margin-left: 6px;
-      font-size: 0.8rem;
-    }
-
-    .source-link {
-      font-size: 0.8rem;
-      color: var(--text-dim);
-      margin-top: 8px;
-    }
-
-    .source-link a {
-      color: var(--accent);
-      text-decoration: none;
-    }
-
+    .ingredient-row.optional { opacity: 0.6; }
+    .ing-name { flex: 1; font-weight: 500; font-size: 0.92rem; }
+    .ing-pct { color: var(--text-dim); font-size: 0.78rem; margin-right: 20px; width: 50px; text-align: right; font-variant-numeric: tabular-nums; }
+    .ing-amount { font-weight: 700; font-size: 1rem; width: 76px; text-align: right; font-variant-numeric: tabular-nums; }
+    .ing-unit { color: var(--text-dim); font-size: 0.78rem; margin-left: 5px; width: 22px; }
+    .optional-badge { font-size: 0.65rem; color: var(--text-dimmer); background: var(--surface2); border-radius: 4px; padding: 1px 5px; margin-left: 6px; }
+    .total-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background: var(--accent-bg); border-top: 2px solid var(--accent); }
+    .total-label { font-weight: 700; }
+    .total-amount { font-weight: 800; font-size: 1.1rem; color: var(--accent); font-variant-numeric: tabular-nums; }
+    .source-link { font-size: 0.76rem; color: var(--text-dimmer); margin-top: 8px; }
+    .source-link a { color: var(--accent); text-decoration: none; }
     .source-link a:hover { text-decoration: underline; }
 
-    /* Sliders */
-    .slider-list { display: flex; flex-direction: column; gap: 20px; }
+    /* ── Nutrition ── */
+    .nutrition-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    @media (max-width: 560px) { .nutrition-grid { grid-template-columns: repeat(2, 1fr); } }
+    .nutrition-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; text-align: center; }
+    .nutrition-value { font-size: 1.3rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .nutrition-label { font-size: 0.72rem; color: var(--text-dim); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .nutrition-note { font-size: 0.7rem; color: var(--text-dimmer); text-align: center; margin-top: 8px; }
 
-    .slider-row {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px 20px;
-    }
+    /* ── Fermentation guide ── */
+    .ferment-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+    .ferment-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+    .ferment-card.active { border-color: var(--accent); background: var(--accent-bg); }
+    .ferment-time { font-size: 0.95rem; font-weight: 700; margin-bottom: 4px; }
+    .ferment-desc { font-size: 0.76rem; color: var(--text-dim); line-height: 1.5; }
 
-    .slider-header {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      margin-bottom: 14px;
-    }
+    /* ── Configs ── */
+    .save-row { display: flex; gap: 10px; margin-bottom: 20px; }
+    .save-row input { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 0 14px; height: 42px; font-size: 0.9rem; outline: none; transition: border-color var(--transition); }
+    .save-row input:focus { border-color: var(--accent); }
+    .save-row input::placeholder { color: var(--text-dimmer); }
+    .btn-primary { background: var(--accent); border: none; border-radius: 8px; color: #fff; cursor: pointer; font-size: 0.85rem; font-weight: 700; padding: 0 18px; height: 42px; white-space: nowrap; transition: opacity var(--transition); }
+    .btn-primary:hover { opacity: 0.85; }
+    .config-empty { color: var(--text-dimmer); font-size: 0.88rem; padding: 20px 0; }
+    .config-list { display: flex; flex-direction: column; gap: 12px; }
+    .config-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+    .config-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+    .config-name { font-weight: 700; font-size: 0.95rem; }
+    .config-recipe-tag { font-size: 0.65rem; font-weight: 700; background: #2a1800; color: var(--accent); border-radius: 4px; padding: 2px 7px; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+    .config-meta { font-size: 0.78rem; color: var(--text-dim); margin-bottom: 6px; }
+    .config-rating-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .config-stars { color: var(--star); font-size: 0.9rem; letter-spacing: 1px; }
+    .config-unrated { font-size: 0.76rem; color: var(--text-dimmer); }
+    .config-baked { font-size: 0.76rem; color: var(--text-dimmer); }
+    .config-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn-sm { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text-dim); cursor: pointer; font-size: 0.75rem; font-weight: 600; padding: 5px 12px; transition: all var(--transition); }
+    .btn-sm:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-sm.danger:hover { border-color: var(--danger); color: var(--danger); }
 
-    .slider-label {
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .slider-value-wrap {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .slider-value {
-      font-size: 1.1rem;
-      font-weight: 700;
-      font-variant-numeric: tabular-nums;
-      min-width: 48px;
-      text-align: right;
-    }
-
-    .slider-reset {
-      background: none;
-      border: 1px solid var(--border);
-      color: var(--text-dim);
-      cursor: pointer;
-      font-size: 0.72rem;
-      padding: 2px 8px;
-      border-radius: 4px;
-      transition: all var(--transition);
-    }
-
-    .slider-reset:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-
-    .slider-track-wrap { position: relative; }
-
-    input[type=range] {
-      --fill: 0%;
-      appearance: none;
-      -webkit-appearance: none;
-      width: 100%;
-      height: 4px;
-      border-radius: 2px;
-      background: linear-gradient(to right, var(--accent) var(--fill), var(--border) var(--fill));
-      outline: none;
-      cursor: pointer;
-    }
-
-    input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: var(--accent);
-      cursor: pointer;
-      border: 3px solid var(--bg);
-      box-shadow: 0 0 0 1px var(--accent);
-      transition: transform var(--transition);
-    }
-
-    input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); }
-
-    input[type=range]::-moz-range-thumb {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: var(--accent);
-      cursor: pointer;
-      border: 3px solid var(--bg);
-      box-shadow: 0 0 0 1px var(--accent);
-    }
-
-    .slider-range-labels {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 6px;
-      font-size: 0.72rem;
-      color: var(--text-dim);
-    }
+    /* ── Rating modal ── */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 20px; }
+    .modal-overlay[hidden] { display: none; }
+    .modal-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+    .modal-title { font-size: 1rem; font-weight: 700; }
+    .modal-close { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 1.1rem; padding: 4px; transition: color var(--transition); }
+    .modal-close:hover { color: var(--text); }
+    .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 18px; }
+    .modal-field label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+    .modal-field input[type=date], .modal-field textarea { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 8px 12px; width: 100%; font-size: 0.9rem; outline: none; transition: border-color var(--transition); }
+    .modal-field input[type=date]:focus, .modal-field textarea:focus { border-color: var(--accent); }
+    .modal-field textarea { resize: vertical; min-height: 70px; font-family: inherit; }
+    .dim-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .dim-row:last-child { border-bottom: none; }
+    .dim-label { font-size: 0.85rem; font-weight: 500; }
+    .star-group { display: flex; gap: 2px; }
+    .star-btn { background: none; border: none; color: var(--text-dimmer); cursor: pointer; font-size: 1.3rem; padding: 2px; transition: color var(--transition); line-height: 1; }
+    .star-btn.filled { color: var(--star); }
+    .star-btn:hover { color: var(--star); }
+    .modal-footer { display: flex; gap: 10px; padding: 16px 20px; border-top: 1px solid var(--border); }
+    .btn-ghost { background: none; border: 1px solid var(--border); border-radius: 8px; color: var(--text-dim); cursor: pointer; font-size: 0.85rem; font-weight: 600; padding: 0 16px; height: 40px; transition: all var(--transition); }
+    .btn-ghost:hover { border-color: var(--text-dim); color: var(--text); }
+    .modal-footer .btn-primary { height: 40px; }
   </style>
 </head>
 <body>
@@ -519,17 +180,17 @@
       <div class="field">
         <label data-i18n="label_balls"></label>
         <div class="input-wrap">
-          <button onclick="adj('balls', -1)">−</button>
+          <button onclick="adj('balls',-1)">−</button>
           <input type="number" id="balls" value="2" min="1" max="50" oninput="calculate()" />
-          <button onclick="adj('balls', +1)">+</button>
+          <button onclick="adj('balls',+1)">+</button>
         </div>
       </div>
       <div class="field">
         <label data-i18n="label_weight"></label>
         <div class="input-wrap">
-          <button onclick="adj('weight', -10)">−</button>
-          <input type="number" id="weight" value="280" min="100" max="1000" oninput="calculate()" />
-          <button onclick="adj('weight', +10)">+</button>
+          <button onclick="adj('weight',-10)">−</button>
+          <input type="number" id="weight" value="280" min="80" max="1000" oninput="calculate()" />
+          <button onclick="adj('weight',+10)">+</button>
           <span class="unit">g</span>
         </div>
       </div>
@@ -538,54 +199,34 @@
 
   <section>
     <h2 data-i18n="section_adjust"></h2>
-    <div class="slider-list">
+    <div class="slider-list" id="slider-list"></div>
+  </section>
 
-      <div class="slider-row">
+  <section>
+    <h2 data-i18n="section_fermentation_cfg"></h2>
+    <div class="ferment-controls">
+      <div class="slider-row" id="ferment-time-row">
         <div class="slider-header">
-          <span class="slider-label" data-i18n="label_hydration"></span>
+          <span class="slider-label" data-i18n="label_ferment_hours"></span>
           <div class="slider-value-wrap">
-            <span class="slider-value" id="val-hydration"></span>
-            <button class="slider-reset" onclick="resetSlider('hydration')" data-i18n="btn_reset"></button>
+            <span class="slider-value" id="val-ferment-hours">72h</span>
           </div>
         </div>
-        <div class="slider-track-wrap">
-          <input type="range" id="sl-hydration" min="50" max="85" step="1"
-                 oninput="onSlider('hydration')" />
-        </div>
-        <div class="slider-range-labels"><span>50%</span><span>85%</span></div>
+        <input type="range" id="sl-ferment-hours" min="4" max="120" step="4" value="72"
+               oninput="onFermentSlider()" />
+        <div class="slider-range-labels"><span>4h</span><span>120h</span></div>
       </div>
-
       <div class="slider-row">
         <div class="slider-header">
-          <span class="slider-label" data-i18n="label_salt"></span>
-          <div class="slider-value-wrap">
-            <span class="slider-value" id="val-salt"></span>
-            <button class="slider-reset" onclick="resetSlider('salt')" data-i18n="btn_reset"></button>
+          <span class="slider-label" data-i18n="label_ferment_method"></span>
+          <div class="toggle-group">
+            <button class="toggle-btn active" id="btn-cold" onclick="setFermentMethod('cold')" data-i18n="ferment_cold"></button>
+            <button class="toggle-btn" id="btn-room" onclick="setFermentMethod('room')" data-i18n="ferment_room"></button>
           </div>
         </div>
-        <div class="slider-track-wrap">
-          <input type="range" id="sl-salt" min="1.5" max="5" step="0.1"
-                 oninput="onSlider('salt')" />
-        </div>
-        <div class="slider-range-labels"><span>1.5%</span><span>5%</span></div>
       </div>
-
-      <div class="slider-row">
-        <div class="slider-header">
-          <span class="slider-label" data-i18n="label_yeast"></span>
-          <div class="slider-value-wrap">
-            <span class="slider-value" id="val-yeast"></span>
-            <button class="slider-reset" onclick="resetSlider('yeast')" data-i18n="btn_reset"></button>
-          </div>
-        </div>
-        <div class="slider-track-wrap">
-          <input type="range" id="sl-yeast" min="0.05" max="0.8" step="0.01"
-                 oninput="onSlider('yeast')" />
-        </div>
-        <div class="slider-range-labels"><span>0.05%</span><span>0.8%</span></div>
-      </div>
-
     </div>
+    <div class="ferment-grid" id="ferment-grid"></div>
   </section>
 
   <section>
@@ -593,7 +234,7 @@
     <div class="result-card">
       <div class="result-header">
         <span data-i18n="col_ingredient"></span>
-        <div style="display:flex;gap:48px">
+        <div style="display:flex;gap:44px">
           <span data-i18n="col_pct"></span>
           <span data-i18n="col_amount"></span>
         </div>
@@ -610,77 +251,123 @@
   <section>
     <h2 data-i18n="section_nutrition"></h2>
     <div class="nutrition-grid" id="nutrition-grid"></div>
+    <div class="nutrition-note" data-i18n="nutrition_note"></div>
   </section>
 
   <section>
-    <h2 data-i18n="section_fermentation"></h2>
-    <div class="ferment-grid" id="ferment-grid"></div>
+    <h2 data-i18n="section_ferment_guide"></h2>
+    <div class="ferment-grid" id="ferment-guide-grid"></div>
+  </section>
+
+  <section>
+    <h2 data-i18n="section_configs"></h2>
+    <div class="save-row">
+      <input type="text" id="config-name-input" data-i18n-ph="config_name_ph" />
+      <button class="btn-primary" onclick="saveConfig()" data-i18n="btn_save_config"></button>
+    </div>
+    <div id="config-list"></div>
   </section>
 
 </main>
 
+<!-- Rating modal -->
+<div id="rating-modal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <div class="modal-header">
+      <span class="modal-title" data-i18n="modal_rate_title"></span>
+      <button class="modal-close" onclick="closeRating()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-field">
+        <label data-i18n="label_baked_at"></label>
+        <input type="date" id="rating-date" />
+      </div>
+      <div id="rating-dimensions"></div>
+      <div class="modal-field">
+        <label data-i18n="label_notes"></label>
+        <textarea id="rating-notes" rows="3"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary" onclick="saveRating()" data-i18n="btn_save_rating"></button>
+      <button class="btn-ghost" onclick="closeRating()" data-i18n="btn_cancel"></button>
+    </div>
+  </div>
+</div>
+
 <script>
-// ─── i18n ──────────────────────────────────────────────────────────────────
+// ─── i18n ─────────────────────────────────────────────────────────────────
 const STRINGS = {
   en: {
-    app_title:         "Pizza Dough Calculator",
-    section_recipe:    "Recipe",
-    section_quantity:  "Quantity",
-    section_ingredients: "Ingredients",
-    section_nutrition: "Nutrition per dough ball",
-    section_fermentation: "Fermentation guide",
-    label_balls:       "Dough balls",
-    label_weight:      "Weight per ball",
-    col_ingredient:    "Ingredient",
-    col_pct:           "%",
-    col_amount:        "Amount",
-    label_total:       "Total dough",
-    badge_optional:    "optional",
-    unit_g:            "g",
-    unit_kcal:         "kcal",
-    nutr_protein:      "Protein",
-    nutr_carbs:        "Carbs",
-    nutr_fat:          "Fat",
-    nutr_calories:     "Calories",
-    source_prefix:     "Recipe based on",
-    section_adjust:    "Adjust",
-    label_hydration:   "Hydration",
-    label_salt:        "Salt",
-    label_yeast:       "Yeast",
-    btn_reset:         "Reset",
+    app_title: "Pizza Dough Calculator",
+    section_recipe: "Recipe", section_quantity: "Quantity",
+    section_adjust: "Adjust", section_fermentation_cfg: "Fermentation",
+    section_ingredients: "Ingredients", section_nutrition: "Nutrition per ball",
+    section_ferment_guide: "Fermentation guide", section_configs: "My Configs",
+    label_balls: "Dough balls", label_weight: "Weight per ball",
+    label_hydration: "Hydration", label_salt: "Salt", label_yeast: "Yeast",
+    label_oil: "Oil", label_sugar: "Sugar", label_malt: "Diastatic malt",
+    label_sweetener: "Sweetener",
+    label_ferment_hours: "Fermentation time", label_ferment_method: "Method",
+    ferment_cold: "Cold (4 °C)", ferment_room: "Room temp (22 °C)",
+    col_ingredient: "Ingredient", col_pct: "%", col_amount: "Amount",
+    label_total: "Total dough", badge_optional: "optional",
+    unit_g: "g", unit_kcal: "kcal",
+    nutr_protein: "Protein", nutr_carbs: "Carbs", nutr_fat: "Fat", nutr_calories: "Calories",
+    nutrition_note: "Approximate values · Water and salt not counted",
+    source_prefix: "Based on",
+    section_configs: "My Configs", btn_save_config: "Save Config",
+    config_name_ph: "Name this config…",
+    config_empty: "No saved configs yet. Adjust settings above and save.",
+    btn_load: "Load", btn_rate: "Rate", btn_delete: "Delete",
+    config_unrated: "Not yet rated",
+    config_baked_on: "Baked",
+    modal_rate_title: "Rate this bake",
+    label_baked_at: "Baked on", label_notes: "Notes",
+    btn_save_rating: "Save rating", btn_cancel: "Cancel",
+    btn_reset: "Reset",
+    dim_oven_spring: "Oven spring", dim_bottom_color: "Bottom color",
+    dim_spotting_neo: "Leoparding", dim_spotting_other: "Browning",
+    dim_crumb: "Crumb structure", dim_texture: "Crust texture",
+    dim_flavor: "Flavor complexity", dim_overall: "Overall",
   },
   de: {
-    app_title:         "Pizzateig-Rechner",
-    section_recipe:    "Rezept",
-    section_quantity:  "Menge",
-    section_ingredients: "Zutaten",
-    section_nutrition: "Nährwerte pro Teigling",
-    section_fermentation: "Gärführung",
-    label_balls:       "Teiglinge",
-    label_weight:      "Gewicht pro Teigling",
-    col_ingredient:    "Zutat",
-    col_pct:           "%",
-    col_amount:        "Menge",
-    label_total:       "Teig gesamt",
-    badge_optional:    "optional",
-    unit_g:            "g",
-    unit_kcal:         "kcal",
-    nutr_protein:      "Eiweiß",
-    nutr_carbs:        "Kohlenhydrate",
-    nutr_fat:          "Fett",
-    nutr_calories:     "Kalorien",
-    source_prefix:     "Rezept basierend auf",
-    section_adjust:    "Anpassen",
-    label_hydration:   "Hydration",
-    label_salt:        "Salz",
-    label_yeast:       "Hefe",
-    btn_reset:         "Reset",
+    app_title: "Pizzateig-Rechner",
+    section_recipe: "Rezept", section_quantity: "Menge",
+    section_adjust: "Anpassen", section_fermentation_cfg: "Gärführung",
+    section_ingredients: "Zutaten", section_nutrition: "Nährwerte pro Teigling",
+    section_ferment_guide: "Gärführungs-Guide", section_configs: "Meine Configs",
+    label_balls: "Teiglinge", label_weight: "Gewicht pro Teigling",
+    label_hydration: "Hydration", label_salt: "Salz", label_yeast: "Hefe",
+    label_oil: "Öl", label_sugar: "Zucker", label_malt: "Diastat. Malz",
+    label_sweetener: "Süßungsmittel",
+    label_ferment_hours: "Gärzeit", label_ferment_method: "Methode",
+    ferment_cold: "Kalt (4 °C)", ferment_room: "Raumtemp. (22 °C)",
+    col_ingredient: "Zutat", col_pct: "%", col_amount: "Menge",
+    label_total: "Teig gesamt", badge_optional: "optional",
+    unit_g: "g", unit_kcal: "kcal",
+    nutr_protein: "Eiweiß", nutr_carbs: "Kohlenhydrate", nutr_fat: "Fett", nutr_calories: "Kalorien",
+    nutrition_note: "Näherungswerte · Wasser und Salz nicht eingerechnet",
+    source_prefix: "Basierend auf",
+    btn_save_config: "Config speichern",
+    config_name_ph: "Config benennen…",
+    config_empty: "Noch keine Configs gespeichert. Einstellungen anpassen und speichern.",
+    btn_load: "Laden", btn_rate: "Bewerten", btn_delete: "Löschen",
+    config_unrated: "Noch nicht bewertet",
+    config_baked_on: "Gebacken",
+    modal_rate_title: "Backversuch bewerten",
+    label_baked_at: "Gebacken am", label_notes: "Notizen",
+    btn_save_rating: "Bewertung speichern", btn_cancel: "Abbrechen",
+    btn_reset: "Reset",
+    dim_oven_spring: "Ofentrieb", dim_bottom_color: "Bodenfarbe",
+    dim_spotting_neo: "Leopardenmuster", dim_spotting_other: "Bräunung",
+    dim_crumb: "Krumenstruktur", dim_texture: "Krustenstruktur",
+    dim_flavor: "Aromakomplexität", dim_overall: "Gesamt",
   },
 };
 
 let lang = "en";
-
-function t(key) { return STRINGS[lang][key] ?? key; }
+function t(k) { return STRINGS[lang][k] ?? k; }
 
 function setLang(l) {
   lang = l;
@@ -689,227 +376,535 @@ function setLang(l) {
   document.getElementById("btn-de").classList.toggle("active", l === "de");
   document.querySelector(".app-title").textContent = t("app_title");
   document.title = t("app_title");
-  document.querySelectorAll("[data-i18n]").forEach(el => {
-    el.textContent = t(el.dataset.i18n);
-  });
+  document.querySelectorAll("[data-i18n]").forEach(el => el.textContent = t(el.dataset.i18n));
+  document.querySelectorAll("[data-i18n-ph]").forEach(el => el.placeholder = t(el.dataset.i18nPh));
   renderRecipes();
+  renderSliders();
   calculate();
+  renderConfigs();
 }
 
-// ─── Recipes ───────────────────────────────────────────────────────────────
-// Baker's percentages: all relative to total flour (= 100 %)
+// ─── Recipes ──────────────────────────────────────────────────────────────
 const RECIPES = [
   {
     id: "high-protein",
-    name:     { en: "High Protein",      de: "High Protein" },
-    tag:      { en: "New York Style",    de: "New Yorker Art" },
-    metaDesc: {
-      en: "24 g protein per ball · High-heat bake · 72 h cold ferment",
-      de: "24 g Eiweiß pro Teigling · Heißes Backen · 72 h Kaltgare",
-    },
-    source: {
-      label: "fwegoslices.com",
-      url:   "https://www.fwegoslices.com",
-    },
-    // Each ingredient: key, name (en/de), baker % relative to flour, optional flag
+    name: { en: "High Protein", de: "High Protein" },
+    tag: { en: "New York Style", de: "New Yorker Art" },
+    metaDesc: { en: "24 g protein · Bread flour + VWG · 72 h cold", de: "24 g Eiweiß · Mehl + Weizengkleber · 72 h kalt" },
+    source: { label: "fwegoslices.com", url: "https://www.fwegoslices.com" },
+    leoparding: false,
     ingredients: [
-      { key: "bread_flour",  en: "Bread flour (85%)",           de: "Weizenmehl Type 550 (85%)",    pct: 85,   optional: false },
-      { key: "vital_gluten", en: "Vital wheat gluten (15%)",    de: "Weizengkleber (15%)",           pct: 15,   optional: false },
-      { key: "water",        en: "Water",                       de: "Wasser",                        pct: 70,   optional: false },
-      { key: "salt",         en: "Salt",                        de: "Salz",                          pct: 3,    optional: false },
-      { key: "yeast",        en: "Instant yeast",               de: "Trockenhefe (Instant)",         pct: 0.25, optional: false },
-      { key: "malt",         en: "Diastatic malt powder",       de: "Diastatisches Malzmehl",        pct: 0.7,  optional: true  },
-      { key: "sweetener",    en: "Sweetener (erythritol)",      de: "Süßungsmittel (Erythrit)",      pct: 2,    optional: false },
+      { key: "bread_flour", en: "Bread flour (85%)", de: "Weizenmehl T550 (85%)", pct: 85, nutrition: "flour" },
+      { key: "vital_gluten", en: "Vital wheat gluten (15%)", de: "Weizengkleber (15%)", pct: 15, nutrition: "flour" },
+      { key: "water",       en: "Water",                    de: "Wasser",               pct: 70,   nutrition: "water" },
+      { key: "salt",        en: "Salt",                     de: "Salz",                 pct: 3,    nutrition: "zero" },
+      { key: "yeast",       en: "Instant yeast",            de: "Trockenhefe (Instant)", pct: 0.25, nutrition: "zero" },
+      { key: "malt",        en: "Diastatic malt powder",    de: "Diastat. Malzmehl",    pct: 0.7,  nutrition: "flour", optional: true },
+      { key: "sweetener",   en: "Sweetener (erythritol)",   de: "Süßungsmittel (Erythrit)", pct: 2, nutrition: "zero" },
     ],
-    // Nutrition per 280 g reference ball (from source)
-    nutritionRef: {
-      ballWeight: 280,
-      kcal: 371, protein: 24, carbs: 65, fat: 2,
-    },
+    sliders: [
+      { ingKey: "water",     labelKey: "label_hydration", min: 60, max: 80, step: 1,    decimals: 1 },
+      { ingKey: "salt",      labelKey: "label_salt",      min: 1.5, max: 5, step: 0.1,  decimals: 1 },
+      { ingKey: "yeast",     labelKey: "label_yeast",     min: 0.05, max: 0.8, step: 0.01, decimals: 2 },
+      { ingKey: "malt",      labelKey: "label_malt",      min: 0, max: 1, step: 0.1,    decimals: 1 },
+      { ingKey: "sweetener", labelKey: "label_sweetener", min: 0, max: 3, step: 0.5,    decimals: 1 },
+    ],
     fermentation: [
-      { time: { en: "Same day",  de: "Gleicher Tag" },  desc: { en: "1–1.5 h room temp, then shape and bake",         de: "1–1,5 h Zimmertemperatur, dann formen und backen" } },
-      { time: { en: "24 hours",  de: "24 Stunden" },    desc: { en: "1 h room temp, then refrigerate overnight",       de: "1 h Zimmertemperatur, dann über Nacht kühlen" } },
-      { time: { en: "48 hours",  de: "48 Stunden" },    desc: { en: "Better flavor and structure develops",            de: "Besseres Aroma und Struktur" } },
-      { time: { en: "72 hours ⭐", de: "72 Stunden ⭐" }, desc: { en: "Optimal — best flavor and extensibility",        de: "Optimal — bestes Aroma und Dehnbarkeit" } },
-      { time: { en: "5 days",    de: "5 Tage" },        desc: { en: "Maximum cold ferment, very complex flavor",       de: "Maximale Kaltgare, sehr komplexes Aroma" } },
+      { time: { en: "Same day",    de: "Gleicher Tag" },  hours: 6,  cold: false, desc: { en: "1–1.5 h room temp, shape and bake",          de: "1–1,5 h Zimmertemp., formen und backen" } },
+      { time: { en: "24 hours",    de: "24 Stunden" },    hours: 24, cold: true,  desc: { en: "1 h room temp, then refrigerate overnight",   de: "1 h Zimmertemp., dann über Nacht kühlen" } },
+      { time: { en: "48 hours",    de: "48 Stunden" },    hours: 48, cold: true,  desc: { en: "Better flavor and structure",                  de: "Besseres Aroma und Struktur" } },
+      { time: { en: "72 hours ⭐", de: "72 Stunden ⭐" }, hours: 72, cold: true,  desc: { en: "Optimal — best flavor and extensibility",     de: "Optimal — bestes Aroma und Dehnbarkeit" } },
+      { time: { en: "5 days",      de: "5 Tage" },        hours: 120, cold: true, desc: { en: "Maximum cold ferment, very complex flavor",   de: "Maximale Kaltgare, sehr komplexes Aroma" } },
+    ],
+  },
+  {
+    id: "neapolitan",
+    name: { en: "Neapolitan", de: "Neapolitanisch" },
+    tag: { en: "AVPN Style", de: "AVPN Stil" },
+    metaDesc: { en: "Tipo 00 · No oil · 430–480 °C · 60–90 s", de: "Tipo 00 · Kein Öl · 430–480 °C · 60–90 s" },
+    source: { label: "pizzanapoletana.org", url: "https://www.pizzanapoletana.org" },
+    leoparding: true,
+    ingredients: [
+      { key: "flour", en: "Tipo 00 flour", de: "Tipo 00 Mehl", pct: 100, nutrition: "flour" },
+      { key: "water", en: "Water",         de: "Wasser",       pct: 60,  nutrition: "water" },
+      { key: "salt",  en: "Salt",          de: "Salz",         pct: 2.8, nutrition: "zero" },
+      { key: "yeast", en: "Fresh yeast",   de: "Frischhefe",   pct: 0.07, nutrition: "zero" },
+    ],
+    sliders: [
+      { ingKey: "water", labelKey: "label_hydration", min: 55, max: 65,  step: 1,    decimals: 1 },
+      { ingKey: "salt",  labelKey: "label_salt",      min: 2.0, max: 3.5, step: 0.1,  decimals: 1 },
+      { ingKey: "yeast", labelKey: "label_yeast",     min: 0.04, max: 0.2, step: 0.01, decimals: 2 },
+    ],
+    fermentation: [
+      { time: { en: "8 hours",     de: "8 Stunden" },     hours: 8,  cold: false, desc: { en: "Minimum per AVPN — 2 h knead + 6 h proof",  de: "AVPN-Minimum — 2 h kneten + 6 h Gare" } },
+      { time: { en: "24 hours",    de: "24 Stunden" },    hours: 24, cold: true,  desc: { en: "Better flavor, improved extensibility",       de: "Besseres Aroma, verbesserte Dehnbarkeit" } },
+      { time: { en: "48 hours ⭐", de: "48 Stunden ⭐" }, hours: 48, cold: true,  desc: { en: "Optimal — deep flavor, leopard-spotting ready", de: "Optimal — tiefes Aroma, Leopardenmuster" } },
+      { time: { en: "72 hours",    de: "72 Stunden" },    hours: 72, cold: true,  desc: { en: "Very complex, subtle tang",                   de: "Sehr komplex, leichte Säure" } },
+    ],
+  },
+  {
+    id: "new-york",
+    name: { en: "New York", de: "New York" },
+    tag: { en: "NY Style", de: "NY Stil" },
+    metaDesc: { en: "Bread flour · Oil + sugar · 250–290 °C", de: "Weizenmehl · Öl + Zucker · 250–290 °C" },
+    source: null,
+    leoparding: false,
+    ingredients: [
+      { key: "flour",  en: "Bread flour",      de: "Weizenmehl T550",    pct: 100, nutrition: "flour" },
+      { key: "water",  en: "Water",            de: "Wasser",             pct: 63,  nutrition: "water" },
+      { key: "salt",   en: "Salt",             de: "Salz",               pct: 2.0, nutrition: "zero" },
+      { key: "yeast",  en: "Instant yeast",    de: "Trockenhefe",        pct: 0.25, nutrition: "zero" },
+      { key: "oil",    en: "Olive oil",        de: "Olivenöl",           pct: 2.0, nutrition: "oil" },
+      { key: "sugar",  en: "Sugar",            de: "Zucker",             pct: 1.5, nutrition: "sugar" },
+      { key: "malt",   en: "Diastatic malt",   de: "Diastat. Malzmehl",  pct: 0.7, nutrition: "flour", optional: true },
+    ],
+    sliders: [
+      { ingKey: "water", labelKey: "label_hydration", min: 58, max: 68, step: 1,    decimals: 1 },
+      { ingKey: "salt",  labelKey: "label_salt",      min: 1.5, max: 3,  step: 0.1,  decimals: 1 },
+      { ingKey: "yeast", labelKey: "label_yeast",     min: 0.1, max: 0.6, step: 0.01, decimals: 2 },
+      { ingKey: "oil",   labelKey: "label_oil",       min: 1,   max: 4,  step: 0.5,  decimals: 1 },
+      { ingKey: "sugar", labelKey: "label_sugar",     min: 0,   max: 3,  step: 0.5,  decimals: 1 },
+      { ingKey: "malt",  labelKey: "label_malt",      min: 0,   max: 1,  step: 0.1,  decimals: 1 },
+    ],
+    fermentation: [
+      { time: { en: "24 hours",    de: "24 Stunden" },    hours: 24, cold: true,  desc: { en: "Good start — real improvement over same-day",  de: "Guter Start — spürbar besser als gleicher Tag" } },
+      { time: { en: "48 hours",    de: "48 Stunden" },    hours: 48, cold: true,  desc: { en: "Deeper flavor, good extensibility",             de: "Tieferes Aroma, gute Dehnbarkeit" } },
+      { time: { en: "72 hours ⭐", de: "72 Stunden ⭐" }, hours: 72, cold: true,  desc: { en: "Optimal — best NY flavor profile",              de: "Optimal — bestes NY-Aromaprofil" } },
+      { time: { en: "5 days",      de: "5 Tage" },        hours: 120, cold: true, desc: { en: "Maximum complexity before degradation sets in", de: "Maximale Komplexität vor Überreife" } },
+    ],
+  },
+  {
+    id: "detroit",
+    name: { en: "Detroit", de: "Detroit" },
+    tag: { en: "Pan Pizza", de: "Pfannenpizza" },
+    metaDesc: { en: "High hydration · Oil · Steel pan · 260–290 °C", de: "Hohe Hydration · Öl · Stahlpfanne · 260–290 °C" },
+    source: null,
+    leoparding: false,
+    ingredients: [
+      { key: "flour", en: "Bread flour",   de: "Weizenmehl T550", pct: 100, nutrition: "flour" },
+      { key: "water", en: "Water",         de: "Wasser",          pct: 70,  nutrition: "water" },
+      { key: "salt",  en: "Salt",          de: "Salz",            pct: 2.2, nutrition: "zero" },
+      { key: "yeast", en: "Instant yeast", de: "Trockenhefe",     pct: 0.2, nutrition: "zero" },
+      { key: "oil",   en: "Olive oil",     de: "Olivenöl",        pct: 3.0, nutrition: "oil" },
+      { key: "sugar", en: "Sugar",         de: "Zucker",          pct: 2.0, nutrition: "sugar" },
+    ],
+    sliders: [
+      { ingKey: "water", labelKey: "label_hydration", min: 65, max: 78, step: 1,    decimals: 1 },
+      { ingKey: "salt",  labelKey: "label_salt",      min: 1.75, max: 3, step: 0.1,  decimals: 1 },
+      { ingKey: "yeast", labelKey: "label_yeast",     min: 0.05, max: 0.5, step: 0.01, decimals: 2 },
+      { ingKey: "oil",   labelKey: "label_oil",       min: 1,   max: 6,  step: 0.5,  decimals: 1 },
+      { ingKey: "sugar", labelKey: "label_sugar",     min: 0,   max: 3,  step: 0.5,  decimals: 1 },
+    ],
+    fermentation: [
+      { time: { en: "6 hours",     de: "6 Stunden" },     hours: 6,  cold: false, desc: { en: "Press into oiled pan, 1 h proof, bake",       de: "In geölte Pfanne drücken, 1 h Stückgare, backen" } },
+      { time: { en: "24 hours ⭐", de: "24 Stunden ⭐" }, hours: 24, cold: true,  desc: { en: "Optimal — best open crumb + cheese crust",    de: "Optimal — offene Krume + Käsekruste" } },
+      { time: { en: "48 hours",    de: "48 Stunden" },    hours: 48, cold: true,  desc: { en: "Rich flavor, very tender crumb",              de: "Reiches Aroma, sehr zarte Krume" } },
+    ],
+  },
+  {
+    id: "roman-taglio",
+    name: { en: "Roman al Taglio", de: "Römisch al Taglio" },
+    tag: { en: "Pizza in Teglia", de: "Pizza in Teglia" },
+    metaDesc: { en: "80% hydration · Olive oil · Two-phase bake", de: "80% Hydration · Olivenöl · Zweistufiges Backen" },
+    source: null,
+    leoparding: false,
+    ingredients: [
+      { key: "flour", en: "Tipo 0 / strong flour", de: "Typ 0 / Starkes Mehl", pct: 100, nutrition: "flour" },
+      { key: "water", en: "Water",                 de: "Wasser",               pct: 80,  nutrition: "water" },
+      { key: "salt",  en: "Salt",                  de: "Salz",                 pct: 2.4, nutrition: "zero" },
+      { key: "yeast", en: "Instant yeast",         de: "Trockenhefe",          pct: 0.3, nutrition: "zero" },
+      { key: "oil",   en: "Extra virgin olive oil", de: "Natives Olivenöl extra", pct: 3.0, nutrition: "oil" },
+    ],
+    sliders: [
+      { ingKey: "water", labelKey: "label_hydration", min: 72, max: 85, step: 1,    decimals: 1 },
+      { ingKey: "salt",  labelKey: "label_salt",      min: 2.0, max: 3,  step: 0.1,  decimals: 1 },
+      { ingKey: "yeast", labelKey: "label_yeast",     min: 0.05, max: 0.6, step: 0.01, decimals: 2 },
+      { ingKey: "oil",   labelKey: "label_oil",       min: 2,   max: 5,  step: 0.5,  decimals: 1 },
+    ],
+    fermentation: [
+      { time: { en: "24 hours",    de: "24 Stunden" },    hours: 24, cold: true,  desc: { en: "Minimum for al taglio — still developing",    de: "Minimum für al Taglio — noch in Entwicklung" } },
+      { time: { en: "48 hours ⭐", de: "48 Stunden ⭐" }, hours: 48, cold: true,  desc: { en: "Optimal — open crumb, crispy bottom",         de: "Optimal — offene Krume, knuspriger Boden" } },
+      { time: { en: "72 hours",    de: "72 Stunden" },    hours: 72, cold: true,  desc: { en: "Complex flavor, very extensible dough",       de: "Komplexes Aroma, sehr dehnbarer Teig" } },
     ],
   },
 ];
 
+// ─── State ────────────────────────────────────────────────────────────────
 let selectedRecipe = RECIPES[0];
+let fermentHours = 72;
+let fermentCold  = true;
+let ratingConfigId = null;
+let ratingValues = {};
 
-// Maps slider id → ingredient key in the recipe
-const SLIDER_MAP = {
-  hydration: "water",
-  salt:      "salt",
-  yeast:     "yeast",
-};
+const CONFIGS_KEY = "pizza-configs";
+const uid = () => (crypto.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).slice(2));
 
-function sliderDefault(sliderId) {
-  const ingKey = SLIDER_MAP[sliderId];
-  const ing = selectedRecipe.ingredients.find(i => i.key === ingKey);
-  return ing ? ing.pct : 0;
-}
-
-function initSliders() {
-  Object.keys(SLIDER_MAP).forEach(sid => {
-    const el = document.getElementById("sl-" + sid);
-    el.value = sliderDefault(sid);
-    updateSliderTrack(el);
-    updateSliderValue(sid);
-  });
-}
-
-function resetSlider(sid) {
-  const el = document.getElementById("sl-" + sid);
-  el.value = sliderDefault(sid);
-  updateSliderTrack(el);
-  updateSliderValue(sid);
-  calculate();
-}
-
-function onSlider(sid) {
-  const el = document.getElementById("sl-" + sid);
-  updateSliderTrack(el);
-  updateSliderValue(sid);
-  calculate();
-}
-
-function updateSliderTrack(el) {
-  const min = parseFloat(el.min);
-  const max = parseFloat(el.max);
-  const val = parseFloat(el.value);
-  const pct = ((val - min) / (max - min)) * 100;
-  el.style.setProperty("--fill", pct + "%");
-}
-
-function updateSliderValue(sid) {
-  const el = document.getElementById("sl-" + sid);
-  const val = parseFloat(el.value);
-  const decimals = val < 1 ? 2 : 1;
-  document.getElementById("val-" + sid).textContent = val.toFixed(decimals) + "%";
-}
-
-function getSliderPct(sliderId) {
-  return parseFloat(document.getElementById("sl-" + sliderId).value);
-}
-
+// ─── Render recipes ───────────────────────────────────────────────────────
 function renderRecipes() {
   const grid = document.getElementById("recipe-grid");
   grid.innerHTML = "";
-  RECIPES.forEach(recipe => {
+  RECIPES.forEach(r => {
     const card = document.createElement("div");
-    card.className = "recipe-card" + (recipe.id === selectedRecipe.id ? " selected" : "");
-    card.innerHTML = `
-      <div class="check">✓</div>
-      <div class="recipe-name">${recipe.name[lang]}</div>
-      <div class="recipe-tag">${recipe.tag[lang]}</div>
-      <div class="recipe-meta">${recipe.metaDesc[lang]}</div>
-    `;
-    card.onclick = () => { selectedRecipe = recipe; renderRecipes(); initSliders(); calculate(); };
+    card.className = "recipe-card" + (r.id === selectedRecipe.id ? " selected" : "");
+    card.innerHTML = `<div class="check">✓</div>
+      <div class="recipe-name">${r.name[lang]}</div>
+      <div class="recipe-tag">${r.tag[lang]}</div>
+      <div class="recipe-meta">${r.metaDesc[lang]}</div>`;
+    card.onclick = () => { selectedRecipe = r; renderRecipes(); renderSliders(); calculate(); renderFermentGuide(); };
     grid.appendChild(card);
   });
 }
 
-// ─── Calculator ────────────────────────────────────────────────────────────
+// ─── Dynamic sliders ──────────────────────────────────────────────────────
+function renderSliders() {
+  const list = document.getElementById("slider-list");
+  list.innerHTML = "";
+  selectedRecipe.sliders.forEach(sc => {
+    const defVal = ingDefault(sc.ingKey);
+    const row = document.createElement("div");
+    row.className = "slider-row";
+    row.innerHTML = `
+      <div class="slider-header">
+        <span class="slider-label">${t(sc.labelKey)}</span>
+        <div class="slider-value-wrap">
+          <span class="slider-value" id="val-${sc.ingKey}"></span>
+          <button class="slider-reset" onclick="resetSlider('${sc.ingKey}')">${t("btn_reset")}</button>
+        </div>
+      </div>
+      <input type="range" id="sl-${sc.ingKey}"
+             min="${sc.min}" max="${sc.max}" step="${sc.step}" value="${defVal}"
+             oninput="onSlider('${sc.ingKey}')" />
+      <div class="slider-range-labels"><span>${sc.min}%</span><span>${sc.max}%</span></div>`;
+    list.appendChild(row);
+    syncSliderTrack(sc.ingKey);
+    syncSliderValue(sc.ingKey, sc.decimals);
+  });
+}
+
+function ingDefault(ingKey) {
+  const ing = selectedRecipe.ingredients.find(i => i.key === ingKey);
+  return ing ? ing.pct : 0;
+}
+
+function sliderCfg(ingKey) {
+  return selectedRecipe.sliders.find(s => s.ingKey === ingKey);
+}
+
+function getSliderVal(ingKey) {
+  const el = document.getElementById("sl-" + ingKey);
+  return el ? parseFloat(el.value) : ingDefault(ingKey);
+}
+
+function onSlider(ingKey) {
+  const sc = sliderCfg(ingKey);
+  syncSliderTrack(ingKey);
+  syncSliderValue(ingKey, sc?.decimals ?? 1);
+  calculate();
+}
+
+function resetSlider(ingKey) {
+  const el = document.getElementById("sl-" + ingKey);
+  if (!el) return;
+  el.value = ingDefault(ingKey);
+  onSlider(ingKey);
+}
+
+function syncSliderTrack(ingKey) {
+  const el = document.getElementById("sl-" + ingKey);
+  if (!el) return;
+  const pct = ((parseFloat(el.value) - parseFloat(el.min)) / (parseFloat(el.max) - parseFloat(el.min))) * 100;
+  el.style.setProperty("--fill", pct + "%");
+}
+
+function syncSliderValue(ingKey, decimals) {
+  const el = document.getElementById("sl-" + ingKey);
+  const val = el ? parseFloat(el.value) : ingDefault(ingKey);
+  const d = decimals ?? (val < 1 ? 2 : 1);
+  const display = document.getElementById("val-" + ingKey);
+  if (display) display.textContent = val.toFixed(d) + "%";
+}
+
+// ─── Fermentation controls ────────────────────────────────────────────────
+function onFermentSlider() {
+  fermentHours = parseInt(document.getElementById("sl-ferment-hours").value);
+  document.getElementById("val-ferment-hours").textContent = fermentHours + "h";
+  const pct = ((fermentHours - 4) / (120 - 4)) * 100;
+  document.getElementById("sl-ferment-hours").style.setProperty("--fill", pct + "%");
+  renderFermentGuide();
+}
+
+function setFermentMethod(method) {
+  fermentCold = method === "cold";
+  document.getElementById("btn-cold").classList.toggle("active", fermentCold);
+  document.getElementById("btn-room").classList.toggle("active", !fermentCold);
+  renderFermentGuide();
+}
+
+function renderFermentGuide() {
+  const grid = document.getElementById("ferment-guide-grid");
+  grid.innerHTML = selectedRecipe.fermentation.map(f => {
+    const active = Math.abs(f.hours - fermentHours) <= 12 && f.cold === fermentCold;
+    return `<div class="ferment-card${active ? " active" : ""}">
+      <div class="ferment-time">${f.time[lang]}</div>
+      <div class="ferment-desc">${f.desc[lang]}</div>
+    </div>`;
+  }).join("");
+}
+
+// ─── Calculate ───────────────────────────────────────────────────────────
+const NUTR = {
+  flour: { kcal: 3.55, protein: 0.12, carbs: 0.72, fat: 0.015 },
+  oil:   { kcal: 8.84, protein: 0,    carbs: 0,    fat: 1.0 },
+  sugar: { kcal: 3.87, protein: 0,    carbs: 1.0,  fat: 0 },
+  water: { kcal: 0, protein: 0, carbs: 0, fat: 0 },
+  zero:  { kcal: 0, protein: 0, carbs: 0, fat: 0 },
+};
+
 function calculate() {
   const balls  = Math.max(1, parseInt(document.getElementById("balls").value)  || 1);
   const weight = Math.max(50, parseInt(document.getElementById("weight").value) || 280);
   const r = selectedRecipe;
-
-  // Total dough weight for all balls
   const totalDough = balls * weight;
 
-  // Build effective percentages: recipe defaults overridden by sliders
   const effectivePct = {};
-  r.ingredients.forEach(ing => { effectivePct[ing.key] = ing.pct; });
-  Object.entries(SLIDER_MAP).forEach(([sid, ingKey]) => {
-    if (ingKey in effectivePct) effectivePct[ingKey] = getSliderPct(sid);
+  r.ingredients.forEach(ing => {
+    effectivePct[ing.key] = r.sliders?.find(s => s.ingKey === ing.key)
+      ? getSliderVal(ing.key)
+      : ing.pct;
   });
 
-  // Sum of all effective baker's percentages (flour = 100 %)
-  const sumPct = r.ingredients.reduce((acc, ing) => acc + effectivePct[ing.key], 0);
+  const sumPct = Object.values(effectivePct).reduce((a, v) => a + v, 0);
   const flourGrams = totalDough / (sumPct / 100);
 
-  // Render ingredient rows
+  // Ingredients
   const list = document.getElementById("ingredient-list");
   list.innerHTML = "";
+  let nutrKcal = 0, nutrProtein = 0, nutrCarbs = 0, nutrFat = 0;
+
   r.ingredients.forEach(ing => {
     const pct = effectivePct[ing.key];
     const grams = flourGrams * (pct / 100);
+    const nf = NUTR[ing.nutrition ?? "zero"];
+    nutrKcal    += grams * nf.kcal;
+    nutrProtein += grams * nf.protein;
+    nutrCarbs   += grams * nf.carbs;
+    nutrFat     += grams * nf.fat;
+
     const row = document.createElement("div");
     row.className = "ingredient-row" + (ing.optional ? " optional" : "");
     row.innerHTML = `
-      <div class="ing-name">
-        ${ing[lang]}
-        ${ing.optional ? `<span class="optional-badge">${t("badge_optional")}</span>` : ""}
-      </div>
-      <div class="ing-pct">${pct < 1 ? pct.toFixed(2) : pct.toFixed(1)}%</div>
+      <div class="ing-name">${ing[lang]}${ing.optional ? `<span class="optional-badge">${t("badge_optional")}</span>` : ""}</div>
+      <div class="ing-pct">${pct.toFixed(pct < 1 ? 2 : 1)}%</div>
       <div class="ing-amount">${fmt(grams)}</div>
-      <div class="ing-unit">${t("unit_g")}</div>
-    `;
+      <div class="ing-unit">${t("unit_g")}</div>`;
     list.appendChild(row);
   });
 
-  document.getElementById("total-weight").textContent =
-    `${fmt(totalDough)} ${t("unit_g")}`;
+  document.getElementById("total-weight").textContent = `${fmt(totalDough)} ${t("unit_g")}`;
 
-  // Source link
   const src = r.source;
   document.getElementById("source-link").innerHTML = src
     ? `${t("source_prefix")} <a href="${src.url}" target="_blank" rel="noopener">${src.label}</a>`
     : "";
 
-  // Nutrition (scaled from reference ball weight)
-  const nr = r.nutritionRef;
-  const scale = weight / nr.ballWeight;
-  const nutGrid = document.getElementById("nutrition-grid");
-  nutGrid.innerHTML = `
-    <div class="nutrition-card">
-      <div class="nutrition-value">${Math.round(nr.kcal * scale)}</div>
-      <div class="nutrition-label">${t("nutr_calories")} ${t("unit_kcal")}</div>
-    </div>
-    <div class="nutrition-card">
-      <div class="nutrition-value">${Math.round(nr.protein * scale)}&thinsp;g</div>
-      <div class="nutrition-label">${t("nutr_protein")}</div>
-    </div>
-    <div class="nutrition-card">
-      <div class="nutrition-value">${Math.round(nr.carbs * scale)}&thinsp;g</div>
-      <div class="nutrition-label">${t("nutr_carbs")}</div>
-    </div>
-    <div class="nutrition-card">
-      <div class="nutrition-value">${Math.round(nr.fat * scale)}&thinsp;g</div>
-      <div class="nutrition-label">${t("nutr_fat")}</div>
-    </div>
-  `;
-
-  // Fermentation guide
-  const ferGrid = document.getElementById("ferment-grid");
-  ferGrid.innerHTML = r.fermentation.map(f => `
-    <div class="ferment-card">
-      <div class="ferment-time">${f.time[lang]}</div>
-      <div class="ferment-desc">${f.desc[lang]}</div>
-    </div>
-  `).join("");
+  // Nutrition (per single ball)
+  const fac = 1 / balls;
+  document.getElementById("nutrition-grid").innerHTML = `
+    <div class="nutrition-card"><div class="nutrition-value">${Math.round(nutrKcal * fac)}</div><div class="nutrition-label">${t("nutr_calories")} ${t("unit_kcal")}</div></div>
+    <div class="nutrition-card"><div class="nutrition-value">${Math.round(nutrProtein * fac)}&thinsp;g</div><div class="nutrition-label">${t("nutr_protein")}</div></div>
+    <div class="nutrition-card"><div class="nutrition-value">${Math.round(nutrCarbs * fac)}&thinsp;g</div><div class="nutrition-label">${t("nutr_carbs")}</div></div>
+    <div class="nutrition-card"><div class="nutrition-value">${Math.round(nutrFat * fac)}&thinsp;g</div><div class="nutrition-label">${t("nutr_fat")}</div></div>`;
 }
 
-function fmt(n) {
-  return n < 10 ? n.toFixed(1) : Math.round(n).toString();
-}
+function fmt(n) { return n < 10 ? n.toFixed(1) : Math.round(n).toString(); }
 
 function adj(field, delta) {
   const el = document.getElementById(field);
-  const val = parseInt(el.value) || 0;
-  const min = parseInt(el.min);
-  const max = parseInt(el.max);
-  el.value = Math.min(max, Math.max(min, val + delta));
+  el.value = Math.min(+el.max, Math.max(+el.min, (+el.value || 0) + delta));
   calculate();
 }
 
-// ─── Init ──────────────────────────────────────────────────────────────────
+// ─── Config: localStorage ─────────────────────────────────────────────────
+function loadConfigs() {
+  try { return JSON.parse(localStorage.getItem(CONFIGS_KEY)) || []; } catch { return []; }
+}
+function persistConfigs(list) { localStorage.setItem(CONFIGS_KEY, JSON.stringify(list)); }
+
+function saveConfig() {
+  const nameEl = document.getElementById("config-name-input");
+  const name = nameEl.value.trim();
+  if (!name) { nameEl.focus(); return; }
+
+  const overrides = {};
+  selectedRecipe.sliders?.forEach(sc => { overrides[sc.ingKey] = getSliderVal(sc.ingKey); });
+
+  const cfg = {
+    id: uid(),
+    name,
+    recipeId: selectedRecipe.id,
+    createdAt: new Date().toISOString(),
+    balls: parseInt(document.getElementById("balls").value),
+    ballWeightG: parseInt(document.getElementById("weight").value),
+    overrides,
+    fermentation: { hours: fermentHours, cold: fermentCold },
+    bakedAt: null, rating: null, notes: "",
+  };
+
+  const list = loadConfigs();
+  list.unshift(cfg);
+  persistConfigs(list);
+  nameEl.value = "";
+  renderConfigs();
+}
+
+function loadConfig(id) {
+  const cfg = loadConfigs().find(c => c.id === id);
+  if (!cfg) return;
+
+  const recipe = RECIPES.find(r => r.id === cfg.recipeId);
+  if (!recipe) return;
+  selectedRecipe = recipe;
+  renderRecipes();
+  renderSliders();
+
+  document.getElementById("balls").value  = cfg.balls;
+  document.getElementById("weight").value = cfg.ballWeightG;
+  fermentHours = cfg.fermentation?.hours ?? 72;
+  fermentCold  = cfg.fermentation?.cold  ?? true;
+  document.getElementById("sl-ferment-hours").value = fermentHours;
+  onFermentSlider();
+  document.getElementById("btn-cold").classList.toggle("active", fermentCold);
+  document.getElementById("btn-room").classList.toggle("active", !fermentCold);
+
+  if (cfg.overrides) {
+    Object.entries(cfg.overrides).forEach(([key, val]) => {
+      const el = document.getElementById("sl-" + key);
+      if (el) { el.value = val; onSlider(key); }
+    });
+  }
+  calculate();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function deleteConfig(id) {
+  if (!confirm(lang === "de" ? "Config löschen?" : "Delete config?")) return;
+  persistConfigs(loadConfigs().filter(c => c.id !== id));
+  renderConfigs();
+}
+
+function renderConfigs() {
+  const list = loadConfigs();
+  const el = document.getElementById("config-list");
+  if (!list.length) {
+    el.innerHTML = `<div class="config-empty">${t("config_empty")}</div>`;
+    return;
+  }
+  el.innerHTML = `<div class="config-list">${list.map(cfg => {
+    const recipe = RECIPES.find(r => r.id === cfg.recipeId);
+    const recipeName = recipe ? recipe.name[lang] : cfg.recipeId;
+    const date = new Date(cfg.createdAt).toLocaleDateString(lang === "de" ? "de-DE" : "en-GB");
+    const hydration = cfg.overrides?.water ? cfg.overrides.water.toFixed(1) + "%" : "—";
+    const fermentLabel = cfg.fermentation ? `${cfg.fermentation.hours}h ${cfg.fermentation.cold ? (lang === "de" ? "kalt" : "cold") : (lang === "de" ? "RT" : "RT")}` : "";
+    const bakedLine = cfg.bakedAt
+      ? `<span class="config-baked">${t("config_baked_on")} ${new Date(cfg.bakedAt).toLocaleDateString(lang === "de" ? "de-DE" : "en-GB")}</span>`
+      : "";
+    const stars = cfg.rating
+      ? `<span class="config-stars">${starsStr(cfg.rating.overall)}</span>`
+      : `<span class="config-unrated">${t("config_unrated")}</span>`;
+    return `<div class="config-card">
+      <div class="config-card-header">
+        <span class="config-name">${esc(cfg.name)}</span>
+        <span class="config-recipe-tag">${recipeName}</span>
+      </div>
+      <div class="config-meta">${cfg.balls} × ${cfg.ballWeightG}g · ${hydration} · ${fermentLabel}</div>
+      <div class="config-meta">${date}</div>
+      <div class="config-rating-row">${stars}${bakedLine}</div>
+      <div class="config-actions">
+        <button class="btn-sm" onclick="loadConfig('${cfg.id}')">${t("btn_load")}</button>
+        <button class="btn-sm" onclick="openRating('${cfg.id}')">${t("btn_rate")}</button>
+        <button class="btn-sm danger" onclick="deleteConfig('${cfg.id}')">${t("btn_delete")}</button>
+      </div>
+    </div>`;
+  }).join("")}</div>`;
+}
+
+function esc(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function starsStr(n) { return "★".repeat(Math.round(n || 0)) + "☆".repeat(5 - Math.round(n || 0)); }
+
+// ─── Rating modal ────────────────────────────────────────────────────────
+const DIMS = ["ovenSpring","bottomColor","spotting","crumbStructure","crustTexture","flavorComplexity","overall"];
+function dimLabel(key) {
+  if (key === "spotting") return t(selectedRecipe.leoparding ? "dim_spotting_neo" : "dim_spotting_other");
+  return t("dim_" + key.replace(/([A-Z])/g, c => "_" + c.toLowerCase()));
+}
+
+function openRating(id) {
+  ratingConfigId = id;
+  const cfg = loadConfigs().find(c => c.id === id);
+  if (!cfg) return;
+  const recipe = RECIPES.find(r => r.id === cfg.recipeId) || selectedRecipe;
+
+  document.querySelector("[data-i18n='modal_rate_title']").textContent = cfg.name;
+  document.getElementById("rating-date").value = cfg.bakedAt ? cfg.bakedAt.slice(0,10) : new Date().toISOString().slice(0,10);
+  document.getElementById("rating-notes").value = cfg.notes || "";
+  ratingValues = cfg.rating ? { ...cfg.rating } : {};
+
+  const container = document.getElementById("rating-dimensions");
+  container.innerHTML = DIMS.map(key => {
+    const label = key === "spotting"
+      ? t(recipe.leoparding ? "dim_spotting_neo" : "dim_spotting_other")
+      : t("dim_" + key.replace(/([A-Z])/g, c => "_" + c.toLowerCase()));
+    const cur = ratingValues[key] || 0;
+    const stars = Array.from({length:5},(_,i) =>
+      `<button class="star-btn${i < cur ? " filled" : ""}" onclick="setStar('${key}',${i+1})">★</button>`
+    ).join("");
+    return `<div class="dim-row"><span class="dim-label">${label}</span><div class="star-group" id="stars-${key}">${stars}</div></div>`;
+  }).join("");
+
+  document.getElementById("rating-modal").hidden = false;
+}
+
+function closeRating() {
+  document.getElementById("rating-modal").hidden = true;
+  ratingConfigId = null;
+}
+
+function setStar(dim, val) {
+  ratingValues[dim] = val;
+  const group = document.getElementById("stars-" + dim);
+  group.querySelectorAll(".star-btn").forEach((btn, i) => {
+    btn.classList.toggle("filled", i < val);
+  });
+}
+
+function saveRating() {
+  if (!ratingConfigId) return;
+  const list = loadConfigs();
+  const idx = list.findIndex(c => c.id === ratingConfigId);
+  if (idx === -1) return;
+  list[idx].bakedAt = document.getElementById("rating-date").value || new Date().toISOString().slice(0,10);
+  list[idx].notes   = document.getElementById("rating-notes").value;
+  list[idx].rating  = { ...ratingValues };
+  persistConfigs(list);
+  closeRating();
+  renderConfigs();
+}
+
+// close modal on backdrop click
+document.getElementById("rating-modal").addEventListener("click", e => {
+  if (e.target === e.currentTarget) closeRating();
+});
+
+// ─── Init ─────────────────────────────────────────────────────────────────
 renderRecipes();
-initSliders();
+renderSliders();
+onFermentSlider();
 calculate();
+renderFermentGuide();
+renderConfigs();
+// apply i18n to static elements
+document.querySelectorAll("[data-i18n]").forEach(el => el.textContent = t(el.dataset.i18n));
+document.querySelectorAll("[data-i18n-ph]").forEach(el => el.placeholder = t(el.dataset.i18nPh));
 </script>
 </body>
 </html>
