@@ -3,20 +3,120 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#0f0f0f" />
+  <meta name="theme-color" content="#FCF8F0" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Pizza Dough Calculator</title>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>Forno</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Spectral:wght@600;700;800&family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
-    /* ── Tokens ── */
+    /* ── Forno Design System Tokens ── */
     :root {
-      --bg: #0f0f0f; --surface: #1a1a1a; --surface2: #242424; --border: #2e2e2e;
-      --accent: #e85d04; --accent-dim: #9d2f00; --accent-bg: #1e1208;
-      --text: #f0ede8; --text-dim: #888; --text-dimmer: #4a4a4a;
-      --star: #f5a623; --danger: #c0392b;
-      --radius: 14px; --t: 0.15s ease;
-      --tap: 52px;        /* minimum touch target */
-      --pad: 18px;        /* horizontal page padding */
+      /* Dough / cream surfaces */
+      --dough-50:  #FCF8F0;
+      --dough-100: #F8F1E3;
+      --dough-200: #F0E6D2;
+      --dough-300: #E4D4BA;
+      --dough-400: #D2BC97;
+
+      /* Char (wood-fired near-black) */
+      --char-900: #1E1814;
+      --char-800: #2A221C;
+      --char-700: #3D332A;
+      --char-600: #5A4C40;
+      --char-500: #7A6A5B;
+      --char-400: #9C8C7C;
+
+      /* Terracotta (primary) */
+      --terra-700: #8F3E22;
+      --terra-600: #A84A29;
+      --terra-500: #C25A33;
+      --terra-400: #D27A52;
+      --terra-300: #E3A483;
+      --terra-200: #F0C9B4;
+      --terra-100: #F8E5DA;
+
+      /* Basil (accent / success) */
+      --basil-700: #3F5A2C;
+      --basil-600: #4F6E37;
+      --basil-500: #648A45;
+      --basil-300: #ABC593;
+      --basil-200: #D2E0C0;
+      --basil-100: #ECF2E2;
+
+      /* Tomato (danger) */
+      --tomato-600: #A82C22;
+      --tomato-500: #C5362A;
+      --tomato-100: #F8DDDA;
+
+      /* Heat scale */
+      --heat-cold:   #6E8CA8;
+      --heat-cool:   #9FB0A6;
+      --heat-pale:   #ECD9A8;
+      --heat-golden: #D99B36;
+      --heat-ember:  #C2641F;
+      --heat-char:   #6E3415;
+      --heat-burnt:  #2E1A10;
+
+      /* Semantic aliases */
+      --surface-canvas: var(--dough-50);
+      --surface-card:   var(--dough-100);
+      --surface-well:   var(--dough-200);
+      --surface-ink:    var(--char-900);
+      --text-strong: var(--char-900);
+      --text-body:   var(--char-700);
+      --text-muted:  var(--char-500);
+      --text-faint:  var(--char-400);
+      --text-on-dark: var(--dough-100);
+      --brand:          var(--terra-500);
+      --brand-hover:    var(--terra-600);
+      --brand-press:    var(--terra-700);
+      --brand-subtle:   var(--terra-100);
+      --accent:         var(--basil-500);
+      --accent-subtle:  var(--basil-100);
+      --ok:      var(--basil-500);
+      --ok-bg:   var(--basil-100);
+      --warn:    var(--heat-ember);
+      --warn-bg: #F8E6D0;
+      --danger:      var(--tomato-500);
+      --danger-bg:   var(--tomato-100);
+      --line:        var(--dough-300);
+      --line-strong: var(--dough-400);
+      --line-on-dark: rgba(248,241,227,0.14);
+      --focus: var(--terra-400);
+
+      /* Radii — soft, hand-thrown */
+      --radius-xs:  6px;
+      --radius-sm:  10px;
+      --radius-md:  14px;
+      --radius-lg:  20px;
+      --radius-xl:  28px;
+      --radius-pill: 999px;
+
+      /* Warm brown-tinted shadows */
+      --shadow-xs: 0 1px 2px rgba(58,40,26,0.06);
+      --shadow-sm: 0 2px 6px rgba(58,40,26,0.08);
+      --shadow-md: 0 6px 18px rgba(58,40,26,0.10);
+      --shadow-lg: 0 14px 38px rgba(46,26,16,0.16);
+      --shadow-ink: 0 18px 44px rgba(20,12,6,0.40);
+      --shadow-inset: inset 0 2px 5px rgba(58,40,26,0.10);
+
+      /* Motion — calm, no bounce */
+      --ease-out:  cubic-bezier(0.22, 0.61, 0.36, 1);
+      --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+      --dur-fast: 120ms;
+      --dur-base: 200ms;
+      --t: var(--dur-base) var(--ease-out);
+
+      /* Typography */
+      --font-display: 'Spectral', Georgia, 'Times New Roman', serif;
+      --font-sans: 'Hanken Grotesk', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+
+      /* Layout */
+      --tap:    52px;
+      --pad:    18px;
       --safe-b: env(safe-area-inset-bottom, 0px);
     }
 
@@ -26,54 +126,89 @@
     input  { -webkit-tap-highlight-color: transparent; }
 
     body {
-      background: var(--bg); color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      font-size: 16px; line-height: 1.5; min-height: 100vh;
+      background: var(--surface-canvas);
+      color: var(--text-body);
+      font-family: var(--font-sans);
+      font-size: 16px;
+      line-height: 1.5;
+      min-height: 100vh;
       -webkit-text-size-adjust: 100%;
+    }
+
+    /* ── Eyebrow — the section label treatment ── */
+    .forno-eyebrow, h2 {
+      font-family: var(--font-sans);
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 14px;
     }
 
     /* ── Header ── */
     header {
-      background: var(--surface); border-bottom: 1px solid var(--border);
+      background: var(--surface-canvas);
+      border-bottom: 1px solid var(--line);
+      box-shadow: var(--shadow-xs);
       padding: 0 var(--pad);
       padding-top: env(safe-area-inset-top, 0px);
-      height: calc(56px + env(safe-area-inset-top, 0px));
+      height: calc(58px + env(safe-area-inset-top, 0px));
       display: flex; align-items: flex-end; padding-bottom: 0;
       position: sticky; top: 0; z-index: 100;
     }
     .header-inner {
       width: 100%; display: flex; align-items: center;
-      justify-content: space-between; height: 56px;
+      justify-content: space-between; height: 58px;
     }
-    .logo { display: flex; align-items: center; gap: 9px; font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; }
-    .logo-icon { font-size: 1.35rem; }
-    .lang-toggle { display: flex; gap: 3px; background: var(--surface2); border-radius: 9px; padding: 2px; }
+    .logo {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .logo-mark {
+      width: 30px; height: 30px; flex-shrink: 0;
+    }
+    .app-title {
+      font: 700 19px/1 var(--font-display);
+      color: var(--text-strong);
+      letter-spacing: -0.01em;
+    }
+
+    /* Segmented lang toggle */
+    .lang-toggle {
+      display: flex; gap: 2px;
+      background: var(--surface-well);
+      border-radius: var(--radius-md);
+      padding: 3px;
+      box-shadow: var(--shadow-inset);
+    }
     .lang-btn {
-      background: none; border: none; color: var(--text-dim);
-      cursor: pointer; padding: 0 13px; height: 44px;
-      border-radius: 7px; font-size: 0.82rem; font-weight: 700;
-      transition: all var(--t);
+      background: none; border: none; color: var(--text-muted);
+      cursor: pointer; padding: 0 13px; height: 36px;
+      border-radius: calc(var(--radius-md) - 2px);
+      font: 600 12px/1 var(--font-sans);
+      letter-spacing: 0.04em;
+      transition: color var(--t), background var(--t), box-shadow var(--t);
     }
-    .lang-btn.active { background: var(--accent); color: #fff; }
+    .lang-btn.active {
+      background: var(--dough-50);
+      color: var(--text-strong);
+      box-shadow: var(--shadow-sm);
+    }
 
     /* ── Layout ── */
     main {
       max-width: 860px; margin: 0 auto;
-      padding: 24px var(--pad) calc(80px + var(--safe-b));
+      padding: 28px var(--pad) calc(80px + var(--safe-b));
     }
-    section { margin-bottom: 36px; }
-    h2 {
-      font-size: 0.72rem; font-weight: 800; color: var(--text-dim);
-      text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 14px;
-    }
+    section { margin-bottom: 40px; }
 
-    /* ── Recipe scroll strip (mobile first) ── */
+    /* ── Recipe scroll strip ── */
     .recipe-scroll {
       display: flex; gap: 10px;
       overflow-x: auto; overflow-y: visible;
       scroll-snap-type: x mandatory;
       -webkit-overflow-scrolling: touch;
-      padding-bottom: 6px;
+      padding-bottom: 8px;
       margin: 0 calc(-1 * var(--pad));
       padding-left: var(--pad); padding-right: var(--pad);
       scrollbar-width: none;
@@ -81,30 +216,51 @@
     .recipe-scroll::-webkit-scrollbar { display: none; }
 
     .recipe-card {
-      background: var(--surface); border: 2px solid var(--border);
-      border-radius: var(--radius); padding: 14px 16px;
-      cursor: pointer; transition: border-color var(--t), background var(--t);
+      background: var(--surface-card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 16px 18px;
+      cursor: pointer;
+      transition: border-color var(--t), background var(--t), box-shadow var(--t), transform var(--dur-fast) var(--ease-out);
       position: relative; scroll-snap-align: start; flex-shrink: 0;
       min-width: 172px; max-width: 200px;
+      box-shadow: var(--shadow-sm);
     }
-    .recipe-card:active { background: var(--surface2); }
-    .recipe-card.selected { border-color: var(--accent); background: var(--accent-bg); }
+    .recipe-card:active { transform: scale(0.98); }
+    .recipe-card.selected {
+      border-color: var(--brand);
+      background: var(--brand-subtle);
+      box-shadow: var(--shadow-md);
+    }
     .recipe-card .check {
-      position: absolute; top: 10px; right: 10px;
+      position: absolute; top: 12px; right: 12px;
       width: 20px; height: 20px; border-radius: 50%;
-      background: var(--accent); display: none;
-      align-items: center; justify-content: center; font-size: 0.65rem;
+      background: var(--brand); color: #fff;
+      display: none; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700;
     }
     .recipe-card.selected .check { display: flex; }
-    .recipe-name { font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; }
-    .recipe-tag {
-      display: inline-block; font-size: 0.65rem; font-weight: 800;
-      background: #2a1800; color: var(--accent); border-radius: 4px;
-      padding: 1px 6px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.04em;
+    .recipe-name {
+      font: 700 15px/1.2 var(--font-sans);
+      color: var(--text-strong);
+      margin-bottom: 5px;
     }
-    .recipe-meta { font-size: 0.76rem; color: var(--text-dim); line-height: 1.6; }
+    .recipe-tag {
+      display: inline-block;
+      font: 700 10px/1 var(--font-sans);
+      letter-spacing: 0.08em; text-transform: uppercase;
+      background: var(--brand-subtle); color: var(--terra-700);
+      border-radius: var(--radius-pill);
+      padding: 3px 8px; margin-bottom: 10px;
+    }
+    .recipe-card.selected .recipe-tag {
+      background: var(--terra-200); color: var(--terra-700);
+    }
+    .recipe-meta {
+      font: 400 12px/1.55 var(--font-sans);
+      color: var(--text-muted);
+    }
 
-    /* On wider screens: switch to grid */
     @media (min-width: 600px) {
       .recipe-scroll {
         display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
@@ -116,267 +272,522 @@
     /* ── Quantity controls ── */
     .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .field label {
-      display: block; font-size: 0.72rem; font-weight: 800; color: var(--text-dim);
-      margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.07em;
+      display: block;
+      font: 700 12px/1 var(--font-sans);
+      letter-spacing: 0.10em; text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 9px;
     }
     .input-wrap {
-      display: flex; align-items: center; background: var(--surface);
-      border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
-      transition: border-color var(--t);
+      display: flex; align-items: center;
+      background: var(--surface-well);
+      border: 1.5px solid var(--line);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: var(--shadow-inset);
+      transition: border-color var(--t), box-shadow var(--t);
     }
-    .input-wrap:focus-within { border-color: var(--accent); }
+    .input-wrap:focus-within {
+      border-color: var(--focus);
+      box-shadow: 0 0 0 3px var(--brand-subtle), var(--shadow-inset);
+    }
     .input-wrap button {
-      background: none; border: none; color: var(--text-dim);
+      background: none; border: none; color: var(--text-muted);
       cursor: pointer; font-size: 1.25rem;
       min-width: var(--tap); height: var(--tap);
       display: flex; align-items: center; justify-content: center;
-      transition: color var(--t); user-select: none; flex-shrink: 0;
+      transition: color var(--t), transform var(--dur-fast) var(--ease-out);
+      user-select: none; flex-shrink: 0;
     }
-    .input-wrap button:active { color: var(--accent); }
+    .input-wrap button:active { color: var(--brand); transform: scale(0.92); }
     .input-wrap input {
-      background: none; border: none; color: var(--text);
-      font-size: 1.1rem; font-weight: 700; text-align: center;
-      width: 100%; height: var(--tap); outline: none;
+      background: none; border: none; color: var(--text-strong);
+      font: 700 18px/1 var(--font-mono);
+      text-align: center; width: 100%; height: var(--tap);
+      outline: none; font-variant-numeric: tabular-nums;
     }
     input[type=number]::-webkit-inner-spin-button { display: none; }
-    .unit { color: var(--text-dim); font-size: 0.85rem; padding-right: 14px; white-space: nowrap; }
+    .unit {
+      color: var(--text-muted);
+      font: 500 13px/1 var(--font-mono);
+      padding-right: 14px; white-space: nowrap;
+    }
 
     /* ── Sliders ── */
-    .slider-list { display: flex; flex-direction: column; gap: 12px; }
+    .slider-list { display: flex; flex-direction: column; gap: 10px; }
     .slider-row {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 16px 18px;
+      background: var(--surface-card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      box-shadow: var(--shadow-sm);
     }
     .slider-header {
       display: flex; align-items: center;
-      justify-content: space-between; margin-bottom: 14px;
+      justify-content: space-between; margin-bottom: 16px;
     }
-    .slider-label { font-size: 0.72rem; font-weight: 800; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.07em; }
+    .slider-label {
+      font: 700 12px/1 var(--font-sans);
+      letter-spacing: 0.10em; text-transform: uppercase;
+      color: var(--text-muted);
+    }
     .slider-value-wrap { display: flex; align-items: center; gap: 10px; }
-    .slider-value { font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 54px; text-align: right; }
-    .slider-reset {
-      background: none; border: 1px solid var(--border); color: var(--text-dim);
-      cursor: pointer; font-size: 0.72rem; font-weight: 700;
-      padding: 0 12px; border-radius: 8px; transition: all var(--t);
-      min-height: 44px;
+    .slider-value {
+      font: 700 18px/1 var(--font-mono);
+      color: var(--text-strong);
+      font-variant-numeric: tabular-nums;
+      min-width: 60px; text-align: right;
     }
-    .slider-reset:active { border-color: var(--accent); color: var(--accent); }
+    .slider-reset {
+      background: none;
+      border: 1.5px solid var(--line-strong);
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      cursor: pointer;
+      font: 600 11px/1 var(--font-sans);
+      letter-spacing: 0.04em;
+      padding: 0 12px;
+      min-height: 36px;
+      transition: border-color var(--t), color var(--t), background var(--t);
+    }
+    .slider-reset:active {
+      border-color: var(--brand);
+      color: var(--brand);
+      background: var(--brand-subtle);
+    }
 
-    /* Range input — big thumb for fingers */
+    /* Custom range input — Forno style */
     input[type=range] {
-      --fill: 0%; appearance: none; -webkit-appearance: none;
-      width: 100%; height: 6px; border-radius: 3px;
-      background: linear-gradient(to right, var(--accent) var(--fill), var(--border) var(--fill));
+      --fill-color: var(--terra-500);
+      --fill: 0%;
+      appearance: none; -webkit-appearance: none;
+      width: 100%; height: 8px; border-radius: var(--radius-pill);
+      background: linear-gradient(to right, var(--fill-color) var(--fill), var(--dough-200) var(--fill));
+      box-shadow: var(--shadow-inset);
       outline: none; cursor: pointer;
+      transition: background var(--dur-fast) var(--ease-out);
     }
     input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none; width: 28px; height: 28px; border-radius: 50%;
-      background: var(--accent); cursor: pointer;
-      border: 3px solid var(--bg); box-shadow: 0 0 0 1px var(--accent);
+      -webkit-appearance: none;
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--dough-50);
+      border: 2.5px solid var(--fill-color);
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      transition: border-color var(--dur-base) var(--ease-out);
     }
     input[type=range]::-moz-range-thumb {
-      width: 28px; height: 28px; border-radius: 50%;
-      background: var(--accent); cursor: pointer;
-      border: 3px solid var(--bg); box-shadow: 0 0 0 1px var(--accent);
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--dough-50);
+      border: 2.5px solid var(--fill-color);
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
     }
     .slider-range-labels {
       display: flex; justify-content: space-between;
-      margin-top: 8px; font-size: 0.68rem; color: var(--text-dimmer);
+      margin-top: 10px;
+      font: 500 11px/1 var(--font-mono);
+      color: var(--text-faint);
     }
 
     /* ── Fermentation controls ── */
-    .ferment-controls { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+    .ferment-controls { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+
+    /* Segmented control — matches DS SegmentedControl */
     .toggle-group {
-      display: flex; gap: 3px; background: var(--surface2);
-      border-radius: 10px; padding: 3px; width: 100%;
+      display: flex; gap: 2px;
+      background: var(--surface-well);
+      border-radius: var(--radius-md);
+      padding: 3px;
+      box-shadow: var(--shadow-inset);
+      width: 100%;
     }
     .toggle-btn {
-      flex: 1; background: none; border: none; color: var(--text-dim);
-      cursor: pointer; padding: 0 10px; height: 42px;
-      border-radius: 8px; font-size: 0.82rem; font-weight: 700;
-      transition: all var(--t); text-align: center;
+      flex: 1; background: none; border: none; color: var(--text-muted);
+      cursor: pointer; padding: 0 10px; height: 40px;
+      border-radius: calc(var(--radius-md) - 2px);
+      font: 600 13px/1 var(--font-sans);
+      transition: color var(--t), background var(--t), box-shadow var(--t);
+      text-align: center; white-space: nowrap;
     }
-    .toggle-btn.active { background: var(--accent); color: #fff; }
+    .toggle-btn.active {
+      background: var(--dough-50);
+      color: var(--text-strong);
+      box-shadow: var(--shadow-sm);
+    }
     @media (min-width: 480px) {
       .toggle-group { width: fit-content; }
       .toggle-btn { flex: none; padding: 0 20px; }
     }
 
-    /* ── Ingredient table ── */
-    .result-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    /* ── Ingredient table — IngredientRow style ── */
+    .result-card {
+      background: var(--surface-card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+    }
     .result-header {
-      background: var(--surface2); padding: 12px 16px;
-      font-size: 0.68rem; font-weight: 800; color: var(--text-dim);
-      text-transform: uppercase; letter-spacing: 0.07em;
+      padding: 12px 20px;
+      font: 700 11px/1 var(--font-sans);
+      letter-spacing: 0.10em; text-transform: uppercase;
+      color: var(--text-muted);
       display: flex; justify-content: space-between;
+      border-bottom: 1px solid var(--line);
     }
     .ingredient-row {
-      display: flex; align-items: center;
-      padding: 14px 16px; border-top: 1px solid var(--border);
-      min-height: 52px;
+      display: flex; align-items: baseline;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--line);
+      min-height: 52px; gap: 12px;
     }
-    .ingredient-row.optional { opacity: 0.55; }
-    .ing-name { flex: 1; font-weight: 500; font-size: 0.9rem; padding-right: 8px; }
-    .ing-pct { color: var(--text-dim); font-size: 0.76rem; margin-right: 14px; width: 46px; text-align: right; font-variant-numeric: tabular-nums; }
-    .ing-amount { font-weight: 800; font-size: 1rem; width: 68px; text-align: right; font-variant-numeric: tabular-nums; }
-    .ing-unit { color: var(--text-dim); font-size: 0.78rem; margin-left: 5px; width: 20px; }
+    .ingredient-row:last-child { border-bottom: none; }
+    .ingredient-row.optional { opacity: 0.6; }
+    .ing-name {
+      flex: 1; min-width: 0;
+      font: 600 15px/1.2 var(--font-sans);
+      color: var(--text-strong);
+    }
     .optional-badge {
-      display: block; font-size: 0.6rem; color: var(--text-dimmer);
-      background: var(--surface2); border-radius: 4px; padding: 1px 5px;
-      margin-top: 3px; width: fit-content;
+      display: inline-block;
+      font: 700 10px/1 var(--font-sans);
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--text-muted);
+      background: var(--dough-200);
+      border-radius: var(--radius-pill);
+      padding: 2px 7px; margin-left: 7px;
+      vertical-align: middle;
+    }
+    .ing-pct {
+      font: 500 12px/1 var(--font-mono);
+      color: var(--text-faint);
+      font-variant-numeric: tabular-nums;
+      width: 44px; text-align: right;
+    }
+    .ing-amount {
+      font: 700 20px/1 var(--font-mono);
+      color: var(--text-strong);
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+    .ing-unit {
+      font: 500 13px/1 var(--font-sans);
+      color: var(--text-muted);
+      width: 16px;
     }
     .total-row {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 16px; background: var(--accent-bg); border-top: 2px solid var(--accent);
+      padding: 16px 20px;
+      background: var(--brand-subtle);
+      border-top: 2px solid var(--terra-300);
     }
-    .total-label { font-weight: 700; font-size: 0.95rem; }
-    .total-amount { font-weight: 800; font-size: 1.2rem; color: var(--accent); font-variant-numeric: tabular-nums; }
-    .source-link { font-size: 0.74rem; color: var(--text-dimmer); margin-top: 8px; }
-    .source-link a { color: var(--accent); text-decoration: none; }
+    .total-label {
+      font: 600 14px/1 var(--font-sans);
+      color: var(--terra-700);
+    }
+    .total-amount {
+      font: 700 22px/1 var(--font-mono);
+      color: var(--brand);
+      font-variant-numeric: tabular-nums;
+    }
+    .source-link {
+      font: 400 13px/1 var(--font-sans);
+      color: var(--text-faint);
+      margin-top: 10px;
+    }
+    .source-link a { color: var(--brand); text-decoration: none; }
+    .source-link a:hover { text-decoration: underline; }
 
     /* ── Nutrition ── */
     .nutrition-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
     @media (min-width: 500px) { .nutrition-grid { grid-template-columns: repeat(4, 1fr); } }
     .nutrition-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 16px 12px; text-align: center;
+      background: var(--surface-card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 18px 14px; text-align: center;
+      box-shadow: var(--shadow-sm);
     }
-    .nutrition-value { font-size: 1.4rem; font-weight: 800; font-variant-numeric: tabular-nums; }
-    .nutrition-label { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
-    .nutrition-note { font-size: 0.7rem; color: var(--text-dimmer); text-align: center; margin-top: 8px; }
+    .nutrition-value {
+      font: 700 28px/1 var(--font-mono);
+      color: var(--text-strong);
+      font-variant-numeric: tabular-nums;
+    }
+    .nutrition-label {
+      font: 700 11px/1 var(--font-sans);
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--text-muted); margin-top: 6px;
+    }
+    .nutrition-note {
+      font: 400 12px/1 var(--font-sans);
+      color: var(--text-faint); text-align: center; margin-top: 10px;
+    }
 
-    /* ── Fermentation guide ── */
+    /* ── Fermentation guide cards ── */
     .ferment-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
     @media (min-width: 480px) { .ferment-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
-    .ferment-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 15px; }
-    .ferment-card.active { border-color: var(--accent); background: var(--accent-bg); }
-    .ferment-time { font-size: 0.92rem; font-weight: 700; margin-bottom: 5px; }
-    .ferment-desc { font-size: 0.74rem; color: var(--text-dim); line-height: 1.5; }
+    .ferment-card {
+      background: var(--surface-card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 16px 17px;
+      box-shadow: var(--shadow-sm);
+      transition: border-color var(--t), background var(--t), box-shadow var(--t);
+    }
+    .ferment-card.active {
+      border-color: var(--brand);
+      background: var(--brand-subtle);
+      box-shadow: var(--shadow-md);
+    }
+    .ferment-time {
+      font: 700 14px/1.2 var(--font-sans);
+      color: var(--text-strong);
+      margin-bottom: 6px;
+    }
+    .ferment-card.active .ferment-time { color: var(--terra-700); }
+    .ferment-desc {
+      font: 400 12px/1.55 var(--font-sans);
+      color: var(--text-muted);
+    }
 
-    /* ── Configs ── */
+    /* ── Config save row ── */
     .save-row { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
     .save-row input {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 10px; color: var(--text); padding: 0 16px;
-      height: var(--tap); font-size: 16px; outline: none;
-      transition: border-color var(--t); width: 100%;
+      background: var(--surface-well);
+      border: 1.5px solid var(--line);
+      border-radius: var(--radius-md);
+      color: var(--text-strong);
+      padding: 0 16px;
+      height: var(--tap);
+      font: 500 16px/1 var(--font-sans);
+      outline: none;
+      box-shadow: var(--shadow-inset);
+      transition: border-color var(--t), box-shadow var(--t);
+      width: 100%;
     }
-    .save-row input:focus { border-color: var(--accent); }
-    .save-row input::placeholder { color: var(--text-dimmer); }
+    .save-row input:focus {
+      border-color: var(--focus);
+      box-shadow: 0 0 0 3px var(--brand-subtle), var(--shadow-inset);
+    }
+    .save-row input::placeholder { color: var(--text-faint); }
     @media (min-width: 480px) {
       .save-row { flex-direction: row; }
       .save-row input { flex: 1; }
     }
 
+    /* ── Buttons ── */
     .btn-primary {
-      background: var(--accent); border: none; border-radius: 10px; color: #fff;
-      cursor: pointer; font-size: 0.95rem; font-weight: 800;
-      padding: 0 22px; height: var(--tap); white-space: nowrap;
-      transition: opacity var(--t); width: 100%;
+      background: var(--brand);
+      border: 1.5px solid transparent;
+      border-radius: var(--radius-md);
+      color: #fff;
+      cursor: pointer;
+      font: 600 15px/1 var(--font-sans);
+      letter-spacing: 0.01em;
+      padding: 0 22px; height: var(--tap);
+      white-space: nowrap;
+      box-shadow: var(--shadow-sm);
+      transition: background var(--t), transform var(--dur-fast) var(--ease-out), box-shadow var(--t);
+      width: 100%;
     }
-    .btn-primary:active { opacity: 0.82; }
+    .btn-primary:active {
+      background: var(--brand-press);
+      transform: scale(0.97);
+    }
     @media (min-width: 480px) { .btn-primary { width: auto; } }
 
-    .config-empty { color: var(--text-dimmer); font-size: 0.88rem; padding: 16px 0; }
-    .config-list { display: flex; flex-direction: column; gap: 12px; }
-    .config-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
-    .config-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
-    .config-name { font-weight: 700; font-size: 1rem; }
-    .config-recipe-tag {
-      font-size: 0.62rem; font-weight: 800; background: #2a1800; color: var(--accent);
-      border-radius: 4px; padding: 3px 8px; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;
+    .btn-ghost {
+      background: var(--surface-card);
+      border: 1.5px solid var(--line-strong);
+      border-radius: var(--radius-md);
+      color: var(--text-body);
+      cursor: pointer;
+      font: 600 15px/1 var(--font-sans);
+      height: var(--tap); width: 100%;
+      box-shadow: var(--shadow-xs);
+      transition: background var(--t), border-color var(--t), transform var(--dur-fast) var(--ease-out);
     }
-    .config-meta { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 5px; }
-    .config-rating-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
-    .config-stars { color: var(--star); font-size: 1rem; letter-spacing: 1px; }
-    .config-unrated { font-size: 0.78rem; color: var(--text-dimmer); }
-    .config-baked { font-size: 0.78rem; color: var(--text-dimmer); }
+    .btn-ghost:active {
+      background: var(--dough-200);
+      border-color: var(--char-500);
+      transform: scale(0.97);
+    }
+    @media (min-width: 480px) { .btn-ghost { width: auto; flex: 1; } }
+
+    /* ── Config cards ── */
+    .config-empty {
+      font: 400 14px/1.6 var(--font-sans);
+      color: var(--text-muted);
+      padding: 20px 0;
+    }
+    .config-list { display: flex; flex-direction: column; gap: 12px; }
+    .config-card {
+      background: var(--surface-card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    .config-card-header {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 10px; margin-bottom: 6px;
+    }
+    .config-name {
+      font: 700 16px/1.2 var(--font-sans);
+      color: var(--text-strong);
+    }
+    .config-recipe-tag {
+      font: 700 10px/1 var(--font-sans);
+      letter-spacing: 0.08em; text-transform: uppercase;
+      background: var(--brand-subtle); color: var(--terra-700);
+      border-radius: var(--radius-pill);
+      padding: 4px 10px; white-space: nowrap;
+    }
+    .config-meta {
+      font: 400 13px/1.5 var(--font-sans);
+      color: var(--text-muted); margin-bottom: 3px;
+    }
+    .config-rating-row {
+      display: flex; align-items: center; gap: 8px;
+      margin: 10px 0 14px; flex-wrap: wrap;
+    }
+    .config-stars {
+      font-size: 17px; letter-spacing: 1px;
+      color: var(--heat-golden);
+    }
+    .config-unrated {
+      font: 400 13px/1 var(--font-sans);
+      color: var(--text-faint);
+    }
+    .config-baked {
+      font: 400 13px/1 var(--font-sans);
+      color: var(--text-faint);
+    }
     .config-actions { display: flex; gap: 8px; }
     .btn-sm {
-      flex: 1; background: var(--surface2); border: 1px solid var(--border);
-      border-radius: 8px; color: var(--text-dim); cursor: pointer;
-      font-size: 0.8rem; font-weight: 700; height: 44px;
+      flex: 1;
+      background: var(--surface-well);
+      border: 1.5px solid var(--line);
+      border-radius: var(--radius-sm);
+      color: var(--text-body);
+      cursor: pointer;
+      font: 600 13px/1 var(--font-sans);
+      height: 44px;
       display: flex; align-items: center; justify-content: center;
-      transition: all var(--t);
+      transition: background var(--t), border-color var(--t), color var(--t);
     }
-    .btn-sm:active { border-color: var(--accent); color: var(--accent); }
-    .btn-sm.danger:active { border-color: var(--danger); color: var(--danger); }
+    .btn-sm:active {
+      border-color: var(--brand);
+      color: var(--brand);
+      background: var(--brand-subtle);
+    }
+    .btn-sm.danger:active {
+      border-color: var(--danger);
+      color: var(--danger);
+      background: var(--danger-bg);
+    }
 
     /* ── Rating modal — bottom sheet on mobile ── */
     .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+      position: fixed; inset: 0;
+      background: rgba(46,26,16,0.55);
       display: flex; align-items: flex-end;
       z-index: 200; padding: 0;
     }
     .modal-overlay[hidden] { display: none; }
     .modal-card {
-      background: var(--surface); border-top: 1px solid var(--border);
-      border-radius: var(--radius) var(--radius) 0 0;
+      background: var(--surface-canvas);
+      border-top: 1px solid var(--line);
+      border-radius: var(--radius-xl) var(--radius-xl) 0 0;
       width: 100%; max-height: 92vh; overflow-y: auto;
       padding-bottom: var(--safe-b);
+      box-shadow: var(--shadow-lg);
     }
-    /* Center dialog on tablet+ */
     @media (min-width: 560px) {
       .modal-overlay { align-items: center; padding: 24px; }
-      .modal-card { border-radius: var(--radius); border: 1px solid var(--border); max-width: 480px; padding-bottom: 0; }
+      .modal-card {
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--line);
+        max-width: 480px; padding-bottom: 0;
+      }
     }
     .modal-header {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 18px 20px; border-bottom: 1px solid var(--border);
-      position: sticky; top: 0; background: var(--surface); z-index: 1;
+      padding: 20px 22px;
+      border-bottom: 1px solid var(--line);
+      position: sticky; top: 0;
+      background: var(--surface-canvas); z-index: 1;
     }
-    .modal-title { font-size: 1rem; font-weight: 700; }
+    .modal-title {
+      font: 700 17px/1.2 var(--font-display);
+      color: var(--text-strong);
+    }
     .modal-close {
-      background: none; border: none; color: var(--text-dim); cursor: pointer;
-      font-size: 1.2rem; min-width: 44px; height: 44px;
+      background: var(--surface-well);
+      border: none;
+      border-radius: 50%;
+      color: var(--text-muted);
+      cursor: pointer;
+      width: 36px; height: 36px;
       display: flex; align-items: center; justify-content: center;
-      transition: color var(--t); margin: -10px -10px -10px 0;
+      font-size: 14px;
+      transition: background var(--t), color var(--t);
     }
-    .modal-close:active { color: var(--text); }
-    .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 18px; }
+    .modal-close:active { background: var(--dough-300); color: var(--text-strong); }
+    .modal-body { padding: 20px 22px; display: flex; flex-direction: column; gap: 20px; }
     .modal-field label {
-      display: block; font-size: 0.72rem; font-weight: 800; color: var(--text-dim);
-      text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px;
+      display: block;
+      font: 700 11px/1 var(--font-sans);
+      letter-spacing: 0.10em; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 9px;
     }
     .modal-field input[type=date],
     .modal-field textarea {
-      background: var(--surface2); border: 1px solid var(--border);
-      border-radius: 9px; color: var(--text); padding: 12px 14px;
-      width: 100%; font-size: 16px; outline: none;
-      transition: border-color var(--t);
+      background: var(--surface-well);
+      border: 1.5px solid var(--line);
+      border-radius: var(--radius-md);
+      color: var(--text-strong);
+      padding: 12px 16px;
+      width: 100%; font: 500 16px/1.4 var(--font-sans);
+      outline: none;
+      box-shadow: var(--shadow-inset);
+      transition: border-color var(--t), box-shadow var(--t);
     }
     .modal-field input[type=date]:focus,
-    .modal-field textarea:focus { border-color: var(--accent); }
-    .modal-field textarea { resize: vertical; min-height: 72px; font-family: inherit; }
+    .modal-field textarea:focus {
+      border-color: var(--focus);
+      box-shadow: 0 0 0 3px var(--brand-subtle), var(--shadow-inset);
+    }
+    .modal-field textarea { resize: vertical; min-height: 72px; font-family: var(--font-sans); }
     .dim-row {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 13px 0; border-bottom: 1px solid var(--border);
+      padding: 13px 0; border-bottom: 1px solid var(--line);
     }
     .dim-row:last-child { border-bottom: none; }
-    .dim-label { font-size: 0.9rem; font-weight: 500; }
-    .star-group { display: flex; gap: 0; }
-    .star-btn {
-      background: none; border: none; color: var(--text-dimmer);
-      cursor: pointer; font-size: 1.6rem; padding: 4px 3px;
-      transition: color var(--t); line-height: 1;
-      min-width: 36px; text-align: center;
+    .dim-label {
+      font: 500 14px/1 var(--font-sans);
+      color: var(--text-body);
     }
-    .star-btn.filled { color: var(--star); }
-    .star-btn:active { color: var(--star); }
+    .star-group { display: flex; gap: 2px; }
+    .star-btn {
+      background: none; border: none;
+      color: var(--dough-300);
+      cursor: pointer; font-size: 22px;
+      padding: 4px 2px;
+      transition: color var(--t), transform var(--dur-fast) var(--ease-out);
+      line-height: 1; min-width: 34px; text-align: center;
+    }
+    .star-btn.filled { color: var(--heat-golden); }
+    .star-btn:active { transform: scale(1.2); }
     .modal-footer {
       display: flex; flex-direction: column; gap: 10px;
-      padding: 16px 20px; border-top: 1px solid var(--border);
+      padding: 16px 22px; border-top: 1px solid var(--line);
     }
-    .modal-footer .btn-primary { width: 100%; font-size: 1rem; height: var(--tap); }
-    .btn-ghost {
-      background: none; border: 1px solid var(--border); border-radius: 10px;
-      color: var(--text-dim); cursor: pointer; font-size: 0.9rem; font-weight: 600;
-      height: var(--tap); width: 100%; transition: all var(--t);
-    }
-    .btn-ghost:active { border-color: var(--text-dim); color: var(--text); }
+    .modal-footer .btn-primary { width: 100%; height: var(--tap); }
     @media (min-width: 480px) {
       .modal-footer { flex-direction: row; }
-      .modal-footer .btn-primary, .btn-ghost { width: auto; flex: 1; }
+      .modal-footer .btn-primary { width: auto; flex: 1; }
     }
   </style>
 </head>
@@ -385,8 +796,13 @@
 <header>
   <div class="header-inner">
     <div class="logo">
-      <span class="logo-icon">🍕</span>
-      <span class="app-title">Pizza Dough Calculator</span>
+      <!-- Forno mark -->
+      <svg class="logo-mark" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Forno">
+        <rect x="4" y="4" width="40" height="40" rx="12" fill="#1E1814"/>
+        <path d="M14 34a10 10 0 0 0 20 0c0-6-4-9-5.5-13.5C27 25 24 25.5 24 29c-2-1.5-2-4.5-1-7-4 2-9 6-9 12Z" fill="#C25A33"/>
+        <path d="M19.5 33.5a4.5 4.5 0 0 0 9 0c0-3-2.2-4.6-2.8-7-1.2 2.4-3 2.8-3.4 4.6-1-.8-1-2.2-.6-3.4-1.6 1.2-2.2 3.2-2.2 5.8Z" fill="#D99B36"/>
+      </svg>
+      <span class="app-title">Forno</span>
     </div>
     <div class="lang-toggle">
       <button class="lang-btn active" onclick="setLang('en')" id="btn-en">EN</button>
@@ -408,17 +824,17 @@
       <div class="field">
         <label data-i18n="label_balls"></label>
         <div class="input-wrap">
-          <button onclick="adj('balls',-1)">−</button>
+          <button onclick="adj('balls',-1)" aria-label="Decrease">−</button>
           <input type="number" id="balls" value="2" min="1" max="50" inputmode="numeric" autocomplete="off" oninput="calculate()" />
-          <button onclick="adj('balls',+1)">+</button>
+          <button onclick="adj('balls',+1)" aria-label="Increase">+</button>
         </div>
       </div>
       <div class="field">
         <label data-i18n="label_weight"></label>
         <div class="input-wrap">
-          <button onclick="adj('weight',-10)">−</button>
+          <button onclick="adj('weight',-10)" aria-label="Decrease">−</button>
           <input type="number" id="weight" value="280" min="80" max="1000" inputmode="numeric" autocomplete="off" oninput="calculate()" />
-          <button onclick="adj('weight',+10)">+</button>
+          <button onclick="adj('weight',+10)" aria-label="Increase">+</button>
           <span class="unit">g</span>
         </div>
       </div>
@@ -442,7 +858,7 @@
         </div>
         <input type="range" id="sl-ferment-hours" min="4" max="120" step="4" value="72"
                oninput="onFermentSlider()" />
-        <div class="slider-range-labels"><span>4h</span><span>120h</span></div>
+        <div class="slider-range-labels"><span>4 h</span><span>120 h</span></div>
       </div>
       <div class="slider-row">
         <div class="slider-header">
@@ -462,7 +878,7 @@
     <div class="result-card">
       <div class="result-header">
         <span data-i18n="col_ingredient"></span>
-        <div style="display:flex;gap:44px">
+        <div style="display:flex;gap:36px">
           <span data-i18n="col_pct"></span>
           <span data-i18n="col_amount"></span>
         </div>
@@ -503,7 +919,7 @@
   <div class="modal-card">
     <div class="modal-header">
       <span class="modal-title" data-i18n="modal_rate_title"></span>
-      <button class="modal-close" onclick="closeRating()">✕</button>
+      <button class="modal-close" onclick="closeRating()" aria-label="Close">✕</button>
     </div>
     <div class="modal-body">
       <div class="modal-field">
@@ -527,7 +943,7 @@
 // ─── i18n ─────────────────────────────────────────────────────────────────
 const STRINGS = {
   en: {
-    app_title: "Pizza Dough Calculator",
+    app_title: "Forno",
     section_recipe: "Recipe", section_quantity: "Quantity",
     section_adjust: "Adjust", section_fermentation_cfg: "Fermentation",
     section_ingredients: "Ingredients", section_nutrition: "Nutrition per ball",
@@ -544,7 +960,7 @@ const STRINGS = {
     nutr_protein: "Protein", nutr_carbs: "Carbs", nutr_fat: "Fat", nutr_calories: "Calories",
     nutrition_note: "Approximate values · Water and salt not counted",
     source_prefix: "Based on",
-    section_configs: "My Configs", btn_save_config: "Save Config",
+    btn_save_config: "Save Config",
     config_name_ph: "Name this config…",
     config_empty: "No saved configs yet. Adjust settings above and save.",
     btn_load: "Load", btn_rate: "Rate", btn_delete: "Delete",
@@ -554,13 +970,13 @@ const STRINGS = {
     label_baked_at: "Baked on", label_notes: "Notes",
     btn_save_rating: "Save rating", btn_cancel: "Cancel",
     btn_reset: "Reset",
-    dim_oven_spring: "Oven spring", dim_bottom_color: "Bottom color",
+    dim_oven_spring: "Oven spring", dim_bottom_color: "Bottom colour",
     dim_spotting_neo: "Leoparding", dim_spotting_other: "Browning",
     dim_crumb: "Crumb structure", dim_texture: "Crust texture",
-    dim_flavor: "Flavor complexity", dim_overall: "Overall",
+    dim_flavor: "Flavour complexity", dim_overall: "Overall",
   },
   de: {
-    app_title: "Pizzateig-Rechner",
+    app_title: "Forno",
     section_recipe: "Rezept", section_quantity: "Menge",
     section_adjust: "Anpassen", section_fermentation_cfg: "Gärführung",
     section_ingredients: "Zutaten", section_nutrition: "Nährwerte pro Teigling",
@@ -602,7 +1018,6 @@ function setLang(l) {
   document.documentElement.lang = l;
   document.getElementById("btn-en").classList.toggle("active", l === "en");
   document.getElementById("btn-de").classList.toggle("active", l === "de");
-  document.querySelector(".app-title").textContent = t("app_title");
   document.title = t("app_title");
   document.querySelectorAll("[data-i18n]").forEach(el => el.textContent = t(el.dataset.i18n));
   document.querySelectorAll("[data-i18n-ph]").forEach(el => el.placeholder = t(el.dataset.i18nPh));
@@ -622,27 +1037,27 @@ const RECIPES = [
     source: { label: "fwegoslices.com", url: "https://www.fwegoslices.com" },
     leoparding: false,
     ingredients: [
-      { key: "bread_flour", en: "Bread flour (85%)", de: "Weizenmehl T550 (85%)", pct: 85, nutrition: "flour" },
-      { key: "vital_gluten", en: "Vital wheat gluten (15%)", de: "Weizengkleber (15%)", pct: 15, nutrition: "flour" },
-      { key: "water",       en: "Water",                    de: "Wasser",               pct: 70,   nutrition: "water" },
-      { key: "salt",        en: "Salt",                     de: "Salz",                 pct: 3,    nutrition: "zero" },
-      { key: "yeast",       en: "Instant yeast",            de: "Trockenhefe (Instant)", pct: 0.25, nutrition: "zero" },
-      { key: "malt",        en: "Diastatic malt powder",    de: "Diastat. Malzmehl",    pct: 0.7,  nutrition: "flour", optional: true },
-      { key: "sweetener",   en: "Sweetener (erythritol)",   de: "Süßungsmittel (Erythrit)", pct: 2, nutrition: "zero" },
+      { key: "bread_flour",  en: "Bread flour (85%)",          de: "Weizenmehl T550 (85%)",        pct: 85,   nutrition: "flour" },
+      { key: "vital_gluten", en: "Vital wheat gluten (15%)",   de: "Weizengkleber (15%)",           pct: 15,   nutrition: "flour" },
+      { key: "water",        en: "Water",                       de: "Wasser",                        pct: 70,   nutrition: "water" },
+      { key: "salt",         en: "Salt",                        de: "Salz",                          pct: 3,    nutrition: "zero" },
+      { key: "yeast",        en: "Instant yeast",               de: "Trockenhefe (Instant)",         pct: 0.25, nutrition: "zero" },
+      { key: "malt",         en: "Diastatic malt powder",       de: "Diastat. Malzmehl",             pct: 0.7,  nutrition: "flour", optional: true },
+      { key: "sweetener",    en: "Sweetener (erythritol)",      de: "Süßungsmittel (Erythrit)",      pct: 2,    nutrition: "zero" },
     ],
     sliders: [
-      { ingKey: "water",     labelKey: "label_hydration", min: 60, max: 80, step: 1,    decimals: 1 },
-      { ingKey: "salt",      labelKey: "label_salt",      min: 1.5, max: 5, step: 0.1,  decimals: 1 },
+      { ingKey: "water",     labelKey: "label_hydration", min: 60,   max: 80,  step: 1,    decimals: 1 },
+      { ingKey: "salt",      labelKey: "label_salt",      min: 1.5,  max: 5,   step: 0.1,  decimals: 1 },
       { ingKey: "yeast",     labelKey: "label_yeast",     min: 0.05, max: 0.8, step: 0.01, decimals: 2 },
-      { ingKey: "malt",      labelKey: "label_malt",      min: 0, max: 1, step: 0.1,    decimals: 1 },
-      { ingKey: "sweetener", labelKey: "label_sweetener", min: 0, max: 3, step: 0.5,    decimals: 1 },
+      { ingKey: "malt",      labelKey: "label_malt",      min: 0,    max: 1,   step: 0.1,  decimals: 1 },
+      { ingKey: "sweetener", labelKey: "label_sweetener", min: 0,    max: 3,   step: 0.5,  decimals: 1 },
     ],
     fermentation: [
-      { time: { en: "Same day",    de: "Gleicher Tag" },  hours: 6,  cold: false, desc: { en: "1–1.5 h room temp, shape and bake",          de: "1–1,5 h Zimmertemp., formen und backen" } },
-      { time: { en: "24 hours",    de: "24 Stunden" },    hours: 24, cold: true,  desc: { en: "1 h room temp, then refrigerate overnight",   de: "1 h Zimmertemp., dann über Nacht kühlen" } },
-      { time: { en: "48 hours",    de: "48 Stunden" },    hours: 48, cold: true,  desc: { en: "Better flavor and structure",                  de: "Besseres Aroma und Struktur" } },
-      { time: { en: "72 hours ⭐", de: "72 Stunden ⭐" }, hours: 72, cold: true,  desc: { en: "Optimal — best flavor and extensibility",     de: "Optimal — bestes Aroma und Dehnbarkeit" } },
-      { time: { en: "5 days",      de: "5 Tage" },        hours: 120, cold: true, desc: { en: "Maximum cold ferment, very complex flavor",   de: "Maximale Kaltgare, sehr komplexes Aroma" } },
+      { time: { en: "Same day",    de: "Gleicher Tag"   }, hours: 6,   cold: false, desc: { en: "1–1.5 h room temp, shape and bake",        de: "1–1,5 h Zimmertemp., formen und backen" } },
+      { time: { en: "24 hours",    de: "24 Stunden"     }, hours: 24,  cold: true,  desc: { en: "1 h room temp, then refrigerate overnight", de: "1 h Zimmertemp., dann über Nacht kühlen" } },
+      { time: { en: "48 hours",    de: "48 Stunden"     }, hours: 48,  cold: true,  desc: { en: "Better flavour and structure",              de: "Besseres Aroma und Struktur" } },
+      { time: { en: "72 hours ★",  de: "72 Stunden ★"  }, hours: 72,  cold: true,  desc: { en: "Optimal — best flavour and extensibility",  de: "Optimal — bestes Aroma und Dehnbarkeit" } },
+      { time: { en: "5 days",      de: "5 Tage"         }, hours: 120, cold: true,  desc: { en: "Maximum cold ferment, very complex flavour", de: "Maximale Kaltgare, sehr komplexes Aroma" } },
     ],
   },
   {
@@ -653,21 +1068,21 @@ const RECIPES = [
     source: { label: "pizzanapoletana.org", url: "https://www.pizzanapoletana.org" },
     leoparding: true,
     ingredients: [
-      { key: "flour", en: "Tipo 00 flour", de: "Tipo 00 Mehl", pct: 100, nutrition: "flour" },
-      { key: "water", en: "Water",         de: "Wasser",       pct: 60,  nutrition: "water" },
-      { key: "salt",  en: "Salt",          de: "Salz",         pct: 2.8, nutrition: "zero" },
+      { key: "flour", en: "Tipo 00 flour", de: "Tipo 00 Mehl", pct: 100,  nutrition: "flour" },
+      { key: "water", en: "Water",         de: "Wasser",       pct: 60,   nutrition: "water" },
+      { key: "salt",  en: "Salt",          de: "Salz",         pct: 2.8,  nutrition: "zero" },
       { key: "yeast", en: "Fresh yeast",   de: "Frischhefe",   pct: 0.07, nutrition: "zero" },
     ],
     sliders: [
-      { ingKey: "water", labelKey: "label_hydration", min: 55, max: 65,  step: 1,    decimals: 1 },
+      { ingKey: "water", labelKey: "label_hydration", min: 55,  max: 65,  step: 1,    decimals: 1 },
       { ingKey: "salt",  labelKey: "label_salt",      min: 2.0, max: 3.5, step: 0.1,  decimals: 1 },
-      { ingKey: "yeast", labelKey: "label_yeast",     min: 0.04, max: 0.2, step: 0.01, decimals: 2 },
+      { ingKey: "yeast", labelKey: "label_yeast",     min: 0.04,max: 0.2, step: 0.01, decimals: 2 },
     ],
     fermentation: [
-      { time: { en: "8 hours",     de: "8 Stunden" },     hours: 8,  cold: false, desc: { en: "Minimum per AVPN — 2 h knead + 6 h proof",  de: "AVPN-Minimum — 2 h kneten + 6 h Gare" } },
-      { time: { en: "24 hours",    de: "24 Stunden" },    hours: 24, cold: true,  desc: { en: "Better flavor, improved extensibility",       de: "Besseres Aroma, verbesserte Dehnbarkeit" } },
-      { time: { en: "48 hours ⭐", de: "48 Stunden ⭐" }, hours: 48, cold: true,  desc: { en: "Optimal — deep flavor, leopard-spotting ready", de: "Optimal — tiefes Aroma, Leopardenmuster" } },
-      { time: { en: "72 hours",    de: "72 Stunden" },    hours: 72, cold: true,  desc: { en: "Very complex, subtle tang",                   de: "Sehr komplex, leichte Säure" } },
+      { time: { en: "8 hours",    de: "8 Stunden"    }, hours: 8,  cold: false, desc: { en: "Minimum per AVPN — 2 h knead + 6 h proof",    de: "AVPN-Minimum — 2 h kneten + 6 h Gare" } },
+      { time: { en: "24 hours",   de: "24 Stunden"   }, hours: 24, cold: true,  desc: { en: "Better flavour, improved extensibility",       de: "Besseres Aroma, verbesserte Dehnbarkeit" } },
+      { time: { en: "48 hours ★", de: "48 Stunden ★" }, hours: 48, cold: true,  desc: { en: "Optimal — deep flavour, leopard-spotting ready", de: "Optimal — tiefes Aroma, Leopardenmuster" } },
+      { time: { en: "72 hours",   de: "72 Stunden"   }, hours: 72, cold: true,  desc: { en: "Very complex, subtle tang",                   de: "Sehr komplex, leichte Säure" } },
     ],
   },
   {
@@ -678,27 +1093,27 @@ const RECIPES = [
     source: null,
     leoparding: false,
     ingredients: [
-      { key: "flour",  en: "Bread flour",      de: "Weizenmehl T550",    pct: 100, nutrition: "flour" },
-      { key: "water",  en: "Water",            de: "Wasser",             pct: 63,  nutrition: "water" },
-      { key: "salt",   en: "Salt",             de: "Salz",               pct: 2.0, nutrition: "zero" },
-      { key: "yeast",  en: "Instant yeast",    de: "Trockenhefe",        pct: 0.25, nutrition: "zero" },
-      { key: "oil",    en: "Olive oil",        de: "Olivenöl",           pct: 2.0, nutrition: "oil" },
-      { key: "sugar",  en: "Sugar",            de: "Zucker",             pct: 1.5, nutrition: "sugar" },
-      { key: "malt",   en: "Diastatic malt",   de: "Diastat. Malzmehl",  pct: 0.7, nutrition: "flour", optional: true },
+      { key: "flour",  en: "Bread flour",    de: "Weizenmehl T550",   pct: 100,  nutrition: "flour" },
+      { key: "water",  en: "Water",          de: "Wasser",            pct: 63,   nutrition: "water" },
+      { key: "salt",   en: "Salt",           de: "Salz",              pct: 2.0,  nutrition: "zero" },
+      { key: "yeast",  en: "Instant yeast",  de: "Trockenhefe",       pct: 0.25, nutrition: "zero" },
+      { key: "oil",    en: "Olive oil",      de: "Olivenöl",          pct: 2.0,  nutrition: "oil" },
+      { key: "sugar",  en: "Sugar",          de: "Zucker",            pct: 1.5,  nutrition: "sugar" },
+      { key: "malt",   en: "Diastatic malt", de: "Diastat. Malzmehl", pct: 0.7,  nutrition: "flour", optional: true },
     ],
     sliders: [
-      { ingKey: "water", labelKey: "label_hydration", min: 58, max: 68, step: 1,    decimals: 1 },
-      { ingKey: "salt",  labelKey: "label_salt",      min: 1.5, max: 3,  step: 0.1,  decimals: 1 },
+      { ingKey: "water", labelKey: "label_hydration", min: 58,  max: 68,  step: 1,    decimals: 1 },
+      { ingKey: "salt",  labelKey: "label_salt",      min: 1.5, max: 3,   step: 0.1,  decimals: 1 },
       { ingKey: "yeast", labelKey: "label_yeast",     min: 0.1, max: 0.6, step: 0.01, decimals: 2 },
-      { ingKey: "oil",   labelKey: "label_oil",       min: 1,   max: 4,  step: 0.5,  decimals: 1 },
-      { ingKey: "sugar", labelKey: "label_sugar",     min: 0,   max: 3,  step: 0.5,  decimals: 1 },
-      { ingKey: "malt",  labelKey: "label_malt",      min: 0,   max: 1,  step: 0.1,  decimals: 1 },
+      { ingKey: "oil",   labelKey: "label_oil",       min: 1,   max: 4,   step: 0.5,  decimals: 1 },
+      { ingKey: "sugar", labelKey: "label_sugar",     min: 0,   max: 3,   step: 0.5,  decimals: 1 },
+      { ingKey: "malt",  labelKey: "label_malt",      min: 0,   max: 1,   step: 0.1,  decimals: 1 },
     ],
     fermentation: [
-      { time: { en: "24 hours",    de: "24 Stunden" },    hours: 24, cold: true,  desc: { en: "Good start — real improvement over same-day",  de: "Guter Start — spürbar besser als gleicher Tag" } },
-      { time: { en: "48 hours",    de: "48 Stunden" },    hours: 48, cold: true,  desc: { en: "Deeper flavor, good extensibility",             de: "Tieferes Aroma, gute Dehnbarkeit" } },
-      { time: { en: "72 hours ⭐", de: "72 Stunden ⭐" }, hours: 72, cold: true,  desc: { en: "Optimal — best NY flavor profile",              de: "Optimal — bestes NY-Aromaprofil" } },
-      { time: { en: "5 days",      de: "5 Tage" },        hours: 120, cold: true, desc: { en: "Maximum complexity before degradation sets in", de: "Maximale Komplexität vor Überreife" } },
+      { time: { en: "24 hours",   de: "24 Stunden"   }, hours: 24,  cold: true, desc: { en: "Good start — real improvement over same-day",  de: "Guter Start — spürbar besser als gleicher Tag" } },
+      { time: { en: "48 hours",   de: "48 Stunden"   }, hours: 48,  cold: true, desc: { en: "Deeper flavour, good extensibility",            de: "Tieferes Aroma, gute Dehnbarkeit" } },
+      { time: { en: "72 hours ★", de: "72 Stunden ★" }, hours: 72,  cold: true, desc: { en: "Optimal — best NY flavour profile",             de: "Optimal — bestes NY-Aromaprofil" } },
+      { time: { en: "5 days",     de: "5 Tage"       }, hours: 120, cold: true, desc: { en: "Maximum complexity before degradation sets in", de: "Maximale Komplexität vor Überreife" } },
     ],
   },
   {
@@ -717,16 +1132,16 @@ const RECIPES = [
       { key: "sugar", en: "Sugar",         de: "Zucker",          pct: 2.0, nutrition: "sugar" },
     ],
     sliders: [
-      { ingKey: "water", labelKey: "label_hydration", min: 65, max: 78, step: 1,    decimals: 1 },
-      { ingKey: "salt",  labelKey: "label_salt",      min: 1.75, max: 3, step: 0.1,  decimals: 1 },
+      { ingKey: "water", labelKey: "label_hydration", min: 65,   max: 78,  step: 1,    decimals: 1 },
+      { ingKey: "salt",  labelKey: "label_salt",      min: 1.75, max: 3,   step: 0.1,  decimals: 1 },
       { ingKey: "yeast", labelKey: "label_yeast",     min: 0.05, max: 0.5, step: 0.01, decimals: 2 },
-      { ingKey: "oil",   labelKey: "label_oil",       min: 1,   max: 6,  step: 0.5,  decimals: 1 },
-      { ingKey: "sugar", labelKey: "label_sugar",     min: 0,   max: 3,  step: 0.5,  decimals: 1 },
+      { ingKey: "oil",   labelKey: "label_oil",       min: 1,    max: 6,   step: 0.5,  decimals: 1 },
+      { ingKey: "sugar", labelKey: "label_sugar",     min: 0,    max: 3,   step: 0.5,  decimals: 1 },
     ],
     fermentation: [
-      { time: { en: "6 hours",     de: "6 Stunden" },     hours: 6,  cold: false, desc: { en: "Press into oiled pan, 1 h proof, bake",       de: "In geölte Pfanne drücken, 1 h Stückgare, backen" } },
-      { time: { en: "24 hours ⭐", de: "24 Stunden ⭐" }, hours: 24, cold: true,  desc: { en: "Optimal — best open crumb + cheese crust",    de: "Optimal — offene Krume + Käsekruste" } },
-      { time: { en: "48 hours",    de: "48 Stunden" },    hours: 48, cold: true,  desc: { en: "Rich flavor, very tender crumb",              de: "Reiches Aroma, sehr zarte Krume" } },
+      { time: { en: "6 hours",    de: "6 Stunden"    }, hours: 6,  cold: false, desc: { en: "Press into oiled pan, 1 h proof, bake",    de: "In geölte Pfanne drücken, 1 h Stückgare, backen" } },
+      { time: { en: "24 hours ★", de: "24 Stunden ★" }, hours: 24, cold: true,  desc: { en: "Optimal — best open crumb + cheese crust", de: "Optimal — offene Krume + Käsekruste" } },
+      { time: { en: "48 hours",   de: "48 Stunden"   }, hours: 48, cold: true,  desc: { en: "Rich flavour, very tender crumb",          de: "Reiches Aroma, sehr zarte Krume" } },
     ],
   },
   {
@@ -737,22 +1152,22 @@ const RECIPES = [
     source: null,
     leoparding: false,
     ingredients: [
-      { key: "flour", en: "Tipo 0 / strong flour", de: "Typ 0 / Starkes Mehl", pct: 100, nutrition: "flour" },
-      { key: "water", en: "Water",                 de: "Wasser",               pct: 80,  nutrition: "water" },
-      { key: "salt",  en: "Salt",                  de: "Salz",                 pct: 2.4, nutrition: "zero" },
-      { key: "yeast", en: "Instant yeast",         de: "Trockenhefe",          pct: 0.3, nutrition: "zero" },
-      { key: "oil",   en: "Extra virgin olive oil", de: "Natives Olivenöl extra", pct: 3.0, nutrition: "oil" },
+      { key: "flour", en: "Tipo 0 / strong flour",      de: "Typ 0 / Starkes Mehl",        pct: 100, nutrition: "flour" },
+      { key: "water", en: "Water",                       de: "Wasser",                       pct: 80,  nutrition: "water" },
+      { key: "salt",  en: "Salt",                        de: "Salz",                         pct: 2.4, nutrition: "zero" },
+      { key: "yeast", en: "Instant yeast",               de: "Trockenhefe",                  pct: 0.3, nutrition: "zero" },
+      { key: "oil",   en: "Extra virgin olive oil",      de: "Natives Olivenöl extra",       pct: 3.0, nutrition: "oil" },
     ],
     sliders: [
-      { ingKey: "water", labelKey: "label_hydration", min: 72, max: 85, step: 1,    decimals: 1 },
-      { ingKey: "salt",  labelKey: "label_salt",      min: 2.0, max: 3,  step: 0.1,  decimals: 1 },
+      { ingKey: "water", labelKey: "label_hydration", min: 72,   max: 85,  step: 1,    decimals: 1 },
+      { ingKey: "salt",  labelKey: "label_salt",      min: 2.0,  max: 3,   step: 0.1,  decimals: 1 },
       { ingKey: "yeast", labelKey: "label_yeast",     min: 0.05, max: 0.6, step: 0.01, decimals: 2 },
-      { ingKey: "oil",   labelKey: "label_oil",       min: 2,   max: 5,  step: 0.5,  decimals: 1 },
+      { ingKey: "oil",   labelKey: "label_oil",       min: 2,    max: 5,   step: 0.5,  decimals: 1 },
     ],
     fermentation: [
-      { time: { en: "24 hours",    de: "24 Stunden" },    hours: 24, cold: true,  desc: { en: "Minimum for al taglio — still developing",    de: "Minimum für al Taglio — noch in Entwicklung" } },
-      { time: { en: "48 hours ⭐", de: "48 Stunden ⭐" }, hours: 48, cold: true,  desc: { en: "Optimal — open crumb, crispy bottom",         de: "Optimal — offene Krume, knuspriger Boden" } },
-      { time: { en: "72 hours",    de: "72 Stunden" },    hours: 72, cold: true,  desc: { en: "Complex flavor, very extensible dough",       de: "Komplexes Aroma, sehr dehnbarer Teig" } },
+      { time: { en: "24 hours",   de: "24 Stunden"   }, hours: 24, cold: true, desc: { en: "Minimum for al taglio — still developing",  de: "Minimum für al Taglio — noch in Entwicklung" } },
+      { time: { en: "48 hours ★", de: "48 Stunden ★" }, hours: 48, cold: true, desc: { en: "Optimal — open crumb, crispy bottom",       de: "Optimal — offene Krume, knuspriger Boden" } },
+      { time: { en: "72 hours",   de: "72 Stunden"   }, hours: 72, cold: true, desc: { en: "Complex flavour, very extensible dough",    de: "Komplexes Aroma, sehr dehnbarer Teig" } },
     ],
   },
 ];
@@ -855,9 +1270,15 @@ function syncSliderValue(ingKey, decimals) {
 // ─── Fermentation controls ────────────────────────────────────────────────
 function onFermentSlider() {
   fermentHours = parseInt(document.getElementById("sl-ferment-hours").value);
-  document.getElementById("val-ferment-hours").textContent = fermentHours + "h";
+  document.getElementById("val-ferment-hours").textContent = fermentHours + " h";
+  const el = document.getElementById("sl-ferment-hours");
   const pct = ((fermentHours - 4) / (120 - 4)) * 100;
-  document.getElementById("sl-ferment-hours").style.setProperty("--fill", pct + "%");
+  el.style.setProperty("--fill", pct + "%");
+  // heat-scale: cold ferment uses cold-blue, long ferments warm up
+  const fillColor = fermentCold
+    ? (fermentHours <= 24 ? "var(--heat-cold)" : fermentHours <= 48 ? "var(--heat-cool)" : "var(--basil-500)")
+    : "var(--heat-ember)";
+  el.style.setProperty("--fill-color", fillColor);
   renderFermentGuide();
 }
 
@@ -865,7 +1286,7 @@ function setFermentMethod(method) {
   fermentCold = method === "cold";
   document.getElementById("btn-cold").classList.toggle("active", fermentCold);
   document.getElementById("btn-room").classList.toggle("active", !fermentCold);
-  renderFermentGuide();
+  onFermentSlider();
 }
 
 function renderFermentGuide() {
@@ -1032,7 +1453,7 @@ function renderConfigs() {
     const recipeName = recipe ? recipe.name[lang] : cfg.recipeId;
     const date = new Date(cfg.createdAt).toLocaleDateString(lang === "de" ? "de-DE" : "en-GB");
     const hydration = cfg.overrides?.water ? cfg.overrides.water.toFixed(1) + "%" : "—";
-    const fermentLabel = cfg.fermentation ? `${cfg.fermentation.hours}h ${cfg.fermentation.cold ? (lang === "de" ? "kalt" : "cold") : (lang === "de" ? "RT" : "RT")}` : "";
+    const fermentLabel = cfg.fermentation ? `${cfg.fermentation.hours} h ${cfg.fermentation.cold ? (lang === "de" ? "kalt" : "cold") : (lang === "de" ? "RT" : "RT")}` : "";
     const bakedLine = cfg.bakedAt
       ? `<span class="config-baked">${t("config_baked_on")} ${new Date(cfg.bakedAt).toLocaleDateString(lang === "de" ? "de-DE" : "en-GB")}</span>`
       : "";
@@ -1044,7 +1465,7 @@ function renderConfigs() {
         <span class="config-name">${esc(cfg.name)}</span>
         <span class="config-recipe-tag">${recipeName}</span>
       </div>
-      <div class="config-meta">${cfg.balls} × ${cfg.ballWeightG}g · ${hydration} · ${fermentLabel}</div>
+      <div class="config-meta">${cfg.balls} × ${cfg.ballWeightG} g · ${hydration} · ${fermentLabel}</div>
       <div class="config-meta">${date}</div>
       <div class="config-rating-row">${stars}${bakedLine}</div>
       <div class="config-actions">
@@ -1118,7 +1539,6 @@ function saveRating() {
   renderConfigs();
 }
 
-// close modal on backdrop click
 document.getElementById("rating-modal").addEventListener("click", e => {
   if (e.target === e.currentTarget) closeRating();
 });
@@ -1130,7 +1550,6 @@ onFermentSlider();
 calculate();
 renderFermentGuide();
 renderConfigs();
-// apply i18n to static elements
 document.querySelectorAll("[data-i18n]").forEach(el => el.textContent = t(el.dataset.i18n));
 document.querySelectorAll("[data-i18n-ph]").forEach(el => el.placeholder = t(el.dataset.i18nPh));
 </script>
