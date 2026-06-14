@@ -2,1556 +2,1307 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#FCF8F0" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <title>Forno</title>
+  <title>Forno — Pizza Dough Calculator</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Spectral:wght@600;700;800&family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
   <style>
-    /* ── Forno Design System Tokens ── */
-    :root {
-      /* Dough / cream surfaces */
-      --dough-50:  #FCF8F0;
-      --dough-100: #F8F1E3;
-      --dough-200: #F0E6D2;
-      --dough-300: #E4D4BA;
-      --dough-400: #D2BC97;
-
-      /* Char (wood-fired near-black) */
-      --char-900: #1E1814;
-      --char-800: #2A221C;
-      --char-700: #3D332A;
-      --char-600: #5A4C40;
-      --char-500: #7A6A5B;
-      --char-400: #9C8C7C;
-
-      /* Terracotta (primary) */
-      --terra-700: #8F3E22;
-      --terra-600: #A84A29;
-      --terra-500: #C25A33;
-      --terra-400: #D27A52;
-      --terra-300: #E3A483;
-      --terra-200: #F0C9B4;
-      --terra-100: #F8E5DA;
-
-      /* Basil (accent / success) */
-      --basil-700: #3F5A2C;
-      --basil-600: #4F6E37;
-      --basil-500: #648A45;
-      --basil-300: #ABC593;
-      --basil-200: #D2E0C0;
-      --basil-100: #ECF2E2;
-
-      /* Tomato (danger) */
-      --tomato-600: #A82C22;
-      --tomato-500: #C5362A;
-      --tomato-100: #F8DDDA;
-
-      /* Heat scale */
-      --heat-cold:   #6E8CA8;
-      --heat-cool:   #9FB0A6;
-      --heat-pale:   #ECD9A8;
-      --heat-golden: #D99B36;
-      --heat-ember:  #C2641F;
-      --heat-char:   #6E3415;
-      --heat-burnt:  #2E1A10;
-
-      /* Semantic aliases */
-      --surface-canvas: var(--dough-50);
-      --surface-card:   var(--dough-100);
-      --surface-well:   var(--dough-200);
-      --surface-ink:    var(--char-900);
-      --text-strong: var(--char-900);
-      --text-body:   var(--char-700);
-      --text-muted:  var(--char-500);
-      --text-faint:  var(--char-400);
-      --text-on-dark: var(--dough-100);
-      --brand:          var(--terra-500);
-      --brand-hover:    var(--terra-600);
-      --brand-press:    var(--terra-700);
-      --brand-subtle:   var(--terra-100);
-      --accent:         var(--basil-500);
-      --accent-subtle:  var(--basil-100);
-      --ok:      var(--basil-500);
-      --ok-bg:   var(--basil-100);
-      --warn:    var(--heat-ember);
-      --warn-bg: #F8E6D0;
-      --danger:      var(--tomato-500);
-      --danger-bg:   var(--tomato-100);
-      --line:        var(--dough-300);
-      --line-strong: var(--dough-400);
-      --line-on-dark: rgba(248,241,227,0.14);
-      --focus: var(--terra-400);
-
-      /* Radii — soft, hand-thrown */
-      --radius-xs:  6px;
-      --radius-sm:  10px;
-      --radius-md:  14px;
-      --radius-lg:  20px;
-      --radius-xl:  28px;
-      --radius-pill: 999px;
-
-      /* Warm brown-tinted shadows */
-      --shadow-xs: 0 1px 2px rgba(58,40,26,0.06);
-      --shadow-sm: 0 2px 6px rgba(58,40,26,0.08);
-      --shadow-md: 0 6px 18px rgba(58,40,26,0.10);
-      --shadow-lg: 0 14px 38px rgba(46,26,16,0.16);
-      --shadow-ink: 0 18px 44px rgba(20,12,6,0.40);
-      --shadow-inset: inset 0 2px 5px rgba(58,40,26,0.10);
-
-      /* Motion — calm, no bounce */
-      --ease-out:  cubic-bezier(0.22, 0.61, 0.36, 1);
-      --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
-      --dur-fast: 120ms;
-      --dur-base: 200ms;
-      --t: var(--dur-base) var(--ease-out);
-
-      /* Typography */
-      --font-display: 'Spectral', Georgia, 'Times New Roman', serif;
-      --font-sans: 'Hanken Grotesk', system-ui, -apple-system, sans-serif;
-      --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
-
-      /* Layout */
-      --tap:    52px;
-      --pad:    18px;
-      --safe-b: env(safe-area-inset-bottom, 0px);
-    }
-
-    /* ── Reset ── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-    input  { -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; background: #FCF8F0; }
+    body { -webkit-font-smoothing: antialiased; }
 
-    body {
-      background: var(--surface-canvas);
-      color: var(--text-body);
-      font-family: var(--font-sans);
-      font-size: 16px;
-      line-height: 1.5;
-      min-height: 100vh;
-      -webkit-text-size-adjust: 100%;
-    }
-
-    /* ── Eyebrow — the section label treatment ── */
-    .forno-eyebrow, h2 {
-      font-family: var(--font-sans);
-      font-weight: 700;
-      font-size: 12px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 14px;
-    }
-
-    /* ── Header ── */
-    header {
-      background: var(--surface-canvas);
-      border-bottom: 1px solid var(--line);
-      box-shadow: var(--shadow-xs);
-      padding: 0 var(--pad);
-      padding-top: env(safe-area-inset-top, 0px);
-      height: calc(58px + env(safe-area-inset-top, 0px));
-      display: flex; align-items: flex-end; padding-bottom: 0;
-      position: sticky; top: 0; z-index: 100;
-    }
-    .header-inner {
-      width: 100%; display: flex; align-items: center;
-      justify-content: space-between; height: 58px;
-    }
-    .logo {
+    .forno-header {
       display: flex; align-items: center; gap: 10px;
+      padding: 16px 20px; max-width: 980px; margin: 0 auto;
     }
-    .logo-mark {
-      width: 30px; height: 30px; flex-shrink: 0;
-    }
-    .app-title {
-      font: 700 19px/1 var(--font-display);
-      color: var(--text-strong);
+    .forno-header-wordmark {
+      font-family: 'Spectral', serif; font-weight: 600;
+      font-size: 22px; line-height: 1; color: #1E1814;
       letter-spacing: -0.01em;
     }
-
-    /* Segmented lang toggle */
-    .lang-toggle {
-      display: flex; gap: 2px;
-      background: var(--surface-well);
-      border-radius: var(--radius-md);
-      padding: 3px;
-      box-shadow: var(--shadow-inset);
-    }
-    .lang-btn {
-      background: none; border: none; color: var(--text-muted);
-      cursor: pointer; padding: 0 13px; height: 36px;
-      border-radius: calc(var(--radius-md) - 2px);
-      font: 600 12px/1 var(--font-sans);
-      letter-spacing: 0.04em;
-      transition: color var(--t), background var(--t), box-shadow var(--t);
-    }
-    .lang-btn.active {
-      background: var(--dough-50);
-      color: var(--text-strong);
-      box-shadow: var(--shadow-sm);
-    }
-
-    /* ── Layout ── */
-    main {
-      max-width: 860px; margin: 0 auto;
-      padding: 28px var(--pad) calc(80px + var(--safe-b));
-    }
-    section { margin-bottom: 40px; }
-
-    /* ── Recipe scroll strip ── */
-    .recipe-scroll {
-      display: flex; gap: 10px;
-      overflow-x: auto; overflow-y: visible;
-      scroll-snap-type: x mandatory;
-      -webkit-overflow-scrolling: touch;
-      padding-bottom: 8px;
-      margin: 0 calc(-1 * var(--pad));
-      padding-left: var(--pad); padding-right: var(--pad);
-      scrollbar-width: none;
-    }
-    .recipe-scroll::-webkit-scrollbar { display: none; }
-
-    .recipe-card {
-      background: var(--surface-card);
-      border: 1px solid var(--line);
-      border-radius: var(--radius-lg);
-      padding: 16px 18px;
-      cursor: pointer;
-      transition: border-color var(--t), background var(--t), box-shadow var(--t), transform var(--dur-fast) var(--ease-out);
-      position: relative; scroll-snap-align: start; flex-shrink: 0;
-      min-width: 172px; max-width: 200px;
-      box-shadow: var(--shadow-sm);
-    }
-    .recipe-card:active { transform: scale(0.98); }
-    .recipe-card.selected {
-      border-color: var(--brand);
-      background: var(--brand-subtle);
-      box-shadow: var(--shadow-md);
-    }
-    .recipe-card .check {
-      position: absolute; top: 12px; right: 12px;
-      width: 20px; height: 20px; border-radius: 50%;
-      background: var(--brand); color: #fff;
-      display: none; align-items: center; justify-content: center;
-      font-size: 10px; font-weight: 700;
-    }
-    .recipe-card.selected .check { display: flex; }
-    .recipe-name {
-      font: 700 15px/1.2 var(--font-sans);
-      color: var(--text-strong);
-      margin-bottom: 5px;
-    }
-    .recipe-tag {
-      display: inline-block;
-      font: 700 10px/1 var(--font-sans);
-      letter-spacing: 0.08em; text-transform: uppercase;
-      background: var(--brand-subtle); color: var(--terra-700);
-      border-radius: var(--radius-pill);
-      padding: 3px 8px; margin-bottom: 10px;
-    }
-    .recipe-card.selected .recipe-tag {
-      background: var(--terra-200); color: var(--terra-700);
-    }
-    .recipe-meta {
-      font: 400 12px/1.55 var(--font-sans);
-      color: var(--text-muted);
-    }
-
-    @media (min-width: 600px) {
-      .recipe-scroll {
-        display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
-        overflow: visible; margin: 0; padding: 0; gap: 10px;
-      }
-      .recipe-card { min-width: unset; max-width: unset; scroll-snap-align: unset; }
-    }
-
-    /* ── Quantity controls ── */
-    .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .field label {
-      display: block;
-      font: 700 12px/1 var(--font-sans);
-      letter-spacing: 0.10em; text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 9px;
-    }
-    .input-wrap {
-      display: flex; align-items: center;
-      background: var(--surface-well);
-      border: 1.5px solid var(--line);
-      border-radius: var(--radius-md);
-      overflow: hidden;
-      box-shadow: var(--shadow-inset);
-      transition: border-color var(--t), box-shadow var(--t);
-    }
-    .input-wrap:focus-within {
-      border-color: var(--focus);
-      box-shadow: 0 0 0 3px var(--brand-subtle), var(--shadow-inset);
-    }
-    .input-wrap button {
-      background: none; border: none; color: var(--text-muted);
-      cursor: pointer; font-size: 1.25rem;
-      min-width: var(--tap); height: var(--tap);
-      display: flex; align-items: center; justify-content: center;
-      transition: color var(--t), transform var(--dur-fast) var(--ease-out);
-      user-select: none; flex-shrink: 0;
-    }
-    .input-wrap button:active { color: var(--brand); transform: scale(0.92); }
-    .input-wrap input {
-      background: none; border: none; color: var(--text-strong);
-      font: 700 18px/1 var(--font-mono);
-      text-align: center; width: 100%; height: var(--tap);
-      outline: none; font-variant-numeric: tabular-nums;
-    }
-    input[type=number]::-webkit-inner-spin-button { display: none; }
-    .unit {
-      color: var(--text-muted);
-      font: 500 13px/1 var(--font-mono);
-      padding-right: 14px; white-space: nowrap;
-    }
-
-    /* ── Sliders ── */
-    .slider-list { display: flex; flex-direction: column; gap: 10px; }
-    .slider-row {
-      background: var(--surface-card);
-      border: 1px solid var(--line);
-      border-radius: var(--radius-lg);
-      padding: 18px 20px;
-      box-shadow: var(--shadow-sm);
-    }
-    .slider-header {
-      display: flex; align-items: center;
-      justify-content: space-between; margin-bottom: 16px;
-    }
-    .slider-label {
-      font: 700 12px/1 var(--font-sans);
-      letter-spacing: 0.10em; text-transform: uppercase;
-      color: var(--text-muted);
-    }
-    .slider-value-wrap { display: flex; align-items: center; gap: 10px; }
-    .slider-value {
-      font: 700 18px/1 var(--font-mono);
-      color: var(--text-strong);
-      font-variant-numeric: tabular-nums;
-      min-width: 60px; text-align: right;
-    }
-    .slider-reset {
-      background: none;
-      border: 1.5px solid var(--line-strong);
-      border-radius: var(--radius-sm);
-      color: var(--text-muted);
-      cursor: pointer;
-      font: 600 11px/1 var(--font-sans);
-      letter-spacing: 0.04em;
-      padding: 0 12px;
-      min-height: 36px;
-      transition: border-color var(--t), color var(--t), background var(--t);
-    }
-    .slider-reset:active {
-      border-color: var(--brand);
-      color: var(--brand);
-      background: var(--brand-subtle);
-    }
-
-    /* Custom range input — Forno style */
-    input[type=range] {
-      --fill-color: var(--terra-500);
-      --fill: 0%;
-      appearance: none; -webkit-appearance: none;
-      width: 100%; height: 8px; border-radius: var(--radius-pill);
-      background: linear-gradient(to right, var(--fill-color) var(--fill), var(--dough-200) var(--fill));
-      box-shadow: var(--shadow-inset);
-      outline: none; cursor: pointer;
-      transition: background var(--dur-fast) var(--ease-out);
-    }
-    input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 24px; height: 24px; border-radius: 50%;
-      background: var(--dough-50);
-      border: 2.5px solid var(--fill-color);
-      box-shadow: var(--shadow-sm);
-      cursor: pointer;
-      transition: border-color var(--dur-base) var(--ease-out);
-    }
-    input[type=range]::-moz-range-thumb {
-      width: 24px; height: 24px; border-radius: 50%;
-      background: var(--dough-50);
-      border: 2.5px solid var(--fill-color);
-      box-shadow: var(--shadow-sm);
-      cursor: pointer;
-    }
-    .slider-range-labels {
-      display: flex; justify-content: space-between;
-      margin-top: 10px;
-      font: 500 11px/1 var(--font-mono);
-      color: var(--text-faint);
-    }
-
-    /* ── Fermentation controls ── */
-    .ferment-controls { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-
-    /* Segmented control — matches DS SegmentedControl */
-    .toggle-group {
-      display: flex; gap: 2px;
-      background: var(--surface-well);
-      border-radius: var(--radius-md);
-      padding: 3px;
-      box-shadow: var(--shadow-inset);
-      width: 100%;
-    }
-    .toggle-btn {
-      flex: 1; background: none; border: none; color: var(--text-muted);
-      cursor: pointer; padding: 0 10px; height: 40px;
-      border-radius: calc(var(--radius-md) - 2px);
-      font: 600 13px/1 var(--font-sans);
-      transition: color var(--t), background var(--t), box-shadow var(--t);
-      text-align: center; white-space: nowrap;
-    }
-    .toggle-btn.active {
-      background: var(--dough-50);
-      color: var(--text-strong);
-      box-shadow: var(--shadow-sm);
-    }
-    @media (min-width: 480px) {
-      .toggle-group { width: fit-content; }
-      .toggle-btn { flex: none; padding: 0 20px; }
-    }
-
-    /* ── Ingredient table — IngredientRow style ── */
-    .result-card {
-      background: var(--surface-card);
-      border: 1px solid var(--line);
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-      box-shadow: var(--shadow-md);
-    }
-    .result-header {
-      padding: 12px 20px;
-      font: 700 11px/1 var(--font-sans);
-      letter-spacing: 0.10em; text-transform: uppercase;
-      color: var(--text-muted);
-      display: flex; justify-content: space-between;
-      border-bottom: 1px solid var(--line);
-    }
-    .ingredient-row {
-      display: flex; align-items: baseline;
-      padding: 14px 20px;
-      border-bottom: 1px solid var(--line);
-      min-height: 52px; gap: 12px;
-    }
-    .ingredient-row:last-child { border-bottom: none; }
-    .ingredient-row.optional { opacity: 0.6; }
-    .ing-name {
-      flex: 1; min-width: 0;
-      font: 600 15px/1.2 var(--font-sans);
-      color: var(--text-strong);
-    }
-    .optional-badge {
-      display: inline-block;
-      font: 700 10px/1 var(--font-sans);
-      letter-spacing: 0.06em; text-transform: uppercase;
-      color: var(--text-muted);
-      background: var(--dough-200);
-      border-radius: var(--radius-pill);
-      padding: 2px 7px; margin-left: 7px;
-      vertical-align: middle;
-    }
-    .ing-pct {
-      font: 500 12px/1 var(--font-mono);
-      color: var(--text-faint);
-      font-variant-numeric: tabular-nums;
-      width: 44px; text-align: right;
-    }
-    .ing-amount {
-      font: 700 20px/1 var(--font-mono);
-      color: var(--text-strong);
-      font-variant-numeric: tabular-nums;
-      text-align: right;
-    }
-    .ing-unit {
-      font: 500 13px/1 var(--font-sans);
-      color: var(--text-muted);
-      width: 16px;
-    }
-    .total-row {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 16px 20px;
-      background: var(--brand-subtle);
-      border-top: 2px solid var(--terra-300);
-    }
-    .total-label {
-      font: 600 14px/1 var(--font-sans);
-      color: var(--terra-700);
-    }
-    .total-amount {
-      font: 700 22px/1 var(--font-mono);
-      color: var(--brand);
-      font-variant-numeric: tabular-nums;
-    }
-    .source-link {
-      font: 400 13px/1 var(--font-sans);
-      color: var(--text-faint);
-      margin-top: 10px;
-    }
-    .source-link a { color: var(--brand); text-decoration: none; }
-    .source-link a:hover { text-decoration: underline; }
-
-    /* ── Nutrition ── */
-    .nutrition-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-    @media (min-width: 500px) { .nutrition-grid { grid-template-columns: repeat(4, 1fr); } }
-    .nutrition-card {
-      background: var(--surface-card);
-      border: 1px solid var(--line);
-      border-radius: var(--radius-lg);
-      padding: 18px 14px; text-align: center;
-      box-shadow: var(--shadow-sm);
-    }
-    .nutrition-value {
-      font: 700 28px/1 var(--font-mono);
-      color: var(--text-strong);
-      font-variant-numeric: tabular-nums;
-    }
-    .nutrition-label {
-      font: 700 11px/1 var(--font-sans);
-      letter-spacing: 0.08em; text-transform: uppercase;
-      color: var(--text-muted); margin-top: 6px;
-    }
-    .nutrition-note {
-      font: 400 12px/1 var(--font-sans);
-      color: var(--text-faint); text-align: center; margin-top: 10px;
-    }
-
-    /* ── Fermentation guide cards ── */
-    .ferment-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-    @media (min-width: 480px) { .ferment-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
-    .ferment-card {
-      background: var(--surface-card);
-      border: 1px solid var(--line);
-      border-radius: var(--radius-lg);
-      padding: 16px 17px;
-      box-shadow: var(--shadow-sm);
-      transition: border-color var(--t), background var(--t), box-shadow var(--t);
-    }
-    .ferment-card.active {
-      border-color: var(--brand);
-      background: var(--brand-subtle);
-      box-shadow: var(--shadow-md);
-    }
-    .ferment-time {
-      font: 700 14px/1.2 var(--font-sans);
-      color: var(--text-strong);
-      margin-bottom: 6px;
-    }
-    .ferment-card.active .ferment-time { color: var(--terra-700); }
-    .ferment-desc {
-      font: 400 12px/1.55 var(--font-sans);
-      color: var(--text-muted);
-    }
-
-    /* ── Config save row ── */
-    .save-row { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-    .save-row input {
-      background: var(--surface-well);
-      border: 1.5px solid var(--line);
-      border-radius: var(--radius-md);
-      color: var(--text-strong);
-      padding: 0 16px;
-      height: var(--tap);
-      font: 500 16px/1 var(--font-sans);
-      outline: none;
-      box-shadow: var(--shadow-inset);
-      transition: border-color var(--t), box-shadow var(--t);
-      width: 100%;
-    }
-    .save-row input:focus {
-      border-color: var(--focus);
-      box-shadow: 0 0 0 3px var(--brand-subtle), var(--shadow-inset);
-    }
-    .save-row input::placeholder { color: var(--text-faint); }
-    @media (min-width: 480px) {
-      .save-row { flex-direction: row; }
-      .save-row input { flex: 1; }
-    }
-
-    /* ── Buttons ── */
-    .btn-primary {
-      background: var(--brand);
-      border: 1.5px solid transparent;
-      border-radius: var(--radius-md);
-      color: #fff;
-      cursor: pointer;
-      font: 600 15px/1 var(--font-sans);
-      letter-spacing: 0.01em;
-      padding: 0 22px; height: var(--tap);
-      white-space: nowrap;
-      box-shadow: var(--shadow-sm);
-      transition: background var(--t), transform var(--dur-fast) var(--ease-out), box-shadow var(--t);
-      width: 100%;
-    }
-    .btn-primary:active {
-      background: var(--brand-press);
-      transform: scale(0.97);
-    }
-    @media (min-width: 480px) { .btn-primary { width: auto; } }
-
-    .btn-ghost {
-      background: var(--surface-card);
-      border: 1.5px solid var(--line-strong);
-      border-radius: var(--radius-md);
-      color: var(--text-body);
-      cursor: pointer;
-      font: 600 15px/1 var(--font-sans);
-      height: var(--tap); width: 100%;
-      box-shadow: var(--shadow-xs);
-      transition: background var(--t), border-color var(--t), transform var(--dur-fast) var(--ease-out);
-    }
-    .btn-ghost:active {
-      background: var(--dough-200);
-      border-color: var(--char-500);
-      transform: scale(0.97);
-    }
-    @media (min-width: 480px) { .btn-ghost { width: auto; flex: 1; } }
-
-    /* ── Config cards ── */
-    .config-empty {
-      font: 400 14px/1.6 var(--font-sans);
-      color: var(--text-muted);
-      padding: 20px 0;
-    }
-    .config-list { display: flex; flex-direction: column; gap: 12px; }
-    .config-card {
-      background: var(--surface-card);
-      border: 1px solid var(--line);
-      border-radius: var(--radius-lg);
-      padding: 18px 20px;
-      box-shadow: var(--shadow-sm);
-    }
-    .config-card-header {
-      display: flex; align-items: flex-start;
-      justify-content: space-between; gap: 10px; margin-bottom: 6px;
-    }
-    .config-name {
-      font: 700 16px/1.2 var(--font-sans);
-      color: var(--text-strong);
-    }
-    .config-recipe-tag {
-      font: 700 10px/1 var(--font-sans);
-      letter-spacing: 0.08em; text-transform: uppercase;
-      background: var(--brand-subtle); color: var(--terra-700);
-      border-radius: var(--radius-pill);
-      padding: 4px 10px; white-space: nowrap;
-    }
-    .config-meta {
-      font: 400 13px/1.5 var(--font-sans);
-      color: var(--text-muted); margin-bottom: 3px;
-    }
-    .config-rating-row {
-      display: flex; align-items: center; gap: 8px;
-      margin: 10px 0 14px; flex-wrap: wrap;
-    }
-    .config-stars {
-      font-size: 17px; letter-spacing: 1px;
-      color: var(--heat-golden);
-    }
-    .config-unrated {
-      font: 400 13px/1 var(--font-sans);
-      color: var(--text-faint);
-    }
-    .config-baked {
-      font: 400 13px/1 var(--font-sans);
-      color: var(--text-faint);
-    }
-    .config-actions { display: flex; gap: 8px; }
-    .btn-sm {
-      flex: 1;
-      background: var(--surface-well);
-      border: 1.5px solid var(--line);
-      border-radius: var(--radius-sm);
-      color: var(--text-body);
-      cursor: pointer;
-      font: 600 13px/1 var(--font-sans);
-      height: 44px;
-      display: flex; align-items: center; justify-content: center;
-      transition: background var(--t), border-color var(--t), color var(--t);
-    }
-    .btn-sm:active {
-      border-color: var(--brand);
-      color: var(--brand);
-      background: var(--brand-subtle);
-    }
-    .btn-sm.danger:active {
-      border-color: var(--danger);
-      color: var(--danger);
-      background: var(--danger-bg);
-    }
-
-    /* ── Rating modal — bottom sheet on mobile ── */
-    .modal-overlay {
-      position: fixed; inset: 0;
-      background: rgba(46,26,16,0.55);
-      display: flex; align-items: flex-end;
-      z-index: 200; padding: 0;
-    }
-    .modal-overlay[hidden] { display: none; }
-    .modal-card {
-      background: var(--surface-canvas);
-      border-top: 1px solid var(--line);
-      border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-      width: 100%; max-height: 92vh; overflow-y: auto;
-      padding-bottom: var(--safe-b);
-      box-shadow: var(--shadow-lg);
-    }
-    @media (min-width: 560px) {
-      .modal-overlay { align-items: center; padding: 24px; }
-      .modal-card {
-        border-radius: var(--radius-xl);
-        border: 1px solid var(--line);
-        max-width: 480px; padding-bottom: 0;
-      }
-    }
-    .modal-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 20px 22px;
-      border-bottom: 1px solid var(--line);
-      position: sticky; top: 0;
-      background: var(--surface-canvas); z-index: 1;
-    }
-    .modal-title {
-      font: 700 17px/1.2 var(--font-display);
-      color: var(--text-strong);
-    }
-    .modal-close {
-      background: var(--surface-well);
-      border: none;
-      border-radius: 50%;
-      color: var(--text-muted);
-      cursor: pointer;
-      width: 36px; height: 36px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 14px;
-      transition: background var(--t), color var(--t);
-    }
-    .modal-close:active { background: var(--dough-300); color: var(--text-strong); }
-    .modal-body { padding: 20px 22px; display: flex; flex-direction: column; gap: 20px; }
-    .modal-field label {
-      display: block;
-      font: 700 11px/1 var(--font-sans);
-      letter-spacing: 0.10em; text-transform: uppercase;
-      color: var(--text-muted); margin-bottom: 9px;
-    }
-    .modal-field input[type=date],
-    .modal-field textarea {
-      background: var(--surface-well);
-      border: 1.5px solid var(--line);
-      border-radius: var(--radius-md);
-      color: var(--text-strong);
-      padding: 12px 16px;
-      width: 100%; font: 500 16px/1.4 var(--font-sans);
-      outline: none;
-      box-shadow: var(--shadow-inset);
-      transition: border-color var(--t), box-shadow var(--t);
-    }
-    .modal-field input[type=date]:focus,
-    .modal-field textarea:focus {
-      border-color: var(--focus);
-      box-shadow: 0 0 0 3px var(--brand-subtle), var(--shadow-inset);
-    }
-    .modal-field textarea { resize: vertical; min-height: 72px; font-family: var(--font-sans); }
-    .dim-row {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 13px 0; border-bottom: 1px solid var(--line);
-    }
-    .dim-row:last-child { border-bottom: none; }
-    .dim-label {
-      font: 500 14px/1 var(--font-sans);
-      color: var(--text-body);
-    }
-    .star-group { display: flex; gap: 2px; }
-    .star-btn {
-      background: none; border: none;
-      color: var(--dough-300);
-      cursor: pointer; font-size: 22px;
-      padding: 4px 2px;
-      transition: color var(--t), transform var(--dur-fast) var(--ease-out);
-      line-height: 1; min-width: 34px; text-align: center;
-    }
-    .star-btn.filled { color: var(--heat-golden); }
-    .star-btn:active { transform: scale(1.2); }
-    .modal-footer {
-      display: flex; flex-direction: column; gap: 10px;
-      padding: 16px 22px; border-top: 1px solid var(--line);
-    }
-    .modal-footer .btn-primary { width: 100%; height: var(--tap); }
-    @media (min-width: 480px) {
-      .modal-footer { flex-direction: row; }
-      .modal-footer .btn-primary { width: auto; flex: 1; }
+    .forno-header-tagline {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: #7A6A5B; margin-left: 6px; padding-left: 12px;
+      border-left: 1px solid #E4D4BA;
     }
   </style>
 </head>
 <body>
-
-<header>
-  <div class="header-inner">
-    <div class="logo">
-      <!-- Forno mark -->
-      <svg class="logo-mark" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Forno">
-        <rect x="4" y="4" width="40" height="40" rx="12" fill="#1E1814"/>
-        <path d="M14 34a10 10 0 0 0 20 0c0-6-4-9-5.5-13.5C27 25 24 25.5 24 29c-2-1.5-2-4.5-1-7-4 2-9 6-9 12Z" fill="#C25A33"/>
-        <path d="M19.5 33.5a4.5 4.5 0 0 0 9 0c0-3-2.2-4.6-2.8-7-1.2 2.4-3 2.8-3.4 4.6-1-.8-1-2.2-.6-3.4-1.6 1.2-2.2 3.2-2.2 5.8Z" fill="#D99B36"/>
-      </svg>
-      <span class="app-title">Forno</span>
+  <header style="background:#FCF8F0; border-bottom:1px solid #F0E6D2;">
+    <div class="forno-header">
+      <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Forno mark">
+          <rect x="4" y="4" width="40" height="40" rx="12" fill="#1E1814"/>
+          <path d="M14 34a10 10 0 0 0 20 0c0-6-4-9-5.5-13.5C27 25 24 25.5 24 29c-2-1.5-2-4.5-1-7-4 2-9 6-9 12Z" fill="#C25A33"/>
+          <path d="M19.5 33.5a4.5 4.5 0 0 0 9 0c0-3-2.2-4.6-2.8-7-1.2 2.4-3 2.8-3.4 4.6-1-.8-1-2.2-.6-3.4-1.6 1.2-2.2 3.2-2.2 5.8Z" fill="#D99B36"/>
+        </svg>
+      <span class="forno-header-wordmark">Forno</span>
+      <span class="forno-header-tagline">Pizza dough calculator</span>
     </div>
-    <div class="lang-toggle">
-      <button class="lang-btn active" onclick="setLang('en')" id="btn-en">EN</button>
-      <button class="lang-btn" onclick="setLang('de')" id="btn-de">DE</button>
-    </div>
-  </div>
-</header>
+  </header>
 
-<main>
+  <div id="root"></div>
 
-  <section>
-    <h2 data-i18n="section_recipe"></h2>
-    <div class="recipe-scroll" id="recipe-grid"></div>
-  </section>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <section>
-    <h2 data-i18n="section_quantity"></h2>
-    <div class="controls-grid">
-      <div class="field">
-        <label data-i18n="label_balls"></label>
-        <div class="input-wrap">
-          <button onclick="adj('balls',-1)" aria-label="Decrease">−</button>
-          <input type="number" id="balls" value="2" min="1" max="50" inputmode="numeric" autocomplete="off" oninput="calculate()" />
-          <button onclick="adj('balls',+1)" aria-label="Increase">+</button>
-        </div>
-      </div>
-      <div class="field">
-        <label data-i18n="label_weight"></label>
-        <div class="input-wrap">
-          <button onclick="adj('weight',-10)" aria-label="Decrease">−</button>
-          <input type="number" id="weight" value="280" min="80" max="1000" inputmode="numeric" autocomplete="off" oninput="calculate()" />
-          <button onclick="adj('weight',+10)" aria-label="Increase">+</button>
-          <span class="unit">g</span>
-        </div>
-      </div>
-    </div>
-  </section>
+  <script type="text/babel">
+const { useState, useMemo } = React;
 
-  <section>
-    <h2 data-i18n="section_adjust"></h2>
-    <div class="slider-list" id="slider-list"></div>
-  </section>
+/* ------------------------------------------------------------------ *
+ *  Dough calculator — three stages
+ *  1. Ferment: yeast from a temperature/time "budget" (Q10); modified
+ *     Gompertz rise curve coloured along a cold->warm axis
+ *  2. Flour: protein -> W estimate, hydration range, ferment capacity;
+ *     weak flour over-fermented visibly collapses
+ *  3. Bake: oven temp -> bake time (exponential), crust-colour gauge,
+ *     leoparding flag at the high-temp / short-time corner
+ * ------------------------------------------------------------------ */
 
-  <section>
-    <h2 data-i18n="section_fermentation_cfg"></h2>
-    <div class="ferment-controls">
-      <div class="slider-row" id="ferment-time-row">
-        <div class="slider-header">
-          <span class="slider-label" data-i18n="label_ferment_hours"></span>
-          <div class="slider-value-wrap">
-            <span class="slider-value" id="val-ferment-hours">72h</span>
-          </div>
-        </div>
-        <input type="range" id="sl-ferment-hours" min="4" max="120" step="4" value="72"
-               oninput="onFermentSlider()" />
-        <div class="slider-range-labels"><span>4 h</span><span>120 h</span></div>
-      </div>
-      <div class="slider-row">
-        <div class="slider-header">
-          <span class="slider-label" data-i18n="label_ferment_method"></span>
-          <div class="toggle-group">
-            <button class="toggle-btn active" id="btn-cold" onclick="setFermentMethod('cold')" data-i18n="ferment_cold"></button>
-            <button class="toggle-btn" id="btn-room" onclick="setFermentMethod('room')" data-i18n="ferment_room"></button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="ferment-grid" id="ferment-grid"></div>
-  </section>
-
-  <section>
-    <h2 data-i18n="section_ingredients"></h2>
-    <div class="result-card">
-      <div class="result-header">
-        <span data-i18n="col_ingredient"></span>
-        <div style="display:flex;gap:36px">
-          <span data-i18n="col_pct"></span>
-          <span data-i18n="col_amount"></span>
-        </div>
-      </div>
-      <div id="ingredient-list"></div>
-      <div class="total-row">
-        <span class="total-label" data-i18n="label_total"></span>
-        <span class="total-amount" id="total-weight"></span>
-      </div>
-    </div>
-    <div class="source-link" id="source-link"></div>
-  </section>
-
-  <section>
-    <h2 data-i18n="section_nutrition"></h2>
-    <div class="nutrition-grid" id="nutrition-grid"></div>
-    <div class="nutrition-note" data-i18n="nutrition_note"></div>
-  </section>
-
-  <section>
-    <h2 data-i18n="section_ferment_guide"></h2>
-    <div class="ferment-grid" id="ferment-guide-grid"></div>
-  </section>
-
-  <section>
-    <h2 data-i18n="section_configs"></h2>
-    <div class="save-row">
-      <input type="text" id="config-name-input" data-i18n-ph="config_name_ph" />
-      <button class="btn-primary" onclick="saveConfig()" data-i18n="btn_save_config"></button>
-    </div>
-    <div id="config-list"></div>
-  </section>
-
-</main>
-
-<!-- Rating modal -->
-<div id="rating-modal" class="modal-overlay" hidden>
-  <div class="modal-card">
-    <div class="modal-header">
-      <span class="modal-title" data-i18n="modal_rate_title"></span>
-      <button class="modal-close" onclick="closeRating()" aria-label="Close">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="modal-field">
-        <label data-i18n="label_baked_at"></label>
-        <input type="date" id="rating-date" />
-      </div>
-      <div id="rating-dimensions"></div>
-      <div class="modal-field">
-        <label data-i18n="label_notes"></label>
-        <textarea id="rating-notes" rows="3"></textarea>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-primary" onclick="saveRating()" data-i18n="btn_save_rating"></button>
-      <button class="btn-ghost" onclick="closeRating()" data-i18n="btn_cancel"></button>
-    </div>
-  </div>
-</div>
-
-<script>
-// ─── i18n ─────────────────────────────────────────────────────────────────
-const STRINGS = {
-  en: {
-    app_title: "Forno",
-    section_recipe: "Recipe", section_quantity: "Quantity",
-    section_adjust: "Adjust", section_fermentation_cfg: "Fermentation",
-    section_ingredients: "Ingredients", section_nutrition: "Nutrition per ball",
-    section_ferment_guide: "Fermentation guide", section_configs: "My Configs",
-    label_balls: "Dough balls", label_weight: "Weight per ball",
-    label_hydration: "Hydration", label_salt: "Salt", label_yeast: "Yeast",
-    label_oil: "Oil", label_sugar: "Sugar", label_malt: "Diastatic malt",
-    label_sweetener: "Sweetener",
-    label_ferment_hours: "Fermentation time", label_ferment_method: "Method",
-    ferment_cold: "Cold (4 °C)", ferment_room: "Room temp (22 °C)",
-    col_ingredient: "Ingredient", col_pct: "%", col_amount: "Amount",
-    label_total: "Total dough", badge_optional: "optional",
-    unit_g: "g", unit_kcal: "kcal",
-    nutr_protein: "Protein", nutr_carbs: "Carbs", nutr_fat: "Fat", nutr_calories: "Calories",
-    nutrition_note: "Approximate values · Water and salt not counted",
-    source_prefix: "Based on",
-    btn_save_config: "Save Config",
-    config_name_ph: "Name this config…",
-    config_empty: "No saved configs yet. Adjust settings above and save.",
-    btn_load: "Load", btn_rate: "Rate", btn_delete: "Delete",
-    config_unrated: "Not yet rated",
-    config_baked_on: "Baked",
-    modal_rate_title: "Rate this bake",
-    label_baked_at: "Baked on", label_notes: "Notes",
-    btn_save_rating: "Save rating", btn_cancel: "Cancel",
-    btn_reset: "Reset",
-    dim_oven_spring: "Oven spring", dim_bottom_color: "Bottom colour",
-    dim_spotting_neo: "Leoparding", dim_spotting_other: "Browning",
-    dim_crumb: "Crumb structure", dim_texture: "Crust texture",
-    dim_flavor: "Flavour complexity", dim_overall: "Overall",
-  },
-  de: {
-    app_title: "Forno",
-    section_recipe: "Rezept", section_quantity: "Menge",
-    section_adjust: "Anpassen", section_fermentation_cfg: "Gärführung",
-    section_ingredients: "Zutaten", section_nutrition: "Nährwerte pro Teigling",
-    section_ferment_guide: "Gärführungs-Guide", section_configs: "Meine Configs",
-    label_balls: "Teiglinge", label_weight: "Gewicht pro Teigling",
-    label_hydration: "Hydration", label_salt: "Salz", label_yeast: "Hefe",
-    label_oil: "Öl", label_sugar: "Zucker", label_malt: "Diastat. Malz",
-    label_sweetener: "Süßungsmittel",
-    label_ferment_hours: "Gärzeit", label_ferment_method: "Methode",
-    ferment_cold: "Kalt (4 °C)", ferment_room: "Raumtemp. (22 °C)",
-    col_ingredient: "Zutat", col_pct: "%", col_amount: "Menge",
-    label_total: "Teig gesamt", badge_optional: "optional",
-    unit_g: "g", unit_kcal: "kcal",
-    nutr_protein: "Eiweiß", nutr_carbs: "Kohlenhydrate", nutr_fat: "Fett", nutr_calories: "Kalorien",
-    nutrition_note: "Näherungswerte · Wasser und Salz nicht eingerechnet",
-    source_prefix: "Basierend auf",
-    btn_save_config: "Config speichern",
-    config_name_ph: "Config benennen…",
-    config_empty: "Noch keine Configs gespeichert. Einstellungen anpassen und speichern.",
-    btn_load: "Laden", btn_rate: "Bewerten", btn_delete: "Löschen",
-    config_unrated: "Noch nicht bewertet",
-    config_baked_on: "Gebacken",
-    modal_rate_title: "Backversuch bewerten",
-    label_baked_at: "Gebacken am", label_notes: "Notizen",
-    btn_save_rating: "Bewertung speichern", btn_cancel: "Abbrechen",
-    btn_reset: "Reset",
-    dim_oven_spring: "Ofentrieb", dim_bottom_color: "Bodenfarbe",
-    dim_spotting_neo: "Leopardenmuster", dim_spotting_other: "Bräunung",
-    dim_crumb: "Krumenstruktur", dim_texture: "Krustenstruktur",
-    dim_flavor: "Aromakomplexität", dim_overall: "Gesamt",
-  },
+const REF = { yeastPct: 0.3, hours: 8, tempC: 21 }; // IDY anchor
+const K = REF.yeastPct * REF.hours; // 2.4 (%·h) at 21°C
+const Q10 = 2.5;
+const SALT_REF = 2.5; // salt % at which the fermentation anchor was set
+const TYPE = {
+  idy: { label: "Instant dry", mult: 1.0, gPerTsp: 3.15 },
+  ady: { label: "Active dry", mult: 1.33, gPerTsp: 3.1 },
+  fresh: { label: "Fresh / cake", mult: 3.0, gPerTsp: null },
 };
+const V_AXIS = 260;
+const EMBER = "#C25A33"; // heat accent for the bake stage
+const SURF = {
+  steel: { label: "Steel", k: 1.0 },
+  stone: { label: "Stone", k: 0.8 },
+  pan: { label: "Pan", k: 0.55 },
+  rack: { label: "Rack", k: 0.3 },
+};
+const FRICTION = {
+  hand: { label: "By hand", f: 2 },
+  mixer: { label: "Stand mixer", f: 8 },
+  processor: { label: "Processor", f: 14 },
+};
+const CONF = { g: "#3d6e78", h: "#c08a2e", i: "#9b8aa3" }; // grounded / heuristic / illustrative
 
-let lang = "en";
-function t(k) { return STRINGS[lang][k] ?? k; }
+// architecture as a layered DAG: inputs -> models -> outputs
+const GRAPH = {
+  cols: [
+    [
+      ["i_prove", "Temp · Time"],
+      ["i_flour", "Protein · P/L"],
+      ["i_pct", "Hydr·Salt·Oil·Sugar"],
+      ["i_leaven", "Leaven · Preferment"],
+      ["i_mix", "Room · FDT · Method"],
+      ["i_batch", "Dough weight"],
+      ["i_bake", "Oven · Surface"],
+    ],
+    [
+      ["m_yeast", "Q₁₀ yeast / levain", "g"],
+      ["m_weights", "Baker's % weights", "g"],
+      ["m_water", "Water temp", "g"],
+      ["m_flour", "Flour profile", "h"],
+      ["m_rise", "Gompertz + proof", "h"],
+      ["m_bake", "Bake (time·colour)", "h"],
+      ["m_digest", "Digestibility", "i"],
+      ["m_geom", "Crumb/pizza geom", "h"],
+    ],
+    [
+      ["o_yeast", "Yeast / levain g", "g"],
+      ["o_recipe", "Recipe", "g"],
+      ["o_curve", "Rise curve", "h"],
+      ["o_crumb", "Crumb SVG", "h"],
+      ["o_pizza", "Pizza SVG", "h"],
+      ["o_bake", "Bake readout", "h"],
+      ["o_verdict", "Verdicts", "h"],
+    ],
+  ],
+  edges: [
+    ["i_prove", "m_yeast", "g"], ["i_prove", "m_rise", "h"], ["i_prove", "m_digest", "i"],
+    ["i_flour", "m_flour", "h"], ["i_flour", "m_rise", "h"], ["i_flour", "m_geom", "h"],
+    ["i_pct", "m_weights", "g"], ["i_pct", "m_yeast", "g"], ["i_pct", "m_bake", "h"], ["i_pct", "m_flour", "h"],
+    ["i_leaven", "m_yeast", "g"], ["i_leaven", "m_digest", "i"],
+    ["i_mix", "m_water", "g"],
+    ["i_batch", "m_weights", "g"],
+    ["i_bake", "m_bake", "h"], ["i_bake", "m_geom", "h"],
+    ["m_yeast", "o_yeast", "g"], ["m_yeast", "o_recipe", "g"],
+    ["m_weights", "o_recipe", "g"], ["m_weights", "o_yeast", "g"],
+    ["m_water", "o_recipe", "g"],
+    ["m_flour", "o_verdict", "h"], ["m_flour", "o_crumb", "h"],
+    ["m_rise", "o_curve", "h"], ["m_rise", "o_crumb", "h"], ["m_rise", "o_pizza", "h"],
+    ["m_bake", "o_bake", "h"], ["m_bake", "o_crumb", "h"], ["m_bake", "o_pizza", "h"],
+    ["m_digest", "o_verdict", "i"],
+    ["m_geom", "o_crumb", "h"], ["m_geom", "o_pizza", "h"],
+  ],
+};
+const DG = { W: 760, H: 384, colX: [8, 300, 620], colW: [152, 180, 132], top: 30, nodeH: 26 };
 
-function setLang(l) {
-  lang = l;
-  document.documentElement.lang = l;
-  document.getElementById("btn-en").classList.toggle("active", l === "en");
-  document.getElementById("btn-de").classList.toggle("active", l === "de");
-  document.title = t("app_title");
-  document.querySelectorAll("[data-i18n]").forEach(el => el.textContent = t(el.dataset.i18n));
-  document.querySelectorAll("[data-i18n-ph]").forEach(el => el.placeholder = t(el.dataset.i18nPh));
-  renderRecipes();
-  renderSliders();
-  calculate();
-  renderConfigs();
-}
-
-// ─── Recipes ──────────────────────────────────────────────────────────────
-const RECIPES = [
-  {
-    id: "high-protein",
-    name: { en: "High Protein", de: "High Protein" },
-    tag: { en: "New York Style", de: "New Yorker Art" },
-    metaDesc: { en: "24 g protein · Bread flour + VWG · 72 h cold", de: "24 g Eiweiß · Mehl + Weizengkleber · 72 h kalt" },
-    source: { label: "fwegoslices.com", url: "https://www.fwegoslices.com" },
-    leoparding: false,
-    ingredients: [
-      { key: "bread_flour",  en: "Bread flour (85%)",          de: "Weizenmehl T550 (85%)",        pct: 85,   nutrition: "flour" },
-      { key: "vital_gluten", en: "Vital wheat gluten (15%)",   de: "Weizengkleber (15%)",           pct: 15,   nutrition: "flour" },
-      { key: "water",        en: "Water",                       de: "Wasser",                        pct: 70,   nutrition: "water" },
-      { key: "salt",         en: "Salt",                        de: "Salz",                          pct: 3,    nutrition: "zero" },
-      { key: "yeast",        en: "Instant yeast",               de: "Trockenhefe (Instant)",         pct: 0.25, nutrition: "zero" },
-      { key: "malt",         en: "Diastatic malt powder",       de: "Diastat. Malzmehl",             pct: 0.7,  nutrition: "flour", optional: true },
-      { key: "sweetener",    en: "Sweetener (erythritol)",      de: "Süßungsmittel (Erythrit)",      pct: 2,    nutrition: "zero" },
-    ],
-    sliders: [
-      { ingKey: "water",     labelKey: "label_hydration", min: 60,   max: 80,  step: 1,    decimals: 1 },
-      { ingKey: "salt",      labelKey: "label_salt",      min: 1.5,  max: 5,   step: 0.1,  decimals: 1 },
-      { ingKey: "yeast",     labelKey: "label_yeast",     min: 0.05, max: 0.8, step: 0.01, decimals: 2 },
-      { ingKey: "malt",      labelKey: "label_malt",      min: 0,    max: 1,   step: 0.1,  decimals: 1 },
-      { ingKey: "sweetener", labelKey: "label_sweetener", min: 0,    max: 3,   step: 0.5,  decimals: 1 },
-    ],
-    fermentation: [
-      { time: { en: "Same day",    de: "Gleicher Tag"   }, hours: 6,   cold: false, desc: { en: "1–1.5 h room temp, shape and bake",        de: "1–1,5 h Zimmertemp., formen und backen" } },
-      { time: { en: "24 hours",    de: "24 Stunden"     }, hours: 24,  cold: true,  desc: { en: "1 h room temp, then refrigerate overnight", de: "1 h Zimmertemp., dann über Nacht kühlen" } },
-      { time: { en: "48 hours",    de: "48 Stunden"     }, hours: 48,  cold: true,  desc: { en: "Better flavour and structure",              de: "Besseres Aroma und Struktur" } },
-      { time: { en: "72 hours ★",  de: "72 Stunden ★"  }, hours: 72,  cold: true,  desc: { en: "Optimal — best flavour and extensibility",  de: "Optimal — bestes Aroma und Dehnbarkeit" } },
-      { time: { en: "5 days",      de: "5 Tage"         }, hours: 120, cold: true,  desc: { en: "Maximum cold ferment, very complex flavour", de: "Maximale Kaltgare, sehr komplexes Aroma" } },
-    ],
-  },
-  {
-    id: "neapolitan",
-    name: { en: "Neapolitan", de: "Neapolitanisch" },
-    tag: { en: "AVPN Style", de: "AVPN Stil" },
-    metaDesc: { en: "Tipo 00 · No oil · 430–480 °C · 60–90 s", de: "Tipo 00 · Kein Öl · 430–480 °C · 60–90 s" },
-    source: { label: "pizzanapoletana.org", url: "https://www.pizzanapoletana.org" },
-    leoparding: true,
-    ingredients: [
-      { key: "flour", en: "Tipo 00 flour", de: "Tipo 00 Mehl", pct: 100,  nutrition: "flour" },
-      { key: "water", en: "Water",         de: "Wasser",       pct: 60,   nutrition: "water" },
-      { key: "salt",  en: "Salt",          de: "Salz",         pct: 2.8,  nutrition: "zero" },
-      { key: "yeast", en: "Fresh yeast",   de: "Frischhefe",   pct: 0.07, nutrition: "zero" },
-    ],
-    sliders: [
-      { ingKey: "water", labelKey: "label_hydration", min: 55,  max: 65,  step: 1,    decimals: 1 },
-      { ingKey: "salt",  labelKey: "label_salt",      min: 2.0, max: 3.5, step: 0.1,  decimals: 1 },
-      { ingKey: "yeast", labelKey: "label_yeast",     min: 0.04,max: 0.2, step: 0.01, decimals: 2 },
-    ],
-    fermentation: [
-      { time: { en: "8 hours",    de: "8 Stunden"    }, hours: 8,  cold: false, desc: { en: "Minimum per AVPN — 2 h knead + 6 h proof",    de: "AVPN-Minimum — 2 h kneten + 6 h Gare" } },
-      { time: { en: "24 hours",   de: "24 Stunden"   }, hours: 24, cold: true,  desc: { en: "Better flavour, improved extensibility",       de: "Besseres Aroma, verbesserte Dehnbarkeit" } },
-      { time: { en: "48 hours ★", de: "48 Stunden ★" }, hours: 48, cold: true,  desc: { en: "Optimal — deep flavour, leopard-spotting ready", de: "Optimal — tiefes Aroma, Leopardenmuster" } },
-      { time: { en: "72 hours",   de: "72 Stunden"   }, hours: 72, cold: true,  desc: { en: "Very complex, subtle tang",                   de: "Sehr komplex, leichte Säure" } },
-    ],
-  },
-  {
-    id: "new-york",
-    name: { en: "New York", de: "New York" },
-    tag: { en: "NY Style", de: "NY Stil" },
-    metaDesc: { en: "Bread flour · Oil + sugar · 250–290 °C", de: "Weizenmehl · Öl + Zucker · 250–290 °C" },
-    source: null,
-    leoparding: false,
-    ingredients: [
-      { key: "flour",  en: "Bread flour",    de: "Weizenmehl T550",   pct: 100,  nutrition: "flour" },
-      { key: "water",  en: "Water",          de: "Wasser",            pct: 63,   nutrition: "water" },
-      { key: "salt",   en: "Salt",           de: "Salz",              pct: 2.0,  nutrition: "zero" },
-      { key: "yeast",  en: "Instant yeast",  de: "Trockenhefe",       pct: 0.25, nutrition: "zero" },
-      { key: "oil",    en: "Olive oil",      de: "Olivenöl",          pct: 2.0,  nutrition: "oil" },
-      { key: "sugar",  en: "Sugar",          de: "Zucker",            pct: 1.5,  nutrition: "sugar" },
-      { key: "malt",   en: "Diastatic malt", de: "Diastat. Malzmehl", pct: 0.7,  nutrition: "flour", optional: true },
-    ],
-    sliders: [
-      { ingKey: "water", labelKey: "label_hydration", min: 58,  max: 68,  step: 1,    decimals: 1 },
-      { ingKey: "salt",  labelKey: "label_salt",      min: 1.5, max: 3,   step: 0.1,  decimals: 1 },
-      { ingKey: "yeast", labelKey: "label_yeast",     min: 0.1, max: 0.6, step: 0.01, decimals: 2 },
-      { ingKey: "oil",   labelKey: "label_oil",       min: 1,   max: 4,   step: 0.5,  decimals: 1 },
-      { ingKey: "sugar", labelKey: "label_sugar",     min: 0,   max: 3,   step: 0.5,  decimals: 1 },
-      { ingKey: "malt",  labelKey: "label_malt",      min: 0,   max: 1,   step: 0.1,  decimals: 1 },
-    ],
-    fermentation: [
-      { time: { en: "24 hours",   de: "24 Stunden"   }, hours: 24,  cold: true, desc: { en: "Good start — real improvement over same-day",  de: "Guter Start — spürbar besser als gleicher Tag" } },
-      { time: { en: "48 hours",   de: "48 Stunden"   }, hours: 48,  cold: true, desc: { en: "Deeper flavour, good extensibility",            de: "Tieferes Aroma, gute Dehnbarkeit" } },
-      { time: { en: "72 hours ★", de: "72 Stunden ★" }, hours: 72,  cold: true, desc: { en: "Optimal — best NY flavour profile",             de: "Optimal — bestes NY-Aromaprofil" } },
-      { time: { en: "5 days",     de: "5 Tage"       }, hours: 120, cold: true, desc: { en: "Maximum complexity before degradation sets in", de: "Maximale Komplexität vor Überreife" } },
-    ],
-  },
-  {
-    id: "detroit",
-    name: { en: "Detroit", de: "Detroit" },
-    tag: { en: "Pan Pizza", de: "Pfannenpizza" },
-    metaDesc: { en: "High hydration · Oil · Steel pan · 260–290 °C", de: "Hohe Hydration · Öl · Stahlpfanne · 260–290 °C" },
-    source: null,
-    leoparding: false,
-    ingredients: [
-      { key: "flour", en: "Bread flour",   de: "Weizenmehl T550", pct: 100, nutrition: "flour" },
-      { key: "water", en: "Water",         de: "Wasser",          pct: 70,  nutrition: "water" },
-      { key: "salt",  en: "Salt",          de: "Salz",            pct: 2.2, nutrition: "zero" },
-      { key: "yeast", en: "Instant yeast", de: "Trockenhefe",     pct: 0.2, nutrition: "zero" },
-      { key: "oil",   en: "Olive oil",     de: "Olivenöl",        pct: 3.0, nutrition: "oil" },
-      { key: "sugar", en: "Sugar",         de: "Zucker",          pct: 2.0, nutrition: "sugar" },
-    ],
-    sliders: [
-      { ingKey: "water", labelKey: "label_hydration", min: 65,   max: 78,  step: 1,    decimals: 1 },
-      { ingKey: "salt",  labelKey: "label_salt",      min: 1.75, max: 3,   step: 0.1,  decimals: 1 },
-      { ingKey: "yeast", labelKey: "label_yeast",     min: 0.05, max: 0.5, step: 0.01, decimals: 2 },
-      { ingKey: "oil",   labelKey: "label_oil",       min: 1,    max: 6,   step: 0.5,  decimals: 1 },
-      { ingKey: "sugar", labelKey: "label_sugar",     min: 0,    max: 3,   step: 0.5,  decimals: 1 },
-    ],
-    fermentation: [
-      { time: { en: "6 hours",    de: "6 Stunden"    }, hours: 6,  cold: false, desc: { en: "Press into oiled pan, 1 h proof, bake",    de: "In geölte Pfanne drücken, 1 h Stückgare, backen" } },
-      { time: { en: "24 hours ★", de: "24 Stunden ★" }, hours: 24, cold: true,  desc: { en: "Optimal — best open crumb + cheese crust", de: "Optimal — offene Krume + Käsekruste" } },
-      { time: { en: "48 hours",   de: "48 Stunden"   }, hours: 48, cold: true,  desc: { en: "Rich flavour, very tender crumb",          de: "Reiches Aroma, sehr zarte Krume" } },
-    ],
-  },
-  {
-    id: "roman-taglio",
-    name: { en: "Roman al Taglio", de: "Römisch al Taglio" },
-    tag: { en: "Pizza in Teglia", de: "Pizza in Teglia" },
-    metaDesc: { en: "80% hydration · Olive oil · Two-phase bake", de: "80% Hydration · Olivenöl · Zweistufiges Backen" },
-    source: null,
-    leoparding: false,
-    ingredients: [
-      { key: "flour", en: "Tipo 0 / strong flour",      de: "Typ 0 / Starkes Mehl",        pct: 100, nutrition: "flour" },
-      { key: "water", en: "Water",                       de: "Wasser",                       pct: 80,  nutrition: "water" },
-      { key: "salt",  en: "Salt",                        de: "Salz",                         pct: 2.4, nutrition: "zero" },
-      { key: "yeast", en: "Instant yeast",               de: "Trockenhefe",                  pct: 0.3, nutrition: "zero" },
-      { key: "oil",   en: "Extra virgin olive oil",      de: "Natives Olivenöl extra",       pct: 3.0, nutrition: "oil" },
-    ],
-    sliders: [
-      { ingKey: "water", labelKey: "label_hydration", min: 72,   max: 85,  step: 1,    decimals: 1 },
-      { ingKey: "salt",  labelKey: "label_salt",      min: 2.0,  max: 3,   step: 0.1,  decimals: 1 },
-      { ingKey: "yeast", labelKey: "label_yeast",     min: 0.05, max: 0.6, step: 0.01, decimals: 2 },
-      { ingKey: "oil",   labelKey: "label_oil",       min: 2,    max: 5,   step: 0.5,  decimals: 1 },
-    ],
-    fermentation: [
-      { time: { en: "24 hours",   de: "24 Stunden"   }, hours: 24, cold: true, desc: { en: "Minimum for al taglio — still developing",  de: "Minimum für al Taglio — noch in Entwicklung" } },
-      { time: { en: "48 hours ★", de: "48 Stunden ★" }, hours: 48, cold: true, desc: { en: "Optimal — open crumb, crispy bottom",       de: "Optimal — offene Krume, knuspriger Boden" } },
-      { time: { en: "72 hours",   de: "72 Stunden"   }, hours: 72, cold: true, desc: { en: "Complex flavour, very extensible dough",    de: "Komplexes Aroma, sehr dehnbarer Teig" } },
-    ],
-  },
+const PIZZA_PRESETS = [
+  { id: "neapolitan", label: "Neapolitan", set: { tempC: 18, hours: 24, protein: 13, plVal: 55, hydration: 60, salt: 2.8, oilPct: 0, sugarPct: 0, leavening: "commercial", preferment: "biga", ovenC: 460, surface: "stone", ddt: 23 } },
+  { id: "ny", label: "New York", set: { tempC: 4, hours: 48, protein: 13, plVal: 50, hydration: 63, salt: 2, oilPct: 2.5, sugarPct: 1, leavening: "commercial", preferment: "straight", ovenC: 300, surface: "steel", ddt: 24 } },
+  { id: "detroit", label: "Detroit", set: { tempC: 20, hours: 6, protein: 13, plVal: 45, hydration: 70, salt: 2, oilPct: 1, sugarPct: 0, leavening: "commercial", preferment: "straight", ovenC: 280, surface: "pan", ddt: 25 } },
+  { id: "roman", label: "Roman al taglio", set: { tempC: 4, hours: 48, protein: 12.5, plVal: 40, hydration: 80, salt: 2.2, oilPct: 2, sugarPct: 0, leavening: "commercial", preferment: "poolish", ovenC: 290, surface: "steel", ddt: 23 } },
+  { id: "sourdough", label: "Sourdough", set: { tempC: 5, hours: 24, protein: 12.5, plVal: 50, hydration: 72, salt: 2.5, oilPct: 0, sugarPct: 0, leavening: "sourdough", preferment: "straight", ovenC: 270, surface: "steel", ddt: 24, starterStr: 60 } },
+];
+const OVEN_PRESETS = [
+  { id: "home", label: "Home oven", set: { ovenC: 250, surface: "steel" } },
+  { id: "homehot", label: "Home + stone", set: { ovenC: 300, surface: "stone" } },
+  { id: "deck", label: "Deck oven", set: { ovenC: 330, surface: "stone" } },
+  { id: "electric", label: "Electric pizza", set: { ovenC: 440, surface: "stone" } },
+  { id: "wood", label: "Wood-fired", set: { ovenC: 490, surface: "stone" } },
 ];
 
-// ─── State ────────────────────────────────────────────────────────────────
-let selectedRecipe = RECIPES[0];
-let fermentHours = 72;
-let fermentCold  = true;
-let ratingConfigId = null;
-let ratingValues = {};
+const TONE = { good: "#6f7d52", warn: "#c08a2e", bad: "#b5532e" };
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
-const CONFIGS_KEY = "pizza-configs";
-const uid = () => (crypto.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).slice(2));
-
-// ─── Render recipes ───────────────────────────────────────────────────────
-function renderRecipes() {
-  const grid = document.getElementById("recipe-grid");
-  grid.innerHTML = "";
-  RECIPES.forEach(r => {
-    const card = document.createElement("div");
-    card.className = "recipe-card" + (r.id === selectedRecipe.id ? " selected" : "");
-    card.innerHTML = `<div class="check">✓</div>
-      <div class="recipe-name">${r.name[lang]}</div>
-      <div class="recipe-tag">${r.tag[lang]}</div>
-      <div class="recipe-meta">${r.metaDesc[lang]}</div>`;
-    card.onclick = () => { selectedRecipe = r; renderRecipes(); renderSliders(); calculate(); renderFermentGuide(); };
-    grid.appendChild(card);
-  });
+function tempColor(tempC) {
+  const t = clamp((tempC - 2) / (35 - 2), 0, 1);
+  const c1 = [61, 110, 120], c2 = [199, 125, 56];
+  const ch = c1.map((a, i) => Math.round(a + (c2[i] - a) * t));
+  return `rgb(${ch[0]}, ${ch[1]}, ${ch[2]})`;
 }
 
-// ─── Dynamic sliders ──────────────────────────────────────────────────────
-function renderSliders() {
-  const list = document.getElementById("slider-list");
-  list.innerHTML = "";
-  selectedRecipe.sliders.forEach(sc => {
-    const defVal = ingDefault(sc.ingKey);
-    const row = document.createElement("div");
-    row.className = "slider-row";
-    row.innerHTML = `
-      <div class="slider-header">
-        <span class="slider-label">${t(sc.labelKey)}</span>
-        <div class="slider-value-wrap">
-          <span class="slider-value" id="val-${sc.ingKey}"></span>
-          <button class="slider-reset" onclick="resetSlider('${sc.ingKey}')">${t("btn_reset")}</button>
-        </div>
-      </div>
-      <input type="range" id="sl-${sc.ingKey}"
-             min="${sc.min}" max="${sc.max}" step="${sc.step}" value="${defVal}"
-             oninput="onSlider('${sc.ingKey}')" />
-      <div class="slider-range-labels"><span>${sc.min}%</span><span>${sc.max}%</span></div>`;
-    list.appendChild(row);
-    syncSliderTrack(sc.ingKey);
-    syncSliderValue(sc.ingKey, sc.decimals);
-  });
-}
-
-function ingDefault(ingKey) {
-  const ing = selectedRecipe.ingredients.find(i => i.key === ingKey);
-  return ing ? ing.pct : 0;
-}
-
-function sliderCfg(ingKey) {
-  return selectedRecipe.sliders.find(s => s.ingKey === ingKey);
-}
-
-function getSliderVal(ingKey) {
-  const el = document.getElementById("sl-" + ingKey);
-  return el ? parseFloat(el.value) : ingDefault(ingKey);
-}
-
-function onSlider(ingKey) {
-  const sc = sliderCfg(ingKey);
-  syncSliderTrack(ingKey);
-  syncSliderValue(ingKey, sc?.decimals ?? 1);
-  calculate();
-}
-
-function resetSlider(ingKey) {
-  const el = document.getElementById("sl-" + ingKey);
-  if (!el) return;
-  el.value = ingDefault(ingKey);
-  onSlider(ingKey);
-}
-
-function syncSliderTrack(ingKey) {
-  const el = document.getElementById("sl-" + ingKey);
-  if (!el) return;
-  const pct = ((parseFloat(el.value) - parseFloat(el.min)) / (parseFloat(el.max) - parseFloat(el.min))) * 100;
-  el.style.setProperty("--fill", pct + "%");
-}
-
-function syncSliderValue(ingKey, decimals) {
-  const el = document.getElementById("sl-" + ingKey);
-  const val = el ? parseFloat(el.value) : ingDefault(ingKey);
-  const d = decimals ?? (val < 1 ? 2 : 1);
-  const display = document.getElementById("val-" + ingKey);
-  if (display) display.textContent = val.toFixed(d) + "%";
-}
-
-// ─── Fermentation controls ────────────────────────────────────────────────
-function onFermentSlider() {
-  fermentHours = parseInt(document.getElementById("sl-ferment-hours").value);
-  document.getElementById("val-ferment-hours").textContent = fermentHours + " h";
-  const el = document.getElementById("sl-ferment-hours");
-  const pct = ((fermentHours - 4) / (120 - 4)) * 100;
-  el.style.setProperty("--fill", pct + "%");
-  // heat-scale: cold ferment uses cold-blue, long ferments warm up
-  const fillColor = fermentCold
-    ? (fermentHours <= 24 ? "var(--heat-cold)" : fermentHours <= 48 ? "var(--heat-cool)" : "var(--basil-500)")
-    : "var(--heat-ember)";
-  el.style.setProperty("--fill-color", fillColor);
-  renderFermentGuide();
-}
-
-function setFermentMethod(method) {
-  fermentCold = method === "cold";
-  document.getElementById("btn-cold").classList.toggle("active", fermentCold);
-  document.getElementById("btn-room").classList.toggle("active", !fermentCold);
-  onFermentSlider();
-}
-
-function renderFermentGuide() {
-  const grid = document.getElementById("ferment-guide-grid");
-  grid.innerHTML = selectedRecipe.fermentation.map(f => {
-    const active = Math.abs(f.hours - fermentHours) <= 12 && f.cold === fermentCold;
-    return `<div class="ferment-card${active ? " active" : ""}">
-      <div class="ferment-time">${f.time[lang]}</div>
-      <div class="ferment-desc">${f.desc[lang]}</div>
-    </div>`;
-  }).join("");
-}
-
-// ─── Calculate ───────────────────────────────────────────────────────────
-const NUTR = {
-  flour: { kcal: 3.55, protein: 0.12, carbs: 0.72, fat: 0.015 },
-  oil:   { kcal: 8.84, protein: 0,    carbs: 0,    fat: 1.0 },
-  sugar: { kcal: 3.87, protein: 0,    carbs: 1.0,  fat: 0 },
-  water: { kcal: 0, protein: 0, carbs: 0, fat: 0 },
-  zero:  { kcal: 0, protein: 0, carbs: 0, fat: 0 },
-};
-
-function calculate() {
-  const balls  = Math.max(1, parseInt(document.getElementById("balls").value)  || 1);
-  const weight = Math.max(50, parseInt(document.getElementById("weight").value) || 280);
-  const r = selectedRecipe;
-  const totalDough = balls * weight;
-
-  const effectivePct = {};
-  r.ingredients.forEach(ing => {
-    effectivePct[ing.key] = r.sliders?.find(s => s.ingKey === ing.key)
-      ? getSliderVal(ing.key)
-      : ing.pct;
-  });
-
-  const sumPct = Object.values(effectivePct).reduce((a, v) => a + v, 0);
-  const flourGrams = totalDough / (sumPct / 100);
-
-  // Ingredients
-  const list = document.getElementById("ingredient-list");
-  list.innerHTML = "";
-  let nutrKcal = 0, nutrProtein = 0, nutrCarbs = 0, nutrFat = 0;
-
-  r.ingredients.forEach(ing => {
-    const pct = effectivePct[ing.key];
-    const grams = flourGrams * (pct / 100);
-    const nf = NUTR[ing.nutrition ?? "zero"];
-    nutrKcal    += grams * nf.kcal;
-    nutrProtein += grams * nf.protein;
-    nutrCarbs   += grams * nf.carbs;
-    nutrFat     += grams * nf.fat;
-
-    const row = document.createElement("div");
-    row.className = "ingredient-row" + (ing.optional ? " optional" : "");
-    row.innerHTML = `
-      <div class="ing-name">${ing[lang]}${ing.optional ? `<span class="optional-badge">${t("badge_optional")}</span>` : ""}</div>
-      <div class="ing-pct">${pct.toFixed(pct < 1 ? 2 : 1)}%</div>
-      <div class="ing-amount">${fmt(grams)}</div>
-      <div class="ing-unit">${t("unit_g")}</div>`;
-    list.appendChild(row);
-  });
-
-  document.getElementById("total-weight").textContent = `${fmt(totalDough)} ${t("unit_g")}`;
-
-  const src = r.source;
-  document.getElementById("source-link").innerHTML = src
-    ? `${t("source_prefix")} <a href="${src.url}" target="_blank" rel="noopener">${src.label}</a>`
-    : "";
-
-  // Nutrition (per single ball)
-  const fac = 1 / balls;
-  document.getElementById("nutrition-grid").innerHTML = `
-    <div class="nutrition-card"><div class="nutrition-value">${Math.round(nutrKcal * fac)}</div><div class="nutrition-label">${t("nutr_calories")} ${t("unit_kcal")}</div></div>
-    <div class="nutrition-card"><div class="nutrition-value">${Math.round(nutrProtein * fac)}&thinsp;g</div><div class="nutrition-label">${t("nutr_protein")}</div></div>
-    <div class="nutrition-card"><div class="nutrition-value">${Math.round(nutrCarbs * fac)}&thinsp;g</div><div class="nutrition-label">${t("nutr_carbs")}</div></div>
-    <div class="nutrition-card"><div class="nutrition-value">${Math.round(nutrFat * fac)}&thinsp;g</div><div class="nutrition-label">${t("nutr_fat")}</div></div>`;
-}
-
-function fmt(n) { return n < 10 ? n.toFixed(1) : Math.round(n).toString(); }
-
-function adj(field, delta) {
-  const el = document.getElementById(field);
-  el.value = Math.min(+el.max, Math.max(+el.min, (+el.value || 0) + delta));
-  calculate();
-}
-
-// ─── Config: localStorage ─────────────────────────────────────────────────
-function loadConfigs() {
-  try { return JSON.parse(localStorage.getItem(CONFIGS_KEY)) || []; } catch { return []; }
-}
-function persistConfigs(list) { localStorage.setItem(CONFIGS_KEY, JSON.stringify(list)); }
-
-function saveConfig() {
-  const nameEl = document.getElementById("config-name-input");
-  const name = nameEl.value.trim();
-  if (!name) { nameEl.focus(); return; }
-
-  const overrides = {};
-  selectedRecipe.sliders?.forEach(sc => { overrides[sc.ingKey] = getSliderVal(sc.ingKey); });
-
-  const cfg = {
-    id: uid(),
-    name,
-    recipeId: selectedRecipe.id,
-    createdAt: new Date().toISOString(),
-    balls: parseInt(document.getElementById("balls").value),
-    ballWeightG: parseInt(document.getElementById("weight").value),
-    overrides,
-    fermentation: { hours: fermentHours, cold: fermentCold },
-    bakedAt: null, rating: null, notes: "",
+// deterministic RNG so pictograms morph with settings, not reshuffle each render
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
-
-  const list = loadConfigs();
-  list.unshift(cfg);
-  persistConfigs(list);
-  nameEl.value = "";
-  renderConfigs();
+}
+const CRUMB_PTS = (() => {
+  const rnd = mulberry32(7), cols = 22, rows = 4, pts = [];
+  for (let r = 0; r < rows; r++)
+    for (let c = 0; c < cols; c++)
+      pts.push({
+        x: (c + 0.5) / cols + (rnd() - 0.5) * 0.05,
+        y: (r + 0.5) / rows + (rnd() - 0.5) * 0.18,
+        v: rnd(),
+      });
+  return pts;
+})();
+const TOPPINGS = (() => {
+  const rnd = mulberry32(19), arr = [];
+  for (let i = 0; i < 9; i++) {
+    const ang = rnd() * Math.PI * 2, rad = 8 + rnd() * 34;
+    arr.push({ kind: i % 3 === 0 ? "basil" : "mozz", ang, rad, s: 5 + rnd() * 5 });
+  }
+  return arr;
+})();
+const LEOPARD = (() => {
+  const rnd = mulberry32(23), arr = [];
+  for (let i = 0; i < 18; i++) arr.push({ ang: rnd() * Math.PI * 2, w: 4 + rnd() * 5, h: 3 + rnd() * 4 });
+  return arr;
+})();
+const CRUST_STOPS = [[0, [232, 207, 158]], [0.45, [201, 138, 60]], [0.75, [154, 90, 34]], [1, [74, 42, 18]]];
+function lerpStops(stops, t) {
+  t = clamp(t, 0, 1);
+  for (let i = 1; i < stops.length; i++) {
+    if (t <= stops[i][0]) {
+      const [p0, c0] = stops[i - 1], [p1, c1] = stops[i];
+      const f = (t - p0) / (p1 - p0 || 1);
+      const c = c0.map((a, k) => Math.round(a + (c1[k] - a) * f));
+      return `rgb(${c[0]},${c[1]},${c[2]})`;
+    }
+  }
+  const l = stops[stops.length - 1][1];
+  return `rgb(${l[0]},${l[1]},${l[2]})`;
 }
 
-function loadConfig(id) {
-  const cfg = loadConfigs().find(c => c.id === id);
-  if (!cfg) return;
+const SOURCES = [
+  { group: "Fermentation", items: [
+    { t: "Microbial leavening & time → digestibility/FODMAPs of Neapolitan pizza", u: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12027146/" },
+    { t: "Sourdough biga → glycemic index of Pinsa Romana", u: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10346773/" },
+    { t: "Lactobacillus groups in semolina pizza doughs", u: "https://www.mdpi.com/2311-5637/4/3/61" },
+    { t: "Reducing fermentation time (rheofermentometer)", u: "https://www.researchgate.net/publication/262662318" },
+    { t: "Fermentation & baking → antioxidant content", u: "https://www.eurekalert.org/news-releases/848139" },
+    { t: "Thermodynamic sensors to monitor fermentation", u: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8914819/" },
+  ] },
+  { group: "Flour & gluten", items: [
+    { t: "Flour protein → dough & crust (etliekmek)", u: "https://pmc.ncbi.nlm.nih.gov/articles/PMC7026350/" },
+    { t: "Gluten content → water migration (LF-NMR)", u: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11012212/" },
+    { t: "Gluten protein transformations during processing", u: "https://www.sciencedirect.com/science/article/pii/S0023643825000258" },
+    { t: "Protein content in wholegrain refrigerated dough", u: "https://onlinelibrary.wiley.com/doi/full/10.1002/cche.10894" },
+    { t: "Protein & baking quality across flour brands", u: "https://www.tandfonline.com/doi/full/10.1080/15428052.2023.2191874" },
+    { t: "Extruded lentil flour → gluten-free pizza", u: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8834442/" },
+  ] },
+  { group: "Salt & rheology", items: [
+    { t: "Salt, water & temperature on wheat dough rheology", u: "https://www.researchgate.net/publication/230486758" },
+    { t: "Low-sodium sea salt → dough rheology & bread", u: "https://www.mdpi.com/2076-3417/12/9/4344" },
+  ] },
+  { group: "Baking & storage", items: [
+    { t: "Salts → acrylamide, HMF & flavour in crust-like dough", u: "https://www.sciencedirect.com/science/article/pii/S0308814622033209" },
+    { t: "Acrylamide in bakery, snack & fried products", u: "https://pmc.ncbi.nlm.nih.gov/articles/PMC9749820/" },
+    { t: "Glycerol monooleate → frozen dough quality", u: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11765111/" },
+    { t: "PizzaBlab — practitioner science (kneading, FDT, baking)", u: "https://www.pizzablab.com" },
+  ] },
+];
 
-  const recipe = RECIPES.find(r => r.id === cfg.recipeId);
-  if (!recipe) return;
-  selectedRecipe = recipe;
-  renderRecipes();
-  renderSliders();
+// ---- flour-strength model -------------------------------------------
+function flourProfile(protein, pl) {
+  const W = clamp(Math.round((protein - 6) * 40), 60, 400);
+  const category =
+    protein < 10.5 ? "Soft / weak"
+    : protein < 12 ? "Medium"
+    : protein < 13.5 ? "Strong (pizza)"
+    : "Very strong";
+  const center = 55 + (protein - 9) * 2.833 + pl * 2; // elastic flours take a touch more water
+  const hydrLo = Math.round(center - 4);
+  const hydrHi = Math.round(center + 4);
+  const maxHours = clamp(6 * Math.pow(2, (protein - 9) / 1.5), 8, 120);
+  return { W, category, hydrLo, hydrHi, maxHours };
+}
 
-  document.getElementById("balls").value  = cfg.balls;
-  document.getElementById("weight").value = cfg.ballWeightG;
-  fermentHours = cfg.fermentation?.hours ?? 72;
-  fermentCold  = cfg.fermentation?.cold  ?? true;
-  document.getElementById("sl-ferment-hours").value = fermentHours;
-  onFermentSlider();
-  document.getElementById("btn-cold").classList.toggle("active", fermentCold);
-  document.getElementById("btn-room").classList.toggle("active", !fermentCold);
+function hydrationVerdict(hydration, fp) {
+  if (hydration > fp.hydrHi + 2)
+    return { tone: "bad", text: `High for this flour — expect a slack, sticky dough that's hard to shape.` };
+  if (hydration > fp.hydrHi)
+    return { tone: "warn", text: `A touch wet; workable with confident handling.` };
+  if (hydration < fp.hydrLo - 2)
+    return { tone: "warn", text: `Drier than this flour can take — room for a more open crumb.` };
+  return { tone: "good", text: `Well matched to a ${fp.hydrLo}–${fp.hydrHi}% range.` };
+}
 
-  if (cfg.overrides) {
-    Object.entries(cfg.overrides).forEach(([key, val]) => {
-      const el = document.getElementById("sl-" + key);
-      if (el) { el.value = val; onSlider(key); }
+function fermentVerdict(hours, fp) {
+  const m = Math.round(fp.maxHours);
+  if (hours > fp.maxHours * 1.25)
+    return { tone: "bad", text: `Too long (~${m} h max). Gluten breaks down — the dough slackens and over-proofs.` };
+  if (hours > fp.maxHours)
+    return { tone: "warn", text: `Near this flour's limit (~${m} h). Watch for over-proofing.` };
+  return { tone: "good", text: `Comfortable — this flour holds up to ~${m} h here.` };
+}
+
+// ---- bake model ------------------------------------------------------
+function bakeProfile(ovenC, hydration, salt, sugarPct, oilPct, surface) {
+  const k = SURF[surface].k;
+  let t = 116 * Math.exp(-0.0098 * ovenC);     // minutes, inverse-exponential
+  t *= 1 + (hydration - 60) * 0.004;           // wetter sets a touch slower
+  t *= 1.1 - 0.18 * k;                          // a better conductor sets the base faster
+  t = clamp(t, 0.4, 30);
+  let top = 100 / (1 + Math.exp(-(ovenC - 290) / 48));
+  top += (salt - SALT_REF) * 4 + sugarPct * 5 + oilPct * 1.5; // residual sugar + added sugar/fat brown
+  top = clamp(top, 3, 100);
+  const base = clamp(top * (0.4 + 0.5 * k) + k * 22, 3, 100);  // surface drives base browning
+  const leopard = ovenC >= 425 && t <= 2.2;
+  const acryl = top >= 86 || base >= 90;        // very dark crust -> acrylamide rises
+  const style =
+    ovenC >= 430 ? "Neapolitan"
+    : ovenC >= 340 ? "Artisan / high-heat"
+    : ovenC >= 280 ? "New York"
+    : ovenC >= 240 ? "Home oven"
+    : "Low / pan";
+  return { t, colour: top, base, leopard, acryl, style };
+}
+
+function digestScore(hours, tempC, leavening, preferment) {
+  let d = 28 + 14 * Math.log2(Math.max(hours, 2) / 4);
+  if (leavening === "sourdough") d += 22;       // LAB break down FODMAPs/fructans
+  if (tempC <= 10) d += 8;                        // slow cold ferment = more breakdown
+  if (preferment !== "straight") d += 8;
+  return clamp(Math.round(d), 5, 99);
+}
+function digestVerdict(d) {
+  if (d >= 68) return { tone: "good", text: `Easy on the gut (${d}/100) — long, slow fermentation breaks down more fructans.` };
+  if (d >= 45) return { tone: "warn", text: `Moderate (${d}/100) — a longer or sourdough prove breaks down more.` };
+  return { tone: "warn", text: `Short prove (${d}/100) — less FODMAP breakdown; extend the time for easier digestion.` };
+}
+
+function bakeVerdict(b, ovenC) {
+  if (b.leopard)
+    return { tone: "good", text: `Leoparding likely — fast bake, soft interior, charred spots. Needs a pizza or wood oven.` };
+  if (ovenC >= 430)
+    return { tone: "warn", text: `Very hot and quick, but only a dedicated pizza oven reaches this.` };
+  if (ovenC >= 280)
+    return { tone: "good", text: `Even golden crust with a crisp base — the classic range.` };
+  if (ovenC >= 240)
+    return { tone: "good", text: `Home-oven territory — golden and even; bake on a preheated steel or stone.` };
+  return { tone: "warn", text: `Low — the crust can dry and stay pale before it browns. Preheat a steel hard.` };
+}
+
+function fmtBake(t) {
+  if (t < 2) return `~${Math.round(t * 60)} s`;
+  if (t < 6) return `~${t.toFixed(1)} min`;
+  return `~${Math.round(t)} min`;
+}
+function crustLabel(c) {
+  return c < 30 ? "Pale · light gold" : c < 55 ? "Golden" : c < 78 ? "Deep golden" : "Charred · leopard";
+}
+
+function compute({ tempC, hours, yeastType, doughWeight, hydration, salt, oilPct, sugarPct, leavening, preferment, starterStr }) {
+  const rateFactor = Math.pow(Q10, (tempC - REF.tempC) / 10);
+  const saltRate = Math.exp(-0.12 * (salt - SALT_REF)); // more salt -> slower yeast
+  const flour = doughWeight / (1 + hydration / 100 + salt / 100 + oilPct / 100 + sugarPct / 100);
+  const waterG = flour * (hydration / 100);
+  const saltGrams = flour * (salt / 100);
+  const oilGrams = flour * (oilPct / 100);
+  const sugarGrams = flour * (sugarPct / 100);
+  const pfYeast = preferment !== "straight" ? 0.85 : 1; // preferment carries some leavening
+  let idyPct = 0, pct = 0, grams = 0, tsp = null, levainPct = 0, levainGrams = 0;
+  if (leavening === "sourdough") {
+    // anchored on ~15% levain → roughly 8 h at 24 °C; a vigorous starter needs less
+    const strength = 0.7 + (starterStr / 100) * 0.6; // 0.7 sluggish .. 1.3 vigorous
+    levainPct = clamp(150 / (hours * rateFactor * saltRate * strength), 3, 40);
+    levainGrams = flour * (levainPct / 100);
+  } else {
+    idyPct = K / (hours * rateFactor * saltRate);
+    pct = idyPct * TYPE[yeastType].mult * pfYeast;
+    grams = flour * (pct / 100);
+    const gPerTsp = TYPE[yeastType].gPerTsp;
+    tsp = gPerTsp ? grams / gPerTsp : null;
+  }
+  return { rateFactor, saltRate, idyPct, pct, flour, grams, saltGrams, oilGrams, sugarGrams, tsp, waterG, levainPct, levainGrams };
+}
+
+// pure rise model — Gompertz values only, no pixels
+function riseModel(tempC, hours, protein) {
+  const lagFrac = clamp(0.12 + (25 - tempC) * 0.006, 0.08, 0.45);
+  const lambda = hours * lagFrac;
+  const span = Math.max(hours - lambda, 0.5);
+  const Arise = 90 + (protein - 8) * 8;
+  const mu = (Arise * 3.97) / (Math.E * span);
+  const maxHours = clamp(6 * Math.pow(2, (protein - 9) / 1.5), 8, 120);
+  const kd = clamp(2.0 / maxHours, 0.01, 0.2);
+  const tMax = hours * 1.4;
+  const riseAt = (t) => Arise * Math.exp(-Math.exp((mu * Math.E) / Arise * (lambda - t) + 1));
+  const vAt = (t) => { let r = riseAt(t); if (t > maxHours) r *= Math.exp(-kd * (t - maxHours)); return 100 + r; };
+  return { lambda, mu, Arise, maxHours, kd, tMax, collapses: maxHours < tMax, hours, vAt };
+}
+function proofQualityFn(hours, maxHours) {
+  const over = clamp((hours - maxHours) / maxHours, 0, 1.5);
+  return clamp(1 - over * 0.6, 0.25, 1);
+}
+function waterTempFn(ddt, roomTemp, mixMethod, preferment) {
+  const friction = FRICTION[mixMethod].f;
+  const nFactor = preferment !== "straight" ? 4 : 3; // preferment held at room temp -> 4-factor
+  return { temp: clamp(Math.round(nFactor * ddt - (nFactor - 1) * roomTemp - friction), 0, 48), friction, nFactor };
+}
+function batchFn(doughWeight) {
+  const balls = Math.max(1, Math.round(doughWeight / 250));
+  return { balls, ballW: Math.round(doughWeight / balls) };
+}
+function geometryFn(hydration, protein, ovenC, proof, pl) {
+  const openness = clamp((hydration - 50) / 25, 0, 1);
+  const strength = clamp((protein - 8) / 7, 0, 1);
+  const springFrac = clamp((ovenC - 230) / 240, 0, 1);
+  const rimIndex = (20 + springFrac * 80 + strength * 24) * proof * (1 + pl * 0.12);
+  return { openness, strength, springFrac, rimIndex };
+}
+
+// single pure entry point: inputs -> every derived value
+function computeAll(inp) {
+  const pl = (inp.plVal - 50) / 50;
+  const r = compute(inp);
+  const fp = flourProfile(inp.protein, pl);
+  const rise = riseModel(inp.tempC, inp.hours, inp.protein);
+  const proof = proofQualityFn(inp.hours, fp.maxHours);
+  const bake = bakeProfile(inp.ovenC, inp.hydration, inp.salt, inp.sugarPct, inp.oilPct, inp.surface);
+  const digest = digestScore(inp.hours, inp.tempC, inp.leavening, inp.preferment);
+  const water = waterTempFn(inp.ddt, inp.roomTemp, inp.mixMethod, inp.preferment);
+  const batch = batchFn(inp.doughWeight);
+  const geometry = geometryFn(inp.hydration, inp.protein, inp.ovenC, proof, pl);
+  const verdicts = {
+    hydration: hydrationVerdict(inp.hydration, fp),
+    ferment: fermentVerdict(inp.hours, fp),
+    digestion: digestVerdict(digest),
+    bake: bakeVerdict(bake, inp.ovenC),
+  };
+  return { r, fp, rise, proof, bake, digest, water, batch, geometry, verdicts, pl };
+}
+
+// view-only: turn a rise model into SVG path strings
+function buildRisePaths(m, w, h, pad, vAxis) {
+  const x = (t) => pad.l + (t / m.tMax) * (w - pad.l - pad.r);
+  const y = (v) => h - pad.b - ((v - 100) / (vAxis - 100)) * (h - pad.t - pad.b);
+  let line = "";
+  for (let i = 0; i <= 120; i++) { const t = (i / 120) * m.tMax; line += (i ? "L" : "M") + x(t).toFixed(1) + " " + y(m.vAt(t)).toFixed(1) + " "; }
+  const baselineY = h - pad.b;
+  const area = line + `L${x(m.tMax).toFixed(1)} ${baselineY.toFixed(1)} L${pad.l.toFixed(1)} ${baselineY.toFixed(1)} Z`;
+  return { line, area, target: { x: x(m.hours), y: y(m.vAt(m.hours)) }, lagX: x(m.lambda), baselineY };
+}
+
+// ---- UI atoms --------------------------------------------------------
+const LearnCtx = React.createContext(false);
+function Help({ children }) {
+  const on = React.useContext(LearnCtx);
+  return on ? <p className="fc-help">{children}</p> : null;
+}
+
+function Slider({ label, value, unit, min, max, step, onChange, accent, note, noteColor }) {
+  const pctPos = ((value - min) / (max - min)) * 100;
+  return (
+    <div className="fc-field">
+      <div className="fc-field-head">
+        <span className="fc-label">{label}</span>
+        <span className="fc-val" style={{ color: accent }}>
+          {value}<span className="fc-unit">{unit}</span>
+        </span>
+      </div>
+      <input
+        type="range" min={min} max={max} step={step} value={value}
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+        style={{ background: `linear-gradient(to right, ${accent} ${pctPos}%, #d9cfbe ${pctPos}%)` }}
+      />
+      {note && <p className="fc-note-line" style={noteColor ? { color: noteColor } : undefined}>{note}</p>}
+    </div>
+  );
+}
+
+function StatusRow({ label, verdict }) {
+  return (
+    <div className="fc-fit-row">
+      <span className="fc-dot" style={{ background: TONE[verdict.tone] }} />
+      <span className="fc-fit-label">{label}</span>
+      <span className="fc-fit-text">{verdict.text}</span>
+    </div>
+  );
+}
+
+function NRow({ k, v, t }) {
+  return (
+    <div className="fc-nrow">
+      <span className="fc-nk">{t && <span className="fc-cdot" style={{ background: CONF[t] }} />}{k}</span>
+      <b>{v}</b>
+    </div>
+  );
+}
+
+function DepGraph() {
+  const pos = {};
+  GRAPH.cols.forEach((col, ci) => {
+    const n = col.length;
+    col.forEach((node, ri) => {
+      pos[node[0]] = { x: DG.colX[ci], w: DG.colW[ci], cyc: DG.top + (ri + 0.5) * (DG.H - DG.top - 10) / n };
     });
-  }
-  calculate();
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-function deleteConfig(id) {
-  if (!confirm(lang === "de" ? "Config löschen?" : "Delete config?")) return;
-  persistConfigs(loadConfigs().filter(c => c.id !== id));
-  renderConfigs();
-}
-
-function renderConfigs() {
-  const list = loadConfigs();
-  const el = document.getElementById("config-list");
-  if (!list.length) {
-    el.innerHTML = `<div class="config-empty">${t("config_empty")}</div>`;
-    return;
-  }
-  el.innerHTML = `<div class="config-list">${list.map(cfg => {
-    const recipe = RECIPES.find(r => r.id === cfg.recipeId);
-    const recipeName = recipe ? recipe.name[lang] : cfg.recipeId;
-    const date = new Date(cfg.createdAt).toLocaleDateString(lang === "de" ? "de-DE" : "en-GB");
-    const hydration = cfg.overrides?.water ? cfg.overrides.water.toFixed(1) + "%" : "—";
-    const fermentLabel = cfg.fermentation ? `${cfg.fermentation.hours} h ${cfg.fermentation.cold ? (lang === "de" ? "kalt" : "cold") : (lang === "de" ? "RT" : "RT")}` : "";
-    const bakedLine = cfg.bakedAt
-      ? `<span class="config-baked">${t("config_baked_on")} ${new Date(cfg.bakedAt).toLocaleDateString(lang === "de" ? "de-DE" : "en-GB")}</span>`
-      : "";
-    const stars = cfg.rating
-      ? `<span class="config-stars">${starsStr(cfg.rating.overall)}</span>`
-      : `<span class="config-unrated">${t("config_unrated")}</span>`;
-    return `<div class="config-card">
-      <div class="config-card-header">
-        <span class="config-name">${esc(cfg.name)}</span>
-        <span class="config-recipe-tag">${recipeName}</span>
-      </div>
-      <div class="config-meta">${cfg.balls} × ${cfg.ballWeightG} g · ${hydration} · ${fermentLabel}</div>
-      <div class="config-meta">${date}</div>
-      <div class="config-rating-row">${stars}${bakedLine}</div>
-      <div class="config-actions">
-        <button class="btn-sm" onclick="loadConfig('${cfg.id}')">${t("btn_load")}</button>
-        <button class="btn-sm" onclick="openRating('${cfg.id}')">${t("btn_rate")}</button>
-        <button class="btn-sm danger" onclick="deleteConfig('${cfg.id}')">${t("btn_delete")}</button>
-      </div>
-    </div>`;
-  }).join("")}</div>`;
-}
-
-function esc(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
-function starsStr(n) { return "★".repeat(Math.round(n || 0)) + "☆".repeat(5 - Math.round(n || 0)); }
-
-// ─── Rating modal ────────────────────────────────────────────────────────
-const DIMS = ["ovenSpring","bottomColor","spotting","crumbStructure","crustTexture","flavorComplexity","overall"];
-function dimLabel(key) {
-  if (key === "spotting") return t(selectedRecipe.leoparding ? "dim_spotting_neo" : "dim_spotting_other");
-  return t("dim_" + key.replace(/([A-Z])/g, c => "_" + c.toLowerCase()));
-}
-
-function openRating(id) {
-  ratingConfigId = id;
-  const cfg = loadConfigs().find(c => c.id === id);
-  if (!cfg) return;
-  const recipe = RECIPES.find(r => r.id === cfg.recipeId) || selectedRecipe;
-
-  document.querySelector("[data-i18n='modal_rate_title']").textContent = cfg.name;
-  document.getElementById("rating-date").value = cfg.bakedAt ? cfg.bakedAt.slice(0,10) : new Date().toISOString().slice(0,10);
-  document.getElementById("rating-notes").value = cfg.notes || "";
-  ratingValues = cfg.rating ? { ...cfg.rating } : {};
-
-  const container = document.getElementById("rating-dimensions");
-  container.innerHTML = DIMS.map(key => {
-    const label = key === "spotting"
-      ? t(recipe.leoparding ? "dim_spotting_neo" : "dim_spotting_other")
-      : t("dim_" + key.replace(/([A-Z])/g, c => "_" + c.toLowerCase()));
-    const cur = ratingValues[key] || 0;
-    const stars = Array.from({length:5},(_,i) =>
-      `<button class="star-btn${i < cur ? " filled" : ""}" onclick="setStar('${key}',${i+1})">★</button>`
-    ).join("");
-    return `<div class="dim-row"><span class="dim-label">${label}</span><div class="star-group" id="stars-${key}">${stars}</div></div>`;
-  }).join("");
-
-  document.getElementById("rating-modal").hidden = false;
-}
-
-function closeRating() {
-  document.getElementById("rating-modal").hidden = true;
-  ratingConfigId = null;
-}
-
-function setStar(dim, val) {
-  ratingValues[dim] = val;
-  const group = document.getElementById("stars-" + dim);
-  group.querySelectorAll(".star-btn").forEach((btn, i) => {
-    btn.classList.toggle("filled", i < val);
   });
+  const titles = ["Inputs", "Models", "Outputs"];
+  return (
+    <svg className="fc-depgraph" viewBox={`0 0 ${DG.W} ${DG.H}`} role="img" aria-label="Dependency graph: inputs to models to outputs">
+      {titles.map((t, i) => (
+        <text key={t} x={DG.colX[i] + DG.colW[i] / 2} y={15} textAnchor="middle"
+          fontFamily="'JetBrains Mono',monospace" fontSize="10" fill="#5a4d3f" letterSpacing="2">{t.toUpperCase()}</text>
+      ))}
+      {GRAPH.edges.map((e, i) => {
+        const a = pos[e[0]], b = pos[e[1]];
+        const sx = a.x + a.w, sy = a.cyc, tx = b.x, ty = b.cyc, mx = (sx + tx) / 2;
+        return <path key={"e" + i} d={`M${sx} ${sy} C ${mx} ${sy} ${mx} ${ty} ${tx} ${ty}`}
+          fill="none" stroke={CONF[e[2]]} strokeWidth="1.1" opacity="0.4" />;
+      })}
+      {GRAPH.cols.flatMap((col) => col.map((node) => {
+        const p = pos[node[0]], tier = node[2], stroke = tier ? CONF[tier] : "#bfb29a";
+        return (
+          <g key={node[0]}>
+            <rect x={p.x} y={p.cyc - DG.nodeH / 2} width={p.w} height={DG.nodeH} rx="6"
+              fill="#f0e9dc" stroke={stroke} strokeWidth={tier ? 1.4 : 1} />
+            {tier && <rect x={p.x} y={p.cyc - DG.nodeH / 2} width="3.5" height={DG.nodeH} rx="1.5" fill={CONF[tier]} />}
+            <text x={p.x + p.w / 2} y={p.cyc + 3} textAnchor="middle"
+              fontFamily="'JetBrains Mono',monospace" fontSize="8.6" fill="#231a12">{node[1]}</text>
+          </g>
+        );
+      }))}
+    </svg>
+  );
 }
 
-function saveRating() {
-  if (!ratingConfigId) return;
-  const list = loadConfigs();
-  const idx = list.findIndex(c => c.id === ratingConfigId);
-  if (idx === -1) return;
-  list[idx].bakedAt = document.getElementById("rating-date").value || new Date().toISOString().slice(0,10);
-  list[idx].notes   = document.getElementById("rating-notes").value;
-  list[idx].rating  = { ...ratingValues };
-  persistConfigs(list);
-  closeRating();
-  renderConfigs();
+// crumb cross-section drawn as a recognisable pizza edge: a thin base
+// carrying sauce + cheese on the left, rising into a round cornicione bulb
+// on the right with a full-height outer crust wall. Bulb height = oven
+// spring × proof quality; pores open with hydration and inflate with heat;
+// the elastic/extensible balance (pl) sets how tall-and-narrow vs wide the bulb is
+function CrumbSlice({ hydration, protein, ovenC, base, proofQuality, pl }) {
+  const VW = 520, VH = 172, inset = 8;
+  const innerW = VW - inset * 2;
+  const bottomY = VH - inset;
+  const baseTh = 14;
+  const yBaseTop = bottomY - baseTh;
+  const o = clamp((hydration - 50) / 25, 0, 1);
+  const s = clamp((protein - 8) / 7, 0, 1);
+  const spring = clamp((ovenC - 230) / 240, 0, 1);
+  let H = (20 + spring * 80 + s * 24) * proofQuality * (1 + pl * 0.12); // proof gates the spring; elastic springs taller
+
+  const rimStartX = inset + innerW * (0.48 - pl * 0.03);
+  const cxR = inset + innerW * (0.78 + pl * 0.03);
+  const rightX = inset + innerW;
+  let peakY = yBaseTop - H;
+  peakY = Math.max(peakY, inset + 6);         // keep the dome inside the frame
+  H = yBaseTop - peakY;
+  const dx = cxR - rimStartX;
+  const rad = (dx * dx + H * H) / (2 * Math.max(H, 1));   // circle through base-junction & peak
+  const cyR = peakY + rad;
+  const arcY = (x) => cyR - Math.sqrt(Math.max(rad * rad - (x - cxR) * (x - cxR), 0));
+  const topY = (x) => (x <= rimStartX ? yBaseTop : arcY(x));
+  const maxCol = bottomY - peakY;
+
+  // silhouette
+  const Narc = 40;
+  let d = `M ${inset} ${bottomY} L ${inset} ${yBaseTop} L ${rimStartX.toFixed(1)} ${yBaseTop} `;
+  for (let i = 1; i <= Narc; i++) {
+    const x = rimStartX + (rightX - rimStartX) * (i / Narc);
+    d += `L${x.toFixed(1)} ${arcY(x).toFixed(1)} `;
+  }
+  d += `L ${rightX.toFixed(1)} ${bottomY} Z`;
+
+  // pores
+  let poreBase = 2.2 + o * 6 + s * 1.2;
+  let varAmt = 0.45 + o * 0.9;
+  if (proofQuality < 0.7) { poreBase += 2.4; varAmt += 0.6; } // over-proofed -> coarse, merged
+  const holes = CRUMB_PTS.map((p) => {
+    const x = inset + p.x * innerW, ty = topY(x), colH = bottomY - ty;
+    const hf = clamp(colH / maxCol, 0.2, 1);
+    const py = 0.18 + p.y * 0.64;
+    // oven heat expands the trapped gas (oven spring), inflating bubbles —
+    // strongest in the rim where the gluten is most extensible
+    const gas = (1 + spring * 0.55 * hf) * (0.6 + 0.4 * proofQuality);
+    let r = poreBase * (0.5 + 1.25 * hf) * gas * (0.5 + varAmt * p.v);
+    r = clamp(r, 0.7, Math.min(py, 1 - py) * colH * 0.92);
+    return { x, y: ty + py * colH, r };
+  });
+
+  const crustCol = lerpStops(CRUST_STOPS, base / 100);
+  // toppings sit on the base only (left of the rim)
+  const sauceL = inset + 5, sauceR = rimStartX - 6;
+  const cheese = [0.16, 0.3, 0.44].map((f) => inset + innerW * f);
+  const charredBase = base >= 70;
+
+  return (
+    <svg className="fc-crumb" viewBox={`0 0 ${VW} ${VH}`} role="img" aria-label="Pizza edge cross-section">
+      <clipPath id="crumbclip"><path d={d} /></clipPath>
+      <path d={d} fill="#ead9b8" />
+      <g clipPath="url(#crumbclip)">
+        {holes.map((h, i) => (
+          <circle key={i} cx={h.x} cy={h.y} r={h.r} fill="#f4eee2" stroke="#d6c094" strokeWidth="0.7" />
+        ))}
+      </g>
+      {/* sauce + cheese on the base */}
+      <path d={`M ${sauceL} ${yBaseTop - 1} L ${sauceR} ${yBaseTop - 1}`} stroke="#b23a26" strokeWidth="7" strokeLinecap="round" />
+      {cheese.map((cx, i) => (
+        <ellipse key={i} cx={cx} cy={yBaseTop - 6} rx="11" ry="5" fill="#f0e6cf" opacity="0.92" />
+      ))}
+      {/* crust skin */}
+      <path d={d} fill="none" stroke={crustCol} strokeWidth="3.5" strokeLinejoin="round" />
+      {/* charred underside spots when the base browns hard */}
+      {charredBase && LEOPARD.slice(0, 6).map((l, i) => (
+        <ellipse key={i} cx={inset + innerW * (0.12 + i * 0.13)} cy={bottomY - 1}
+          rx={3 + l.w * 0.4} ry="2.4" fill="#33200f" opacity={clamp((base - 70) / 30, 0.2, 0.85)} />
+      ))}
+    </svg>
+  );
 }
 
-document.getElementById("rating-modal").addEventListener("click", e => {
-  if (e.target === e.currentTarget) closeRating();
-});
+// top-down pizza: cornicione browning from the bake, rim puff from protein
+// × proof quality, char spots only when leoparding (high heat + short bake)
+function Pizza({ colour, leopard, protein, proofQuality }) {
+  const cx = 100, cy = 100, R = 92;
+  const s = clamp((protein - 8) / 7, 0, 1);
+  const rim = (11 + s * 9) * (0.5 + 0.5 * proofQuality);
+  const sauceR = R - rim;
+  const crust = lerpStops(CRUST_STOPS, colour / 100);
+  return (
+    <svg className="fc-pizza" viewBox="0 0 200 200" role="img" aria-label="Predicted pizza">
+      <circle cx={cx} cy={cy} r={R} fill={crust} />
+      <circle cx={cx} cy={cy} r={sauceR} fill="#b23a26" />
+      <circle cx={cx} cy={cy} r={sauceR} fill="none" stroke="#8f2c1c" strokeWidth="1.5" />
+      {TOPPINGS.map((t, i) => {
+        const rad = Math.min(t.rad, sauceR - 9);
+        const x = cx + Math.cos(t.ang) * rad, y = cy + Math.sin(t.ang) * rad;
+        return t.kind === "mozz" ? (
+          <circle key={i} cx={x} cy={y} r={t.s} fill="#f4ecd8" opacity="0.95" />
+        ) : (
+          <ellipse key={i} cx={x} cy={y} rx={t.s * 0.85} ry={t.s * 0.45}
+            fill="#557a36" transform={`rotate(${(t.ang * 57) % 180},${x},${y})`} />
+        );
+      })}
+      {leopard && LEOPARD.map((l, i) => {
+        const rr = R - rim / 2;
+        const x = cx + Math.cos(l.ang) * rr, y = cy + Math.sin(l.ang) * rr;
+        return (
+          <ellipse key={i} cx={x} cy={y} rx={l.w * 0.7} ry={l.h * 0.7}
+            fill="#33200f" opacity="0.82" transform={`rotate(${l.ang * 57},${x},${y})`} />
+        );
+      })}
+    </svg>
+  );
+}
 
-// ─── Init ─────────────────────────────────────────────────────────────────
-renderRecipes();
-renderSliders();
-onFermentSlider();
-calculate();
-renderFermentGuide();
-renderConfigs();
-document.querySelectorAll("[data-i18n]").forEach(el => el.textContent = t(el.dataset.i18n));
-document.querySelectorAll("[data-i18n-ph]").forEach(el => el.placeholder = t(el.dataset.i18nPh));
-</script>
+function FermentCalculator() {
+  const [tempC, setTempC] = useState(5);
+  const [hours, setHours] = useState(24);
+  const [protein, setProtein] = useState(12.5);
+  const [plVal, setPlVal] = useState(50);
+  const [hydration, setHydration] = useState(60);
+  const [salt, setSalt] = useState(2.5);
+  const [oilPct, setOilPct] = useState(0);
+  const [sugarPct, setSugarPct] = useState(0);
+  const [yeastType, setYeastType] = useState("idy");
+  const [leavening, setLeavening] = useState("commercial");
+  const [starterStr, setStarterStr] = useState(50);
+  const [preferment, setPreferment] = useState("straight");
+  const [doughWeight, setDoughWeight] = useState(1000);
+  const [roomTemp, setRoomTemp] = useState(20);
+  const [ddt, setDdt] = useState(24);
+  const [mixMethod, setMixMethod] = useState("hand");
+  const [ovenC, setOvenC] = useState(250);
+  const [surface, setSurface] = useState("steel");
+  const [nerdMode, setNerdMode] = useState(false);
+  const [learn, setLearn] = useState(false);
+
+  const accent = tempColor(tempC);
+  const inputs = { tempC, hours, protein, plVal, hydration, salt, oilPct, sugarPct, leavening, yeastType, starterStr, preferment, roomTemp, ddt, mixMethod, doughWeight, ovenC, surface };
+  // single pure entry point — all numbers come from the engine
+  const M = useMemo(() => computeAll(inputs),
+    [tempC, hours, protein, plVal, hydration, salt, oilPct, sugarPct, leavening, yeastType, starterStr, preferment, roomTemp, ddt, mixMethod, doughWeight, ovenC, surface]);
+  const { r, fp, bake, digest, geometry, water, verdicts, proof: proofQuality, pl } = M;
+  const hVerdict = verdicts.hydration, fVerdict = verdicts.ferment, dVerdict = verdicts.digestion, bVerdict = verdicts.bake;
+  const oVal = geometry.openness, sVal = geometry.strength, springFrac = geometry.springFrac, rimIndex = geometry.rimIndex;
+  const waterTempReco = water.temp, friction = water.friction, nFactor = water.nFactor;
+  const balls = M.batch.balls, ballW = M.batch.ballW;
+  const sourdough = leavening === "sourdough";
+  const waterTotal = r.waterG;
+  const yLabel = TYPE[yeastType].label;
+  const cold = tempC <= 10;
+
+  // ---- recipe copy (presentation text derived from the engine's numbers) ----
+  const kneadText = hydration > 68
+    ? "develop it with 3–4 sets of stretch-and-folds over the first hour rather than hard kneading."
+    : hours >= 24
+    ? "knead just 3–4 minutes — the long prove finishes the gluten for you."
+    : "knead 8–10 minutes until smooth and elastic.";
+  const fermentLoc = tempC <= 10 ? `in the fridge (${tempC} °C)`
+    : tempC <= 18 ? `somewhere cool (~${tempC} °C)`
+    : `at room temperature (~${tempC} °C)`;
+  const coldNote = cold ? " Pull it out 1–2 h before baking to take off the chill." : "";
+  const bakeFinish = bake.leopard ? ", until the rim is puffed and leopard-spotted."
+    : ovenC >= 280 ? ", until golden with a crisp, spotted base."
+    : ", rotating once, until evenly golden.";
+  const recipeTip = tempC >= 22 ? "Use cool water (~15 °C) so the dough doesn't race ahead."
+    : cold ? "The long cold prove builds the most flavour — don't rush it." : null;
+  const prefermentText = preferment === "poolish"
+    ? "The night before, whisk a pinch of the yeast into equal parts flour and water (a poolish) and leave covered overnight; mix it into the dough at the start."
+    : preferment === "biga"
+    ? "The night before, mix a pinch of the yeast into flour with half its weight in water (a stiff biga) and leave covered overnight; break it into the dough at the start."
+    : null;
+
+  // ---- presets (view-side state wiring) ----
+  const setters = {
+    tempC: setTempC, hours: setHours, protein: setProtein, plVal: setPlVal, hydration: setHydration,
+    salt: setSalt, oilPct: setOilPct, sugarPct: setSugarPct, leavening: setLeavening, preferment: setPreferment,
+    ovenC: setOvenC, surface: setSurface, ddt: setDdt, starterStr: setStarterStr, yeastType: setYeastType,
+    mixMethod: setMixMethod, doughWeight: setDoughWeight, roomTemp: setRoomTemp,
+  };
+  const applyPreset = (obj) => Object.entries(obj).forEach(([k, v]) => setters[k] && setters[k](v));
+  const presetMatches = (obj) => Object.entries(obj).every(([k, v]) => inputs[k] === v);
+
+  // ---- view-only: turn the pure rise model into SVG paths ----
+  const W = 600, H = 300;
+  const pad = { l: 14, r: 14, t: 22, b: 30 };
+  const curve = useMemo(() => ({ ...M.rise, ...buildRisePaths(M.rise, W, H, pad, V_AXIS) }), [M.rise]);
+
+  const gramsTxt = r.grams < 1 ? r.grams.toFixed(2) : r.grams.toFixed(1);
+  const leavenTxt = sourdough
+    ? `${r.levainGrams.toFixed(0)} g starter (${r.levainPct.toFixed(0)}%)`
+    : `${gramsTxt} g ${yLabel.toLowerCase()} yeast`;
+
+  return (
+    <div className="fc-root">
+      <style>{`
+        
+
+        .fc-root{
+          --ink:#1E1814; --ink-soft:#7A6A5B; --paper:#FCF8F0; --paper-2:#F8F1E3;
+          --line:#F0E6D2; --edge:#E4D4BA;
+          font-family:'Hanken Grotesk',sans-serif; background:var(--paper); color:var(--ink);
+          min-height:100%; padding:24px 20px 48px; box-sizing:border-box; -webkit-font-smoothing:antialiased;
+        }
+        .fc-wrap{ max-width:980px; margin:0 auto; }
+        .fc-top{ display:flex; justify-content:space-between; align-items:center; gap:12px; }
+        .fc-toggles{ display:flex; gap:8px; }
+        .fc-help{ font-size:12px; line-height:1.5; color:var(--ink-soft); margin:-2px 0 18px;
+          padding:9px 11px; background:rgba(155,138,163,.10); border-left:2px solid #9b8aa3; border-radius:0 7px 7px 0; }
+        .fc-nerd-toggle{ font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.14em;
+          text-transform:uppercase; padding:7px 14px; border-radius:99px; border:1px solid var(--edge);
+          background:transparent; color:var(--ink-soft); cursor:pointer; white-space:nowrap;
+          transition:all .25s cubic-bezier(.4,0,.2,1); }
+        .fc-nerd-toggle:hover{ border-color:var(--ink); color:var(--ink); }
+        .fc-nerd-toggle[data-on=true]{ background:var(--ink); color:var(--paper-2); border-color:var(--ink); }
+        .fc-nerd{ margin-top:24px; }
+        .fc-nerd-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:24px; }
+        @media (max-width:760px){ .fc-nerd-grid{ grid-template-columns:1fr 1fr; } }
+        @media (max-width:430px){ .fc-nerd-grid{ grid-template-columns:1fr; } }
+        .fc-nerd-col .fc-src-label{ margin-bottom:10px; }
+        .fc-nrow{ display:flex; justify-content:space-between; gap:10px; align-items:baseline;
+          font-family:'JetBrains Mono',monospace; font-size:11.5px; line-height:1.75; color:var(--ink-soft); }
+        .fc-nrow b{ color:var(--ink); font-weight:500; text-align:right; }
+        .fc-nk{ display:inline-flex; align-items:baseline; gap:7px; }
+        .fc-cdot{ width:7px; height:7px; border-radius:50%; flex:none; align-self:center; }
+        .fc-conf-legend{ display:flex; flex-wrap:wrap; gap:16px; margin:0 0 20px;
+          font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.06em; color:var(--ink-soft); }
+        .fc-conf-legend span{ display:inline-flex; align-items:center; gap:7px; }
+        .fc-conf-legend i{ width:8px; height:8px; border-radius:50%; display:inline-block; }
+        .fc-depgraph{ width:100%; height:auto; display:block; margin:6px 0 4px; }
+        .fc-eyebrow{ font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.22em;
+          text-transform:uppercase; color:var(--ink-soft); margin:0 0 10px; }
+        .fc-title{ font-family:'Spectral',serif; font-weight:500; font-size:clamp(30px,5vw,46px);
+          line-height:1.02; margin:0 0 12px; letter-spacing:-.01em; }
+        .fc-title em{ font-style:italic; color:var(--ink-soft); }
+        .fc-lede{ font-size:15px; line-height:1.55; color:var(--ink-soft); max-width:58ch; margin:0 0 28px; }
+        .fc-presets{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:0 0 26px; }
+        .fc-presets.bake{ margin:0 0 18px; }
+        .fc-preset-label{ font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.16em;
+          text-transform:uppercase; color:var(--ink-soft); margin-right:4px; }
+        .fc-chip{ font-family:'Hanken Grotesk',sans-serif; font-size:12.5px; font-weight:500;
+          padding:7px 13px; border-radius:99px; border:1px solid var(--edge); background:transparent;
+          color:var(--ink); cursor:pointer; transition:all .22s cubic-bezier(.4,0,.2,1); }
+        .fc-chip:hover{ border-color:var(--ink); }
+        .fc-chip[data-on=true]{ background:var(--ink); color:var(--paper-2); border-color:var(--ink); }
+
+        .fc-grid{ display:grid; grid-template-columns:1fr 1.1fr; gap:24px; align-items:start; }
+        @media (max-width:760px){ .fc-grid{ grid-template-columns:1fr; } }
+
+        .fc-panel{ background:var(--paper-2); border:1px solid var(--edge); border-radius:16px; padding:22px; }
+        .fc-subhead{ font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:.18em;
+          text-transform:uppercase; color:var(--ink-soft); margin:22px 0 14px; padding-top:13px;
+          border-top:1px solid var(--line); }
+        .fc-subhead.first{ margin-top:0; padding-top:0; border-top:none; }
+        .fc-bake{ margin-top:24px; }
+        .fc-panel-head{ font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.18em;
+          text-transform:uppercase; color:var(--ink-soft); margin:0 0 18px;
+          display:flex; justify-content:space-between; align-items:baseline; }
+
+        .fc-stagetag{ font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.14em;
+          text-transform:uppercase; color:var(--ink-soft); }
+
+        .fc-field{ margin-bottom:20px; }
+        .fc-field:last-child{ margin-bottom:0; }
+        .fc-field-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:9px; }
+        .fc-label{ font-size:13.5px; font-weight:500; color:var(--ink); }
+        .fc-val{ font-family:'JetBrains Mono',monospace; font-size:15px; font-weight:500; transition:color .5s cubic-bezier(.4,0,.2,1); }
+        .fc-unit{ font-size:11px; margin-left:2px; opacity:.7; }
+        .fc-note-line{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-soft);
+          margin:8px 0 0; letter-spacing:.02em; transition:color .4s cubic-bezier(.4,0,.2,1); }
+
+        input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:4px;
+          border-radius:99px; outline:none; cursor:pointer; margin:0; }
+        input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:18px; height:18px;
+          border-radius:50%; background:var(--paper-2); border:2.5px solid var(--ink); cursor:pointer;
+          transition:transform .2s cubic-bezier(.4,0,.2,1); }
+        input[type=range]::-webkit-slider-thumb:hover{ transform:scale(1.15); }
+        input[type=range]::-moz-range-thumb{ width:18px; height:18px; border-radius:50%; background:var(--paper-2);
+          border:2.5px solid var(--ink); cursor:pointer; }
+
+        .fc-seg{ display:flex; gap:6px; }
+        .fc-seg button{ flex:1; font-family:'Hanken Grotesk',sans-serif; font-size:12.5px; font-weight:500;
+          padding:9px 4px; border-radius:9px; border:1px solid var(--edge); background:transparent;
+          color:var(--ink-soft); cursor:pointer; transition:all .25s cubic-bezier(.4,0,.2,1); }
+        .fc-seg button[data-on=true]{ background:var(--ink); color:var(--paper-2); border-color:var(--ink); }
+
+        .fc-stepper{ display:flex; align-items:center; gap:10px; }
+        .fc-stepper button{ width:32px; height:32px; border-radius:8px; border:1px solid var(--edge);
+          background:transparent; color:var(--ink); font-size:18px; cursor:pointer; line-height:1;
+          transition:background .2s cubic-bezier(.4,0,.2,1); }
+        .fc-stepper button:hover{ background:var(--paper); }
+        .fc-stepper .fc-step-val{ font-family:'JetBrains Mono',monospace; font-size:15px; min-width:64px; text-align:center; }
+
+        .fc-readout{ display:flex; align-items:flex-end; gap:14px; margin-bottom:6px; }
+        .fc-big{ font-family:'Spectral',serif; font-weight:500; font-size:clamp(48px,9vw,76px);
+          line-height:.9; letter-spacing:-.02em; font-variant-numeric:tabular-nums;
+          transition:color .5s cubic-bezier(.4,0,.2,1); }
+        .fc-big-unit{ font-family:'Hanken Grotesk',sans-serif; font-size:20px; font-weight:500; color:var(--ink-soft); margin-bottom:10px; }
+        .fc-sub{ font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--ink-soft); margin:0 0 16px; }
+
+        .fc-fit{ border-top:1px solid var(--line); padding-top:14px; margin-bottom:18px; }
+        .fc-fit-row{ display:flex; align-items:baseline; gap:10px; margin-bottom:10px; }
+        .fc-fit-row:last-child{ margin-bottom:0; }
+        .fc-dot{ width:8px; height:8px; border-radius:50%; flex:none; transform:translateY(1px);
+          transition:background .35s cubic-bezier(.4,0,.2,1); }
+        .fc-fit-label{ font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.12em;
+          text-transform:uppercase; color:var(--ink-soft); width:78px; flex:none; }
+        .fc-fit-text{ font-size:13px; line-height:1.4; color:var(--ink); }
+
+        .fc-svg{ width:100%; height:auto; display:block; }
+        .fc-crumb-wrap{ margin:18px 0 2px; }
+        .fc-crumb{ width:100%; height:auto; display:block; margin-top:7px; }
+        .fc-pizza{ width:100%; max-width:188px; height:auto; display:block; margin:7px auto 16px;
+          filter:drop-shadow(0 4px 10px rgba(60,40,20,.16)); }
+        .fc-zones{ display:flex; font-family:'JetBrains Mono',monospace; font-size:10px;
+          letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft); margin-top:6px; gap:2px; }
+
+        /* bake stage */
+        .fc-bake-grid{ display:grid; grid-template-columns:1fr 1fr; gap:28px; align-items:start; }
+        @media (max-width:680px){ .fc-bake-grid{ grid-template-columns:1fr; gap:22px; } }
+        .fc-bake-stats{ display:flex; gap:26px; margin-top:22px; }
+        .fc-stat-label{ font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.12em;
+          text-transform:uppercase; color:var(--ink-soft); display:block; margin-bottom:5px; }
+        .fc-stat-val{ font-family:'Spectral',serif; font-weight:500; font-size:30px; line-height:1;
+          font-variant-numeric:tabular-nums; }
+        .fc-stat-val.small{ font-size:18px; }
+        .fc-gauge{ position:relative; height:16px; border-radius:99px; overflow:visible;
+          background:linear-gradient(90deg,#ead6ad 0%,#d8af6a 32%,#bf7e35 56%,#8a5022 78%,#46260f 100%);
+          border:1px solid var(--edge); }
+        .fc-gauge-mark{ position:absolute; top:-4px; width:3px; height:24px; border-radius:2px;
+          background:var(--ink); transform:translateX(-50%); transition:left .45s cubic-bezier(.4,0,.2,1); }
+        .fc-gauge-labels{ display:flex; justify-content:space-between; margin-top:8px;
+          font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.08em;
+          text-transform:uppercase; color:var(--ink-soft); }
+        .fc-bake-verdict{ border-top:1px solid var(--line); padding-top:14px; margin-top:18px; }
+        .fc-formula{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-soft);
+          margin:16px 0 0; }
+
+        .fc-foot{ font-size:12.5px; line-height:1.5; color:var(--ink-soft); margin:24px 0 0; max-width:64ch; }
+
+        .fc-recipe{ margin-top:24px; }
+        .fc-recipe-grid{ display:grid; grid-template-columns:0.85fr 1.5fr; gap:32px; align-items:start; }
+        @media (max-width:680px){ .fc-recipe-grid{ grid-template-columns:1fr; gap:24px; } }
+        .fc-ing{ list-style:none; margin:10px 0 0; padding:0; }
+        .fc-ing li{ display:flex; justify-content:space-between; align-items:flex-start; gap:14px;
+          padding:9px 0; border-bottom:1px solid var(--line); font-size:14px; }
+        .fc-ing li:last-child{ border-bottom:none; }
+        .fc-ing .nm{ color:var(--ink); }
+        .fc-ing .nm small{ display:block; color:var(--ink-soft); font-size:11px; margin-top:2px; letter-spacing:.01em; }
+        .fc-ing .amt{ font-family:'JetBrains Mono',monospace; font-weight:500; color:var(--ink); white-space:nowrap; }
+        .fc-recipe-yield{ font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.1em;
+          text-transform:uppercase; color:var(--ink-soft); margin:14px 0 0; }
+        .fc-steps{ list-style:none; counter-reset:step; margin:10px 0 0; padding:0; }
+        .fc-steps li{ counter-increment:step; position:relative; padding:0 0 15px 38px;
+          font-size:14px; line-height:1.55; color:var(--ink); }
+        .fc-steps li:last-child{ padding-bottom:0; }
+        .fc-steps li::before{ content:counter(step, decimal-leading-zero); position:absolute; left:0; top:2px;
+          font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:500; color:var(--ink-soft); }
+        .fc-recipe-tip{ font-size:12.5px; line-height:1.5; color:var(--ink-soft);
+          margin:16px 0 0; padding-top:14px; border-top:1px solid var(--line); }
+
+        .fc-sources{ margin-top:30px; border-top:1px solid var(--line); padding-top:22px; }
+        .fc-sources-head{ font-family:'Spectral',serif; font-weight:500; font-size:22px; margin:0 0 18px; }
+        .fc-src-group{ margin-bottom:16px; }
+        .fc-src-label{ font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.14em;
+          text-transform:uppercase; color:var(--ink-soft); margin:0 0 8px; }
+        .fc-sources ul{ margin:0; padding:0; list-style:none; }
+        .fc-sources li{ font-size:12.5px; line-height:1.5; margin-bottom:6px; }
+        .fc-sources a{ color:var(--ink); text-decoration:none; border-bottom:1px solid var(--edge);
+          transition:border-color .2s cubic-bezier(.4,0,.2,1); }
+        .fc-sources a:hover{ border-color:var(--ink); }
+        .fc-src-note{ font-size:11.5px; line-height:1.5; color:var(--ink-soft); margin:14px 0 0; max-width:60ch; }
+
+        @keyframes fc-draw{ from{ stroke-dashoffset:1400; } to{ stroke-dashoffset:0; } }
+        @media (prefers-reduced-motion: no-preference){
+          .fc-line{ stroke-dasharray:1400; animation:fc-draw 1.1s cubic-bezier(.4,0,.2,1) forwards; }
+        }
+        .fc-target-dot, .fc-target-line, .fc-area{ transition:all .45s cubic-bezier(.4,0,.2,1); }
+      `}</style>
+
+      <div className="fc-wrap">
+       <LearnCtx.Provider value={learn}>
+        <div className="fc-top">
+          <p className="fc-eyebrow">Ferment · flour · bake</p>
+          <div className="fc-toggles">
+            <button className="fc-nerd-toggle" data-on={learn} onClick={() => setLearn((v) => !v)}>Learn</button>
+            <button className="fc-nerd-toggle" data-on={nerdMode} onClick={() => setNerdMode((v) => !v)}>Nerd mode</button>
+          </div>
+        </div>
+        <h1 className="fc-title">From yeast to crust, <em>one dough modelled</em></h1>
+        <p className="fc-lede">
+          Three stages of pizza science in one place: how much yeast for your
+          time and temperature, whether the flour can hold that ferment and
+          hydration, and what the oven does to the crust. Colour tracks the
+          driving variable at each step.{" "}
+          {learn ? "Learn mode is on — explanations sit under each control." : "New here? Tap Learn for plain-English notes on every control."}
+        </p>
+
+        <div className="fc-presets">
+          <span className="fc-preset-label">Style</span>
+          {PIZZA_PRESETS.map((p) => (
+            <button key={p.id} className="fc-chip" data-on={presetMatches(p.set)} onClick={() => applyPreset(p.set)}>{p.label}</button>
+          ))}
+        </div>
+
+        <div className="fc-grid">
+          {/* ---- controls ---- */}
+          <div className="fc-panel">
+            <p className="fc-panel-head"><span>1 · Dough</span><span style={{ color: accent }}>{tempC} °C</span></p>
+
+            <p className="fc-subhead first">Prove</p>
+            <Slider label="Fermentation temperature" value={tempC} unit="°C"
+              min={2} max={35} step={1} onChange={setTempC} accent={accent} />
+            <Help>The biggest lever. Warmer makes the yeast work faster (so you need less of it); colder slows it right down and builds more flavour.</Help>
+            <Slider label="Target time" value={hours} unit="h"
+              min={2} max={96} step={1} onChange={setHours} accent={accent} />
+            <Help>How long the dough rises before baking. Longer time means less yeast and a tastier, more digestible crust.</Help>
+
+            <p className="fc-subhead">Flour</p>
+            <Slider label="Flour protein" value={protein} unit="%"
+              min={8} max={15} step={0.5} onChange={setProtein} accent={accent}
+              note={`≈ W ${fp.W} · ${fp.category}`} />
+            <Help>Protein becomes gluten — the web that traps gas. More of it = a stronger dough that holds bigger bubbles and more water, but resists stretching. ~12–13% suits pizza. (W is the bakery measure of the same thing.)</Help>
+            <Slider label="Extensible ↔ elastic (P/L)" value={plVal} unit=""
+              min={0} max={100} step={1} onChange={setPlVal} accent={accent}
+              note={pl < -0.2 ? "extensible — opens easily, spreads" : pl > 0.2 ? "elastic — springs back, taller rim" : "balanced"} />
+            <Help>Two flours can have the same protein but behave differently: extensible dough stretches and stays put; elastic dough pings back. It shifts how easily the base opens and how tall the rim sits.</Help>
+            <Slider label="Hydration" value={hydration} unit="%"
+              min={50} max={85} step={1} onChange={setHydration} accent={accent}
+              note={`recommended ${fp.hydrLo}–${fp.hydrHi}% for this flour`}
+              noteColor={TONE[hVerdict.tone]} />
+            <Help>Water as a percentage of flour. More water = a lighter, more open crumb — but a wetter, stickier dough that's harder to handle and needs a stronger flour.</Help>
+            <Slider label="Salt" value={salt} unit="%"
+              min={0} max={4} step={0.1} onChange={setSalt} accent={accent}
+              note={`${r.saltGrams.toFixed(1)} g · ${salt < 1.8 ? "fast ferment, looser dough" : salt > 3 ? "slow ferment, tighter dough" : "typical pizza range"}`} />
+            <Help>Seasons the dough, but it also reins in the yeast and tightens the gluten. Too little and the dough over-proofs fast and bakes pale; ~2.5–3% is standard.</Help>
+
+            <p className="fc-subhead">Mix-ins</p>
+            <Slider label="Oil" value={oilPct} unit="%"
+              min={0} max={6} step={0.5} onChange={setOilPct} accent={accent}
+              note={oilPct === 0 ? "none — Neapolitan style" : `${r.oilGrams.toFixed(0)} g — softer, crispier crust`} />
+            <Help>Fat softens the crumb and crisps the crust. Common in New York and pan pizzas; a true Neapolitan uses none.</Help>
+            <Slider label="Sugar" value={sugarPct} unit="%"
+              min={0} max={4} step={0.25} onChange={setSugarPct} accent={accent}
+              note={sugarPct === 0 ? "none" : `${r.sugarGrams.toFixed(0)} g — feeds browning`} />
+            <Help>Feeds the yeast and, more importantly, helps the crust brown — useful when a home oven can't get hot enough to colour it on its own.</Help>
+
+            <p className="fc-subhead">Leaven</p>
+            <div className="fc-field">
+              <div className="fc-field-head"><span className="fc-label">Leavening</span></div>
+              <div className="fc-seg">
+                {[["commercial", "Commercial"], ["sourdough", "Sourdough"]].map(([k, l]) => (
+                  <button key={k} data-on={leavening === k} onClick={() => setLeavening(k)}>{l}</button>
+                ))}
+              </div>
+            </div>
+            <Help>What makes the dough rise. Commercial yeast is fast and predictable; sourdough (a live flour-and-water culture) is slower, tangier and gentler on the gut.</Help>
+            {sourdough && (
+              <>
+                <Slider label="Starter strength" value={starterStr} unit=""
+                  min={0} max={100} step={1} onChange={setStarterStr} accent={accent}
+                  note={starterStr < 35 ? "sluggish — needs more levain" : starterStr > 65 ? "vigorous — needs less" : "average activity"} />
+                <Help>How lively your starter is. A vigorous, recently-fed starter raises dough faster, so you need less of it.</Help>
+                <p className="fc-note-line" style={{ color: CONF.i }}>
+                  Levain % is a rule of thumb — your starter's real ripeness and activity dominate.
+                </p>
+              </>
+            )}
+            {!sourdough && (
+              <>
+                <div className="fc-field">
+                  <div className="fc-field-head"><span className="fc-label">Yeast type</span></div>
+                  <div className="fc-seg">
+                    {Object.entries(TYPE).map(([k, v]) => (
+                      <button key={k} data-on={yeastType === k} onClick={() => setYeastType(k)}>{v.label}</button>
+                    ))}
+                  </div>
+                </div>
+                <Help>The same yeast in three forms. Instant and active-dry come in jars; fresh is the cake from the fridge. The tool converts the amounts between them.</Help>
+              </>
+            )}
+            <div className="fc-field">
+              <div className="fc-field-head"><span className="fc-label">Preferment</span></div>
+              <div className="fc-seg">
+                {[["straight", "Straight"], ["poolish", "Poolish"], ["biga", "Biga"]].map(([k, l]) => (
+                  <button key={k} data-on={preferment === k} onClick={() => setPreferment(k)}>{l}</button>
+                ))}
+              </div>
+            </div>
+            <Help>"Straight" mixes everything at once. A poolish (wet) or biga (stiff) is a bit of dough fermented the night before, then mixed in — more flavour and strength for a little planning.</Help>
+
+            <p className="fc-subhead">Mixing & batch</p>
+            <Slider label="Room temperature" value={roomTemp} unit="°C"
+              min={12} max={30} step={1} onChange={setRoomTemp} accent={accent} />
+            <Help>How warm your kitchen is. It's used to work out the water temperature so the dough finishes mixing at your target.</Help>
+            <Slider label="Target dough temp (FDT)" value={ddt} unit="°C"
+              min={20} max={28} step={0.5} onChange={setDdt} accent={accent}
+              note={`use water at ~${waterTempReco} °C${waterTempReco <= 4 ? " (iced)" : ""}`} />
+            <Help>The temperature you want the dough to be right after mixing (~24 °C is a good default). The tool tells you what temperature water to use to land there.</Help>
+            <div className="fc-field">
+              <div className="fc-field-head"><span className="fc-label">Mixing method</span></div>
+              <div className="fc-seg">
+                {Object.entries(FRICTION).map(([k, v]) => (
+                  <button key={k} data-on={mixMethod === k} onClick={() => setMixMethod(k)}>{v.label}</button>
+                ))}
+              </div>
+            </div>
+            <Help>Mixing adds heat through friction — a machine adds more than your hands — so a mixer or processor needs cooler water to hit the same dough temperature.</Help>
+            <div className="fc-field">
+              <div className="fc-field-head"><span className="fc-label">Total dough weight</span></div>
+              <div className="fc-stepper">
+                <button onClick={() => setDoughWeight((w) => Math.max(200, w - 100))}>−</button>
+                <span className="fc-step-val">{doughWeight} g</span>
+                <button onClick={() => setDoughWeight((w) => Math.min(4000, w + 100))}>+</button>
+              </div>
+            </div>
+            <Help>Total dough you want to make. It's split into ~250 g balls — one good-sized pizza each.</Help>
+          </div>
+
+          {/* ---- ferment output ---- */}
+          <div className="fc-panel">
+            <p className="fc-panel-head"><span>{sourdough ? "Starter required" : "Yeast required"}</span><span>{sourdough ? "Sourdough" : TYPE[yeastType].label}</span></p>
+
+            <div className="fc-readout">
+              <span className="fc-big" style={{ color: accent }}>{sourdough ? r.levainGrams.toFixed(0) : gramsTxt}</span>
+              <span className="fc-big-unit">{sourdough ? `g starter` : "grams"}</span>
+            </div>
+            <p className="fc-sub">
+              {sourdough
+                ? `${r.levainPct.toFixed(0)}% levain of flour (${Math.round(r.flour)} g) · ${r.saltGrams.toFixed(1)} g salt`
+                : `${r.pct.toFixed(3)}% of flour (${Math.round(r.flour)} g) · ${r.saltGrams.toFixed(1)} g salt`}
+              {!sourdough && r.tsp != null && ` · ≈ ${r.tsp.toFixed(2)} tsp yeast`}
+            </p>
+
+            <div className="fc-fit">
+              <StatusRow label="Hydration" verdict={hVerdict} />
+              <StatusRow label="Ferment" verdict={fVerdict} />
+              <StatusRow label="Digestion" verdict={dVerdict} />
+            </div>
+            <Help>These three checks read your settings: whether the water suits the flour, whether the flour can survive that long a prove, and how gentle the result is on the gut.</Help>
+
+            <svg className="fc-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Predicted dough rise over time">
+              <defs>
+                <linearGradient id="fcfill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={accent} stopOpacity="0.22" />
+                  <stop offset="100%" stopColor={accent} stopOpacity="0.01" />
+                </linearGradient>
+              </defs>
+              <line x1={pad.l} y1={curve.baselineY} x2={W - pad.r} y2={curve.baselineY} stroke="#cbbfaa" strokeWidth="1" />
+              <line x1={curve.lagX} y1={pad.t} x2={curve.lagX} y2={curve.baselineY} stroke="#cbbfaa" strokeWidth="1" strokeDasharray="2 4" />
+              <path className="fc-area" d={curve.area} fill="url(#fcfill)" />
+              <path className="fc-line" d={curve.line} fill="none" stroke={accent} strokeWidth="2.5" strokeLinecap="round" />
+              <line className="fc-target-line" x1={curve.target.x} y1={pad.t} x2={curve.target.x} y2={curve.baselineY}
+                    stroke={accent} strokeWidth="1.5" strokeDasharray="3 3" opacity="0.55" />
+              <circle className="fc-target-dot" cx={curve.target.x} cy={curve.target.y} r="5.5"
+                      fill="#f4eee2" stroke={accent} strokeWidth="2.5" />
+              <text x={curve.target.x} y={pad.t - 7} textAnchor="middle"
+                    fontFamily="'JetBrains Mono', monospace" fontSize="11" fill="#5a4d3f">{hours} h · target</text>
+            </svg>
+
+            <div className="fc-zones">
+              <span style={{ width: `${(curve.lambda / curve.tMax) * 100}%` }}>↤ lag</span>
+              <span style={{ flex: 1, textAlign: "center" }}>active rise</span>
+              <span>{curve.collapses ? "collapse ↦" : "over-proof ↦"}</span>
+            </div>
+            <Help>The rise over time: a slow start (lag), a steep climb, then a plateau. The dot marks your target — ideally on the plateau. If the flour can't hold the prove, the line sags into collapse.</Help>
+
+            <div className="fc-crumb-wrap">
+              <span className="fc-stat-label">Predicted crumb · rim cross-section</span>
+              <CrumbSlice hydration={hydration} protein={protein} ovenC={ovenC}
+                base={bake.base} proofQuality={proofQuality} pl={pl} />
+            </div>
+            <Help>A slice through the edge of the baked pizza: thin sauced base on the left, puffed rim on the right. Hydration and heat open up the holes; a weak, over-proofed dough stays flat and dense.</Help>
+          </div>
+        </div>
+
+        {/* ---- bake stage ---- */}
+        <div className="fc-panel fc-bake">
+          <p className="fc-panel-head"><span>2 · The bake</span><span style={{ color: EMBER }}>{bake.style}</span></p>
+          <div className="fc-presets bake">
+            <span className="fc-preset-label">Oven</span>
+            {OVEN_PRESETS.map((p) => (
+              <button key={p.id} className="fc-chip" data-on={presetMatches(p.set)} onClick={() => applyPreset(p.set)}>{p.label}</button>
+            ))}
+          </div>
+          <div className="fc-bake-grid">
+            <div>
+              <Slider label="Oven temperature" value={ovenC} unit="°C"
+                min={200} max={500} step={5} onChange={setOvenC} accent={EMBER} />
+              <Help>Hotter bakes faster and puffs the rim harder. A home oven tops out near 250 °C; a true Neapolitan wants 450 °C+, which only a pizza oven reaches.</Help>
+              <div className="fc-field">
+                <div className="fc-field-head"><span className="fc-label">Baking surface</span></div>
+                <div className="fc-seg">
+                  {Object.entries(SURF).map(([k, v]) => (
+                    <button key={k} data-on={surface === k} onClick={() => setSurface(k)}>{v.label}</button>
+                  ))}
+                </div>
+              </div>
+              <Help>What the pizza sits on. A preheated steel or stone stores heat and crisps the underside; a bare oven rack browns the base the least.</Help>
+              <div className="fc-bake-stats">
+                <div>
+                  <span className="fc-stat-label">Bake time</span>
+                  <span className="fc-stat-val" style={{ color: EMBER }}>{fmtBake(bake.t)}</span>
+                </div>
+                <div>
+                  <span className="fc-stat-label">Top / base</span>
+                  <span className="fc-stat-val small">{crustLabel(bake.colour)} / {crustLabel(bake.base)}</span>
+                </div>
+              </div>
+              <p className="fc-formula">bake ≈ 116·e^(−0.0098·T) · surface · hydration</p>
+            </div>
+
+            <div>
+              <span className="fc-stat-label">Your pizza</span>
+              <Pizza colour={bake.colour} leopard={bake.leopard} protein={protein} proofQuality={proofQuality} />
+              <span className="fc-stat-label">Crust colour (top)</span>
+              <div className="fc-gauge">
+                <div className="fc-gauge-mark" style={{ left: `${bake.colour}%` }} />
+              </div>
+              <div className="fc-gauge-labels"><span>pale</span><span>golden</span><span>charred</span></div>
+              <div className="fc-bake-verdict">
+                <StatusRow label="Bake" verdict={bVerdict} />
+                {bake.acryl && (
+                  <StatusRow label="Caution" verdict={{ tone: "bad", text: "Very dark crust — acrylamide rises at this char. Pull a touch sooner or drop the heat." }} />
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="fc-panel fc-recipe">
+          <p className="fc-panel-head"><span>The recipe</span><span style={{ color: accent }}>{balls} × {ballW} g</span></p>
+          <div className="fc-recipe-grid">
+            <div>
+              <p className="fc-src-label">Ingredients</p>
+              <ul className="fc-ing">
+                <li><span className="nm">Flour<small>{fp.category}, ~{protein}%</small></span><span className="amt">{Math.round(r.flour)} g</span></li>
+                <li><span className="nm">Water<small>{hydration}% · ~{waterTempReco} °C</small></span><span className="amt">{Math.round(waterTotal)} g</span></li>
+                <li><span className="nm">Salt<small>{salt}%</small></span><span className="amt">{r.saltGrams.toFixed(1)} g</span></li>
+                {oilPct > 0 && <li><span className="nm">Oil<small>{oilPct}%</small></span><span className="amt">{r.oilGrams.toFixed(0)} g</span></li>}
+                {sugarPct > 0 && <li><span className="nm">Sugar<small>{sugarPct}%</small></span><span className="amt">{r.sugarGrams.toFixed(0)} g</span></li>}
+                {sourdough
+                  ? <li><span className="nm">Sourdough starter<small>{r.levainPct.toFixed(0)}% levain</small></span><span className="amt">{r.levainGrams.toFixed(0)} g</span></li>
+                  : <li><span className="nm">Yeast<small>{yLabel.toLowerCase()}</small></span><span className="amt">{gramsTxt} g</span></li>}
+              </ul>
+              <p className="fc-recipe-yield">Makes {balls} ball{balls > 1 ? "s" : ""} · {doughWeight} g total</p>
+            </div>
+            <div>
+              <p className="fc-src-label">Method</p>
+              <ol className="fc-steps">
+                {prefermentText && <li>{prefermentText}</li>}
+                <li>
+                  {sourdough
+                    ? `Mix the active sourdough starter (${r.levainGrams.toFixed(0)} g) into the water (${Math.round(waterTotal)} g at ~${waterTempReco} °C), `
+                    : `Whisk the ${yLabel.toLowerCase()} yeast (${gramsTxt} g) into the water (${Math.round(waterTotal)} g at ~${waterTempReco} °C), `}
+                  add the flour ({Math.round(r.flour)} g), mix to a shaggy mass and rest 20 min.
+                </li>
+                <li>Add the salt ({r.saltGrams.toFixed(1)} g){oilPct > 0 ? ` and oil (${r.oilGrams.toFixed(0)} g)` : ""}{sugarPct > 0 ? ` and sugar (${r.sugarGrams.toFixed(0)} g)` : ""}, then {kneadText}</li>
+                <li>Cover and bulk-rise until puffy, then divide into {balls} ball{balls > 1 ? "s" : ""} of ~{ballW} g{balls > 1 ? " each" : ""}.</li>
+                <li>Prove {fermentLoc} for {hours} h.{coldNote}</li>
+                {curve.collapses && (
+                  <li>Heads up — at {protein}% protein this flour may over-ferment across {hours} h and slacken. A stronger flour or a shorter prove keeps the rim intact.</li>
+                )}
+                <li>Open each ball into a base, leaving a thicker rim, and top lightly so it bakes through.</li>
+                <li>Preheat your {SURF[surface].label.toLowerCase()}{surface === "rack" ? "" : " (and oven)"} to {ovenC} °C. Bake ~{fmtBake(bake.t)}{bakeFinish}</li>
+              </ol>
+              {recipeTip && <p className="fc-recipe-tip">{recipeTip}</p>}
+            </div>
+          </div>
+        </div>
+
+        {nerdMode && (
+          <div className="fc-panel fc-nerd">
+            <p className="fc-panel-head"><span>Nerd mode · all values</span><span>live</span></p>
+            <div className="fc-conf-legend">
+              <span><i style={{ background: CONF.g }} /> grounded</span>
+              <span><i style={{ background: CONF.h }} /> calibrated heuristic</span>
+              <span><i style={{ background: CONF.i }} /> illustrative</span>
+            </div>
+            <div className="fc-nerd-grid">
+              <div className="fc-nerd-col">
+                <p className="fc-src-label">Leaven</p>
+                <NRow k="Q₁₀ rate factor" v={`${r.rateFactor.toFixed(3)}×`} t="g" />
+                <NRow k="salt slowing factor" v={`${r.saltRate.toFixed(3)}×`} t="h" />
+                <NRow k="mode" v={sourdough ? "sourdough" : "commercial"} />
+                {sourdough
+                  ? <>
+                      <NRow k="starter strength" v={`${starterStr}/100`} t="i" />
+                      <NRow k="levain %" v={`${r.levainPct.toFixed(1)}%`} t="i" />
+                      <NRow k="starter" v={`${r.levainGrams.toFixed(0)} g`} t="i" />
+                    </>
+                  : <>
+                      <NRow k="base IDY %" v={`${r.idyPct.toFixed(3)}%`} t="g" />
+                      <NRow k="yeast type mult" v={`${TYPE[yeastType].mult}×`} t="g" />
+                      <NRow k="effective yeast %" v={`${r.pct.toFixed(3)}%`} t="g" />
+                      <NRow k="yeast" v={`${r.grams.toFixed(2)} g`} t="g" />
+                      <NRow k="yeast (tsp)" v={r.tsp != null ? `${r.tsp.toFixed(2)} tsp` : "—"} t="g" />
+                    </>}
+                <NRow k="preferment" v={preferment} t="i" />
+                <NRow k="digestibility" v={`${digest} / 100`} t="i" />
+              </div>
+              <div className="fc-nerd-col">
+                <p className="fc-src-label">Recipe & mix</p>
+                <NRow k="flour" v={`${r.flour.toFixed(0)} g`} t="g" />
+                <NRow k="water" v={`${r.waterG.toFixed(0)} g`} t="g" />
+                <NRow k="salt" v={`${r.saltGrams.toFixed(1)} g`} t="g" />
+                <NRow k="oil" v={`${r.oilGrams.toFixed(1)} g`} t="g" />
+                <NRow k="sugar" v={`${r.sugarGrams.toFixed(1)} g`} t="g" />
+                <NRow k="total dough" v={`${doughWeight} g`} t="g" />
+                <NRow k="room temp" v={`${roomTemp} °C`} t="g" />
+                <NRow k="target dough temp" v={`${ddt} °C`} t="g" />
+                <NRow k="friction factor" v={`+${friction} °C`} t="g" />
+                <NRow k="→ water temp" v={`~${waterTempReco} °C`} t="g" />
+              </div>
+              <div className="fc-nerd-col">
+                <p className="fc-src-label">Flour & rise</p>
+                <NRow k="protein" v={`${protein}%`} t="g" />
+                <NRow k="est. W" v={`${fp.W}`} t="h" />
+                <NRow k="P/L balance" v={pl.toFixed(2)} t="i" />
+                <NRow k="hydration window" v={`${fp.hydrLo}–${fp.hydrHi}%`} t="h" />
+                <NRow k="ferment capacity" v={`~${Math.round(fp.maxHours)} h`} t="h" />
+                <NRow k="proof quality" v={proofQuality.toFixed(2)} t="h" />
+                <NRow k="Gompertz λ (lag)" v={`${curve.lambda.toFixed(2)} h`} t="h" />
+                <NRow k="Gompertz μₘ" v={curve.mu.toFixed(2)} t="h" />
+                <NRow k="peak rise A" v={`${curve.Arise.toFixed(0)}%`} t="h" />
+                <NRow k="collapse decay k" v={curve.kd.toFixed(3)} t="h" />
+              </div>
+              <div className="fc-nerd-col">
+                <p className="fc-src-label">Bake & geometry</p>
+                <NRow k="oven" v={`${ovenC} °C`} t="g" />
+                <NRow k="surface (k)" v={`${SURF[surface].label} · ${SURF[surface].k}`} t="h" />
+                <NRow k="bake time" v={`${bake.t.toFixed(2)} min · ${Math.round(bake.t * 60)} s`} t="h" />
+                <NRow k="crust top idx" v={`${bake.colour.toFixed(1)} / 100`} t="h" />
+                <NRow k="crust base idx" v={`${bake.base.toFixed(1)} / 100`} t="h" />
+                <NRow k="leoparding" v={bake.leopard ? "yes" : "no"} t="h" />
+                <NRow k="acrylamide flag" v={bake.acryl ? "high" : "ok"} t="h" />
+                <NRow k="style" v={bake.style} t="g" />
+                <NRow k="oven-spring frac" v={springFrac.toFixed(2)} t="h" />
+                <NRow k="rim spring index" v={rimIndex.toFixed(1)} t="i" />
+              </div>
+            </div>
+            <p className="fc-subhead">Dependency graph</p>
+            <p className="fc-src-note" style={{ marginTop: 0, marginBottom: 6 }}>
+              How a setting becomes a number: inputs feed models feed outputs. Edge colour marks the
+              confidence of what it feeds.
+            </p>
+            <DepGraph />
+            <p className="fc-src-note">
+              Dots mark confidence: grounded values are arithmetic or standard formulas; heuristics are
+              calibrated guesses; illustrative ones build intuition, not precision. water °C =
+              N·FDT − (N−1)·room − friction (N = 4 with a preferment, else 3). yeast% = 2.4 / (h ·
+              Q₁₀^((T−21)/10) · e^(−0.12·(S−2.5))) · type. bake ≈ 116·e^(−0.0098·T) · surface.
+            </p>
+          </div>
+        )}
+
+        <p className="fc-foot">
+          A teaching model, not a lab instrument. Yeast assumes one steady
+          temperature (anchored on ~0.3% IDY → full proof in ~8 h at 21 °C,
+          Q₁₀ = {Q10}). Flour W-value, hydration range and ferment capacity are
+          simple heuristics from protein. Bake time follows an inverse-exponential
+          fit and the crust gauge tracks heat — real ovens, stones, steels and
+          toppings all shift it. Use it for intuition: doubling the time halves
+          the yeast, stronger flour buys hydration and ferment length, and a
+          hotter oven trades minutes for leopard spots.
+        </p>
+
+        <div className="fc-sources">
+          <p className="fc-sources-head">Sources</p>
+          {SOURCES.map((g) => (
+            <div className="fc-src-group" key={g.group}>
+              <p className="fc-src-label">{g.group}</p>
+              <ul>
+                {g.items.map((it, i) => (
+                  <li key={i}>
+                    <a href={it.u} target="_blank" rel="noopener noreferrer">{it.t}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+          <p className="fc-src-note">
+            Links open the study or resource. Peer-reviewed work is paraphrased
+            in this tool's heuristics, not implemented from the original methods.
+          </p>
+        </div>
+       </LearnCtx.Provider>
+      </div>
+    </div>
+  );
+}
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<FermentCalculator />);
+  </script>
 </body>
 </html>
