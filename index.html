@@ -153,6 +153,49 @@ const OVEN_PRESETS = [
   { id: "wood", label: "Wood-fired", set: { ovenC: 490, surface: "stone" } },
 ];
 
+const STYLE_GUIDELINES = {
+  neapolitan: [
+    { key:"protein",   label:"Protein",    lo:12.5, hi:13.5, unit:"%",  note:"00 flour, W 280–320" },
+    { key:"hydration", label:"Hydration",  lo:58,   hi:65,   unit:"%",  note:"tight for hand-stretching" },
+    { key:"salt",      label:"Salt",       lo:2.5,  hi:3.0,  unit:"%",  note:"AVPN standard" },
+    { key:"tempC",     label:"Prove temp", lo:16,   hi:24,   unit:"°C", note:"room temp or cool" },
+    { key:"hours",     label:"Prove time", lo:18,   hi:48,   unit:"h",  note:"min 18 h for structure" },
+    { key:"ovenC",     label:"Oven",       lo:430,  hi:500,  unit:"°C", note:"pizza oven required" },
+  ],
+  ny: [
+    { key:"protein",   label:"Protein",    lo:12.0, hi:13.5, unit:"%",  note:"bread or high-gluten flour" },
+    { key:"hydration", label:"Hydration",  lo:60,   hi:65,   unit:"%",  note:"workable, slightly tacky" },
+    { key:"salt",      label:"Salt",       lo:1.8,  hi:2.5,  unit:"%",  note:"restrained — cheese is salty" },
+    { key:"tempC",     label:"Prove temp", lo:2,    hi:7,    unit:"°C", note:"cold fridge proof" },
+    { key:"hours",     label:"Prove time", lo:24,   hi:72,   unit:"h",  note:"longer = more flavour" },
+    { key:"ovenC",     label:"Oven",       lo:260,  hi:320,  unit:"°C", note:"as hot as home oven allows" },
+  ],
+  detroit: [
+    { key:"protein",   label:"Protein",    lo:12.0, hi:13.0, unit:"%",  note:"AP or bread flour" },
+    { key:"hydration", label:"Hydration",  lo:68,   hi:78,   unit:"%",  note:"high — pan holds the dough" },
+    { key:"salt",      label:"Salt",       lo:1.8,  hi:2.5,  unit:"%",  note:"standard" },
+    { key:"tempC",     label:"Prove temp", lo:18,   hi:26,   unit:"°C", note:"room temp, same day" },
+    { key:"hours",     label:"Prove time", lo:3,    hi:8,    unit:"h",  note:"quick same-day rise" },
+    { key:"ovenC",     label:"Oven",       lo:260,  hi:295,  unit:"°C", note:"pan pizza heat" },
+  ],
+  roman: [
+    { key:"protein",   label:"Protein",    lo:12.0, hi:13.5, unit:"%",  note:"strong flour for high hydration" },
+    { key:"hydration", label:"Hydration",  lo:75,   hi:85,   unit:"%",  note:"very wet — use a tray" },
+    { key:"salt",      label:"Salt",       lo:2.0,  hi:2.5,  unit:"%",  note:"standard" },
+    { key:"tempC",     label:"Prove temp", lo:2,    hi:7,    unit:"°C", note:"slow cold proof" },
+    { key:"hours",     label:"Prove time", lo:24,   hi:72,   unit:"h",  note:"long cold ferment" },
+    { key:"ovenC",     label:"Oven",       lo:280,  hi:320,  unit:"°C", note:"deck-oven style" },
+  ],
+  sourdough: [
+    { key:"protein",   label:"Protein",    lo:12.0, hi:13.5, unit:"%",  note:"strong flour for long ferment" },
+    { key:"hydration", label:"Hydration",  lo:68,   hi:78,   unit:"%",  note:"manageable with good gluten" },
+    { key:"salt",      label:"Salt",       lo:2.0,  hi:2.8,  unit:"%",  note:"acid compensates slightly" },
+    { key:"tempC",     label:"Prove temp", lo:2,    hi:8,    unit:"°C", note:"fridge retard for flavour" },
+    { key:"hours",     label:"Prove time", lo:18,   hi:48,   unit:"h",  note:"long cold ferment" },
+    { key:"ovenC",     label:"Oven",       lo:250,  hi:320,  unit:"°C", note:"steel helps at lower temps" },
+  ],
+};
+
 const TONE = { good: "#648A45", warn: "#C2641F", bad: "#C5362A" };
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
@@ -646,6 +689,8 @@ function FermentCalculator() {
   const [surface, setSurface] = useState("steel");
   const [nerdMode, setNerdMode] = useState(false);
   const [learn, setLearn] = useState(false);
+  const [simple, setSimple] = useState(false);
+  const [selectedStyle, setSelectedStyle] = useState(null);
 
   const accent = tempColor(tempC);
   const inputs = { tempC, hours, protein, plVal, hydration, salt, oilPct, sugarPct, leavening, yeastType, starterStr, preferment, roomTemp, ddt, mixMethod, doughWeight, ovenC, surface };
@@ -661,6 +706,8 @@ function FermentCalculator() {
   const waterTotal = r.waterG;
   const yLabel = TYPE[yeastType].label;
   const cold = tempC <= 10;
+  const guideRules = simple && selectedStyle ? STYLE_GUIDELINES[selectedStyle] : null;
+  const selectedPresetLabel = selectedStyle ? PIZZA_PRESETS.find(p => p.id === selectedStyle)?.label : null;
 
   // ---- recipe copy (presentation text derived from the engine's numbers) ----
   const kneadText = hydration > 68
@@ -899,6 +946,17 @@ function FermentCalculator() {
         .fc-target-dot, .fc-target-line, .fc-area{ transition:all .45s cubic-bezier(.4,0,.2,1); }
         button:focus-visible, input:focus-visible{
           outline:2px solid #D27A52; outline-offset:2px; border-radius:inherit; }
+        .fc-guidelines{ margin:0 0 20px; padding:14px 16px; background:var(--paper-2);
+          border:1px solid var(--edge); border-radius:14px; }
+        .fc-guidelines-head{ font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.16em;
+          text-transform:uppercase; color:var(--ink-soft); margin:0 0 10px; }
+        .fc-guide-list{ display:flex; flex-direction:column; gap:7px; }
+        .fc-guide-row{ display:flex; align-items:center; gap:8px; }
+        .fc-guide-label{ font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.12em;
+          text-transform:uppercase; color:var(--ink-soft); min-width:86px; flex:none; }
+        .fc-guide-range{ font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--ink);
+          min-width:72px; flex:none; }
+        .fc-guide-note{ font-size:12px; color:var(--ink-soft); }
       `}</style>
 
       <div className="fc-wrap">
@@ -906,6 +964,7 @@ function FermentCalculator() {
         <div className="fc-top">
           <p className="fc-eyebrow">Ferment · flour · bake</p>
           <div className="fc-toggles">
+            <button className="fc-nerd-toggle" data-on={simple} onClick={() => setSimple((v) => !v)}>Simple</button>
             <button className="fc-nerd-toggle" data-on={learn} onClick={() => setLearn((v) => !v)}>Learn</button>
             <button className="fc-nerd-toggle" data-on={nerdMode} onClick={() => setNerdMode((v) => !v)}>Nerd mode</button>
           </div>
@@ -922,9 +981,32 @@ function FermentCalculator() {
         <div className="fc-presets">
           <span className="fc-preset-label">Style</span>
           {PIZZA_PRESETS.map((p) => (
-            <button key={p.id} className="fc-chip" data-on={presetMatches(p.set)} onClick={() => applyPreset(p.set)}>{p.label}</button>
+            <button key={p.id} className="fc-chip" data-on={presetMatches(p.set)} onClick={() => { applyPreset(p.set); setSelectedStyle(p.id); }}>{p.label}</button>
           ))}
         </div>
+
+        {guideRules && (
+          <div className="fc-guidelines">
+            <p className="fc-guidelines-head">Style guidelines · {selectedPresetLabel}</p>
+            <div className="fc-guide-list">
+              {guideRules.map(({ key, label, lo, hi, unit, note }) => {
+                const val = inputs[key];
+                const margin = (hi - lo) * 0.5;
+                const inRange = val >= lo && val <= hi;
+                const near = !inRange && val >= lo - margin && val <= hi + margin;
+                const tone = inRange ? "good" : near ? "warn" : "bad";
+                return (
+                  <div key={key} className="fc-guide-row">
+                    <span className="fc-dot" style={{ background: TONE[tone], transition: "background .35s cubic-bezier(.4,0,.2,1)" }} />
+                    <span className="fc-guide-label">{label}</span>
+                    <span className="fc-guide-range">{lo}–{hi}{unit}</span>
+                    <span className="fc-guide-note">{note}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="fc-grid">
           {/* ---- controls ---- */}
@@ -944,10 +1026,14 @@ function FermentCalculator() {
               min={8} max={15} step={0.5} onChange={setProtein} accent={accent}
               note={`≈ W ${fp.W} · ${fp.category}`} />
             <Help>Protein becomes gluten — the web that traps gas. More of it = a stronger dough that holds bigger bubbles and more water, but resists stretching. ~12–13% suits pizza. (W is the bakery measure of the same thing.)</Help>
-            <Slider label="Extensible ↔ elastic (P/L)" value={plVal} unit=""
-              min={0} max={100} step={1} onChange={setPlVal} accent={accent}
-              note={pl < -0.2 ? "extensible — opens easily, spreads" : pl > 0.2 ? "elastic — springs back, taller rim" : "balanced"} />
-            <Help>Two flours can have the same protein but behave differently: extensible dough stretches and stays put; elastic dough pings back. It shifts how easily the base opens and how tall the rim sits.</Help>
+            {!simple && (
+              <>
+                <Slider label="Extensible ↔ elastic (P/L)" value={plVal} unit=""
+                  min={0} max={100} step={1} onChange={setPlVal} accent={accent}
+                  note={pl < -0.2 ? "extensible — opens easily, spreads" : pl > 0.2 ? "elastic — springs back, taller rim" : "balanced"} />
+                <Help>Two flours can have the same protein but behave differently: extensible dough stretches and stays put; elastic dough pings back. It shifts how easily the base opens and how tall the rim sits.</Help>
+              </>
+            )}
             <Slider label="Hydration" value={hydration} unit="%"
               min={50} max={85} step={1} onChange={setHydration} accent={accent}
               note={`recommended ${fp.hydrLo}–${fp.hydrHi}% for this flour`}
@@ -958,15 +1044,19 @@ function FermentCalculator() {
               note={`${r.saltGrams.toFixed(1)} g · ${salt < 1.8 ? "fast ferment, looser dough" : salt > 3 ? "slow ferment, tighter dough" : "typical pizza range"}`} />
             <Help>Seasons the dough, but it also reins in the yeast and tightens the gluten. Too little and the dough over-proofs fast and bakes pale; ~2.5–3% is standard.</Help>
 
-            <p className="fc-subhead">Mix-ins</p>
-            <Slider label="Oil" value={oilPct} unit="%"
-              min={0} max={6} step={0.5} onChange={setOilPct} accent={accent}
-              note={oilPct === 0 ? "none — Neapolitan style" : `${r.oilGrams.toFixed(0)} g — softer, crispier crust`} />
-            <Help>Fat softens the crumb and crisps the crust. Common in New York and pan pizzas; a true Neapolitan uses none.</Help>
-            <Slider label="Sugar" value={sugarPct} unit="%"
-              min={0} max={4} step={0.25} onChange={setSugarPct} accent={accent}
-              note={sugarPct === 0 ? "none" : `${r.sugarGrams.toFixed(0)} g — feeds browning`} />
-            <Help>Feeds the yeast and, more importantly, helps the crust brown — useful when a home oven can't get hot enough to colour it on its own.</Help>
+            {!simple && (
+              <>
+                <p className="fc-subhead">Mix-ins</p>
+                <Slider label="Oil" value={oilPct} unit="%"
+                  min={0} max={6} step={0.5} onChange={setOilPct} accent={accent}
+                  note={oilPct === 0 ? "none — Neapolitan style" : `${r.oilGrams.toFixed(0)} g — softer, crispier crust`} />
+                <Help>Fat softens the crumb and crisps the crust. Common in New York and pan pizzas; a true Neapolitan uses none.</Help>
+                <Slider label="Sugar" value={sugarPct} unit="%"
+                  min={0} max={4} step={0.25} onChange={setSugarPct} accent={accent}
+                  note={sugarPct === 0 ? "none" : `${r.sugarGrams.toFixed(0)} g — feeds browning`} />
+                <Help>Feeds the yeast and, more importantly, helps the crust brown — useful when a home oven can't get hot enough to colour it on its own.</Help>
+              </>
+            )}
 
             <p className="fc-subhead">Leaven</p>
             <div className="fc-field">
@@ -989,7 +1079,7 @@ function FermentCalculator() {
                 </p>
               </>
             )}
-            {!sourdough && (
+            {!sourdough && !simple && (
               <>
                 <div className="fc-field">
                   <div className="fc-field-head"><span className="fc-label">Yeast type</span></div>
@@ -1002,33 +1092,41 @@ function FermentCalculator() {
                 <Help>The same yeast in three forms. Instant and active-dry come in jars; fresh is the cake from the fridge. The tool converts the amounts between them.</Help>
               </>
             )}
-            <div className="fc-field">
-              <div className="fc-field-head"><span className="fc-label">Preferment</span></div>
-              <div className="fc-seg">
-                {[["straight", "Straight"], ["poolish", "Poolish"], ["biga", "Biga"]].map(([k, l]) => (
-                  <button key={k} data-on={preferment === k} onClick={() => setPreferment(k)}>{l}</button>
-                ))}
-              </div>
-            </div>
-            <Help>"Straight" mixes everything at once. A poolish (wet) or biga (stiff) is a bit of dough fermented the night before, then mixed in — more flavour and strength for a little planning.</Help>
+            {!simple && (
+              <>
+                <div className="fc-field">
+                  <div className="fc-field-head"><span className="fc-label">Preferment</span></div>
+                  <div className="fc-seg">
+                    {[["straight", "Straight"], ["poolish", "Poolish"], ["biga", "Biga"]].map(([k, l]) => (
+                      <button key={k} data-on={preferment === k} onClick={() => setPreferment(k)}>{l}</button>
+                    ))}
+                  </div>
+                </div>
+                <Help>"Straight" mixes everything at once. A poolish (wet) or biga (stiff) is a bit of dough fermented the night before, then mixed in — more flavour and strength for a little planning.</Help>
+              </>
+            )}
 
-            <p className="fc-subhead">Mixing & batch</p>
-            <Slider label="Room temperature" value={roomTemp} unit="°C"
-              min={12} max={30} step={1} onChange={setRoomTemp} accent={accent} />
-            <Help>How warm your kitchen is. It's used to work out the water temperature so the dough finishes mixing at your target.</Help>
-            <Slider label="Target dough temp (FDT)" value={ddt} unit="°C"
-              min={20} max={28} step={0.5} onChange={setDdt} accent={accent}
-              note={`use water at ~${waterTempReco} °C${waterTempReco <= 4 ? " (iced)" : ""}`} />
-            <Help>The temperature you want the dough to be right after mixing (~24 °C is a good default). The tool tells you what temperature water to use to land there.</Help>
-            <div className="fc-field">
-              <div className="fc-field-head"><span className="fc-label">Mixing method</span></div>
-              <div className="fc-seg">
-                {Object.entries(FRICTION).map(([k, v]) => (
-                  <button key={k} data-on={mixMethod === k} onClick={() => setMixMethod(k)}>{v.label}</button>
-                ))}
-              </div>
-            </div>
-            <Help>Mixing adds heat through friction — a machine adds more than your hands — so a mixer or processor needs cooler water to hit the same dough temperature.</Help>
+            <p className="fc-subhead">{simple ? "Batch" : "Mixing & batch"}</p>
+            {!simple && (
+              <>
+                <Slider label="Room temperature" value={roomTemp} unit="°C"
+                  min={12} max={30} step={1} onChange={setRoomTemp} accent={accent} />
+                <Help>How warm your kitchen is. It's used to work out the water temperature so the dough finishes mixing at your target.</Help>
+                <Slider label="Target dough temp (FDT)" value={ddt} unit="°C"
+                  min={20} max={28} step={0.5} onChange={setDdt} accent={accent}
+                  note={`use water at ~${waterTempReco} °C${waterTempReco <= 4 ? " (iced)" : ""}`} />
+                <Help>The temperature you want the dough to be right after mixing (~24 °C is a good default). The tool tells you what temperature water to use to land there.</Help>
+                <div className="fc-field">
+                  <div className="fc-field-head"><span className="fc-label">Mixing method</span></div>
+                  <div className="fc-seg">
+                    {Object.entries(FRICTION).map(([k, v]) => (
+                      <button key={k} data-on={mixMethod === k} onClick={() => setMixMethod(k)}>{v.label}</button>
+                    ))}
+                  </div>
+                </div>
+                <Help>Mixing adds heat through friction — a machine adds more than your hands — so a mixer or processor needs cooler water to hit the same dough temperature.</Help>
+              </>
+            )}
             <div className="fc-field">
               <div className="fc-field-head"><span className="fc-label">Total dough weight</span></div>
               <div className="fc-stepper">
