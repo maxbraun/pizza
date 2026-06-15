@@ -34,7 +34,7 @@
   <header style="background:#FCF8F0; border-bottom:1px solid #F0E6D2;">
     <div class="forno-header">
       <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Forno mark">
-          <rect x="4" y="4" width="40" height="40" rx="12" fill="#1E1814"/>
+          <rect x="4" y="4" width="40" height="40" rx="14" fill="#1E1814"/>
           <path d="M14 34a10 10 0 0 0 20 0c0-6-4-9-5.5-13.5C27 25 24 25.5 24 29c-2-1.5-2-4.5-1-7-4 2-9 6-9 12Z" fill="#C25A33"/>
           <path d="M19.5 33.5a4.5 4.5 0 0 0 9 0c0-3-2.2-4.6-2.8-7-1.2 2.4-3 2.8-3.4 4.6-1-.8-1-2.2-.6-3.4-1.6 1.2-2.2 3.2-2.2 5.8Z" fill="#D99B36"/>
         </svg>
@@ -84,7 +84,7 @@ const FRICTION = {
   mixer: { label: "Stand mixer", f: 8 },
   processor: { label: "Processor", f: 14 },
 };
-const CONF = { g: "#3d6e78", h: "#c08a2e", i: "#9b8aa3" }; // grounded / heuristic / illustrative
+const CONF = { g: "#4F6E37", h: "#D99B36", i: "#9b8aa3" }; // grounded / heuristic / illustrative
 
 // architecture as a layered DAG: inputs -> models -> outputs
 const GRAPH = {
@@ -153,7 +153,7 @@ const OVEN_PRESETS = [
   { id: "wood", label: "Wood-fired", set: { ovenC: 490, surface: "stone" } },
 ];
 
-const TONE = { good: "#6f7d52", warn: "#c08a2e", bad: "#b5532e" };
+const TONE = { good: "#648A45", warn: "#C2641F", bad: "#C5362A" };
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
 function tempColor(tempC) {
@@ -481,7 +481,7 @@ function DepGraph() {
     <svg className="fc-depgraph" viewBox={`0 0 ${DG.W} ${DG.H}`} role="img" aria-label="Dependency graph: inputs to models to outputs">
       {titles.map((t, i) => (
         <text key={t} x={DG.colX[i] + DG.colW[i] / 2} y={15} textAnchor="middle"
-          fontFamily="'JetBrains Mono',monospace" fontSize="10" fill="#5a4d3f" letterSpacing="2">{t.toUpperCase()}</text>
+          fontFamily="'JetBrains Mono',monospace" fontSize="10" fill="#7A6A5B" letterSpacing="2">{t.toUpperCase()}</text>
       ))}
       {GRAPH.edges.map((e, i) => {
         const a = pos[e[0]], b = pos[e[1]];
@@ -494,7 +494,7 @@ function DepGraph() {
         return (
           <g key={node[0]}>
             <rect x={p.x} y={p.cyc - DG.nodeH / 2} width={p.w} height={DG.nodeH} rx="6"
-              fill="#f0e9dc" stroke={stroke} strokeWidth={tier ? 1.4 : 1} />
+              fill="#F8F1E3" stroke={stroke} strokeWidth={tier ? 1.4 : 1} />
             {tier && <rect x={p.x} y={p.cyc - DG.nodeH / 2} width="3.5" height={DG.nodeH} rx="1.5" fill={CONF[tier]} />}
             <text x={p.x + p.w / 2} y={p.cyc + 3} textAnchor="middle"
               fontFamily="'JetBrains Mono',monospace" fontSize="8.6" fill="#231a12">{node[1]}</text>
@@ -740,7 +740,7 @@ function FermentCalculator() {
         .fc-conf-legend span{ display:inline-flex; align-items:center; gap:7px; }
         .fc-conf-legend i{ width:8px; height:8px; border-radius:50%; display:inline-block; }
         .fc-depgraph{ width:100%; height:auto; display:block; margin:6px 0 4px; }
-        .fc-eyebrow{ font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.22em;
+        .fc-eyebrow{ font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.12em;
           text-transform:uppercase; color:var(--ink-soft); margin:0 0 10px; }
         .fc-title{ font-family:'Spectral',serif; font-weight:500; font-size:clamp(30px,5vw,46px);
           line-height:1.02; margin:0 0 12px; letter-spacing:-.01em; }
@@ -759,13 +759,21 @@ function FermentCalculator() {
         .fc-grid{ display:grid; grid-template-columns:1fr 1.1fr; gap:24px; align-items:start; }
         @media (max-width:760px){ .fc-grid{ grid-template-columns:1fr; } }
 
-        .fc-panel{ background:var(--paper-2); border:1px solid var(--edge); border-radius:16px; padding:22px; }
-        .fc-subhead{ font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:.18em;
+        .fc-panel{ background:var(--paper-2); border:1px solid var(--edge); border-radius:20px; padding:22px; box-shadow:0 6px 18px rgba(58,40,26,0.10); }
+        .fc-subhead{ font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:.12em;
           text-transform:uppercase; color:var(--ink-soft); margin:22px 0 14px; padding-top:13px;
           border-top:1px solid var(--line); }
         .fc-subhead.first{ margin-top:0; padding-top:0; border-top:none; }
-        .fc-bake{ margin-top:24px; }
-        .fc-panel-head{ font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.18em;
+        .fc-bake{ margin-top:24px;
+          --ink:#F8F1E3; --ink-soft:#D2BC97; --paper-2:#2A221C; --paper:#1E1814;
+          --edge:rgba(248,241,227,0.16); --line:rgba(248,241,227,0.10);
+          background:#1E1814; border-color:rgba(248,241,227,0.10);
+          box-shadow:0 18px 44px rgba(20,12,6,0.40); }
+        .fc-bake .fc-chip{ color:#F8F1E3; }
+        .fc-bake .fc-chip[data-on=true]{ background:#F8F1E3; color:#1E1814; border-color:#F8F1E3; }
+        .fc-bake input[type=range]::-webkit-slider-thumb{ background:#2A221C; border-color:#F8F1E3; }
+        .fc-bake input[type=range]::-moz-range-thumb{ background:#2A221C; border-color:#F8F1E3; }
+        .fc-panel-head{ font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.12em;
           text-transform:uppercase; color:var(--ink-soft); margin:0 0 18px;
           display:flex; justify-content:space-between; align-items:baseline; }
 
@@ -781,8 +789,9 @@ function FermentCalculator() {
         .fc-note-line{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-soft);
           margin:8px 0 0; letter-spacing:.02em; transition:color .4s cubic-bezier(.4,0,.2,1); }
 
-        input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:4px;
-          border-radius:99px; outline:none; cursor:pointer; margin:0; }
+        input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:6px;
+          border-radius:99px; outline:none; cursor:pointer; margin:0;
+          box-shadow:inset 0 2px 5px rgba(58,40,26,0.10); }
         input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:18px; height:18px;
           border-radius:50%; background:var(--paper-2); border:2.5px solid var(--ink); cursor:pointer;
           transition:transform .2s cubic-bezier(.4,0,.2,1); }
@@ -792,12 +801,12 @@ function FermentCalculator() {
 
         .fc-seg{ display:flex; gap:6px; }
         .fc-seg button{ flex:1; font-family:'Hanken Grotesk',sans-serif; font-size:12.5px; font-weight:500;
-          padding:9px 4px; border-radius:9px; border:1px solid var(--edge); background:transparent;
+          padding:9px 4px; border-radius:14px; border:1px solid var(--edge); background:transparent;
           color:var(--ink-soft); cursor:pointer; transition:all .25s cubic-bezier(.4,0,.2,1); }
         .fc-seg button[data-on=true]{ background:var(--ink); color:var(--paper-2); border-color:var(--ink); }
 
         .fc-stepper{ display:flex; align-items:center; gap:10px; }
-        .fc-stepper button{ width:32px; height:32px; border-radius:8px; border:1px solid var(--edge);
+        .fc-stepper button{ width:32px; height:32px; border-radius:10px; border:1px solid var(--edge);
           background:transparent; color:var(--ink); font-size:18px; cursor:pointer; line-height:1;
           transition:background .2s cubic-bezier(.4,0,.2,1); }
         .fc-stepper button:hover{ background:var(--paper); }
@@ -874,7 +883,7 @@ function FermentCalculator() {
         .fc-sources{ margin-top:30px; border-top:1px solid var(--line); padding-top:22px; }
         .fc-sources-head{ font-family:'Spectral',serif; font-weight:500; font-size:22px; margin:0 0 18px; }
         .fc-src-group{ margin-bottom:16px; }
-        .fc-src-label{ font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.14em;
+        .fc-src-label{ font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.12em;
           text-transform:uppercase; color:var(--ink-soft); margin:0 0 8px; }
         .fc-sources ul{ margin:0; padding:0; list-style:none; }
         .fc-sources li{ font-size:12.5px; line-height:1.5; margin-bottom:6px; }
@@ -888,6 +897,8 @@ function FermentCalculator() {
           .fc-line{ stroke-dasharray:1400; animation:fc-draw 1.1s cubic-bezier(.4,0,.2,1) forwards; }
         }
         .fc-target-dot, .fc-target-line, .fc-area{ transition:all .45s cubic-bezier(.4,0,.2,1); }
+        button:focus-visible, input:focus-visible{
+          outline:2px solid #D27A52; outline-offset:2px; border-radius:inherit; }
       `}</style>
 
       <div className="fc-wrap">
@@ -1058,8 +1069,8 @@ function FermentCalculator() {
                   <stop offset="100%" stopColor={accent} stopOpacity="0.01" />
                 </linearGradient>
               </defs>
-              <line x1={pad.l} y1={curve.baselineY} x2={W - pad.r} y2={curve.baselineY} stroke="#cbbfaa" strokeWidth="1" />
-              <line x1={curve.lagX} y1={pad.t} x2={curve.lagX} y2={curve.baselineY} stroke="#cbbfaa" strokeWidth="1" strokeDasharray="2 4" />
+              <line x1={pad.l} y1={curve.baselineY} x2={W - pad.r} y2={curve.baselineY} stroke="#E4D4BA" strokeWidth="1" />
+              <line x1={curve.lagX} y1={pad.t} x2={curve.lagX} y2={curve.baselineY} stroke="#E4D4BA" strokeWidth="1" strokeDasharray="2 4" />
               <path className="fc-area" d={curve.area} fill="url(#fcfill)" />
               <path className="fc-line" d={curve.line} fill="none" stroke={accent} strokeWidth="2.5" strokeLinecap="round" />
               <line className="fc-target-line" x1={curve.target.x} y1={pad.t} x2={curve.target.x} y2={curve.baselineY}
@@ -1067,7 +1078,7 @@ function FermentCalculator() {
               <circle className="fc-target-dot" cx={curve.target.x} cy={curve.target.y} r="5.5"
                       fill="#f4eee2" stroke={accent} strokeWidth="2.5" />
               <text x={curve.target.x} y={pad.t - 7} textAnchor="middle"
-                    fontFamily="'JetBrains Mono', monospace" fontSize="11" fill="#5a4d3f">{hours} h · target</text>
+                    fontFamily="'JetBrains Mono', monospace" fontSize="11" fill="#7A6A5B">{hours} h · target</text>
             </svg>
 
             <div className="fc-zones">
