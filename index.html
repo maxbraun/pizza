@@ -776,6 +776,15 @@ function FermentCalculator() {
         .fc-panel-head{ font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.12em;
           text-transform:uppercase; color:var(--ink-soft); margin:0 0 18px;
           display:flex; justify-content:space-between; align-items:baseline; }
+        .fc-style-tip{ position:relative; cursor:default; }
+        .fc-style-tip .fc-style-i{ font-size:8px; opacity:.5; margin-left:3px; vertical-align:super; text-transform:none; letter-spacing:0; }
+        .fc-style-tip::after{
+          content:attr(data-tip); position:absolute; right:0; top:calc(100% + 6px);
+          background:var(--ink); color:var(--paper); font-family:'JetBrains Mono',monospace;
+          font-size:10px; line-height:1.7; white-space:pre; letter-spacing:.04em;
+          padding:9px 13px; border-radius:8px; opacity:0; pointer-events:none;
+          transition:opacity .15s; z-index:20; text-transform:none; }
+        .fc-style-tip:hover::after{ opacity:1; }
 
         .fc-stagetag{ font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.14em;
           text-transform:uppercase; color:var(--ink-soft); }
@@ -1099,7 +1108,7 @@ function FermentCalculator() {
 
         {/* ---- bake stage ---- */}
         <div className="fc-panel fc-bake">
-          <p className="fc-panel-head"><span>2 · The bake</span><span style={{ color: EMBER }}>{bake.style}</span></p>
+          <p className="fc-panel-head"><span>2 · The bake</span><span className="fc-style-tip" data-tip={"≥ 430 °C  Neapolitan\n≥ 340 °C  Artisan / high-heat\n≥ 280 °C  New York\n≥ 240 °C  Home oven\n< 240 °C  Low / pan"} style={{ color: EMBER }}>{bake.style}<span className="fc-style-i">ⓘ</span></span></p>
           <div className="fc-presets bake">
             <span className="fc-preset-label">Oven</span>
             {OVEN_PRESETS.map((p) => (
