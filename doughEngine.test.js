@@ -10,6 +10,7 @@ const {
   flourProfile,
   hydrationVerdict,
   fermentVerdict,
+  overProofRecommendations,
   bakeProfile,
   digestScore,
   digestVerdict,
@@ -23,6 +24,7 @@ const {
   batchFn,
   geometryFn,
   computeAll,
+  buildRisePaths,
   REF, K, Q10, SALT_REF, TYPE, SURF, FRICTION,
 } = require('./doughEngine.js');
 
@@ -567,5 +569,280 @@ describe('computeAll — over-prove scenario', () => {
   });
   test('rise model flags collapse', () => {
     assert.ok(M.rise.collapses, 'weak flour at 48h should collapse');
+  });
+  test('overProof included and non-null when over capacity', () => {
+    assert.ok('overProof' in M, 'overProof key must be present');
+    assert.ok(M.overProof !== null, 'over-proved scenario has non-null overProof');
+  });
+});
+
+describe('computeAll — overProof null when well within capacity', () => {
+  test('overProof is null at anchor conditions', () => {
+    const M = computeAll(BASE); // protein=12, hours=8, maxHours=24 → raw=0.33
+    assert.equal(M.overProof, null);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// bakeProfile — style branches
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('bakeProfile — style branches', () => {
+  test('Neapolitan style at ≥430 °C', () => {
+    assert.equal(bakeProfile(460, 60, 2.5, 0, 0, 'stone').style, 'Neapolitan');
+    assert.equal(bakeProfile(430, 60, 2.5, 0, 0, 'stone').style, 'Neapolitan');
+  });
+  test('Artisan / high-heat style at 340–429 °C', () => {
+    assert.equal(bakeProfile(380, 60, 2.5, 0, 0, 'stone').style, 'Artisan / high-heat');
+    assert.equal(bakeProfile(340, 60, 2.5, 0, 0, 'stone').style, 'Artisan / high-heat');
+  });
+  test('New York style at 280–339 °C', () => {
+    assert.equal(bakeProfile(300, 60, 2.5, 0, 0, 'steel').style, 'New York');
+    assert.equal(bakeProfile(280, 60, 2.5, 0, 0, 'steel').style, 'New York');
+  });
+  test('Home oven style at 240–279 °C', () => {
+    assert.equal(bakeProfile(250, 60, 2.5, 0, 0, 'steel').style, 'Home oven');
+    assert.equal(bakeProfile(240, 60, 2.5, 0, 0, 'steel').style, 'Home oven');
+  });
+  test('Low / pan style below 240 °C', () => {
+    assert.equal(bakeProfile(200, 60, 2.5, 0, 0, 'pan').style, 'Low / pan');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// digestVerdict — all branches
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('digestVerdict', () => {
+  test('d >= 68 → good tone', () => {
+    assert.equal(digestVerdict(68).tone, 'good');
+    assert.equal(digestVerdict(80).tone, 'good');
+  });
+  test('45 ≤ d < 68 → warn tone with "Moderate" text', () => {
+    const v = digestVerdict(50);
+    assert.equal(v.tone, 'warn');
+    assert.ok(v.text.toLowerCase().includes('moderate'), v.text);
+  });
+  test('d < 45 → warn tone with "Short" text', () => {
+    const v = digestVerdict(30);
+    assert.equal(v.tone, 'warn');
+    assert.ok(v.text.toLowerCase().includes('short'), v.text);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// bakeVerdict — all branches
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('bakeVerdict', () => {
+  test('leopard → good', () => {
+    assert.equal(bakeVerdict({ leopard: true }, 460).tone, 'good');
+  });
+  test('no leopard at ≥430 °C → warn', () => {
+    assert.equal(bakeVerdict({ leopard: false }, 430).tone, 'warn');
+  });
+  test('no leopard at 280–429 °C → good', () => {
+    assert.equal(bakeVerdict({ leopard: false }, 300).tone, 'good');
+    assert.equal(bakeVerdict({ leopard: false }, 280).tone, 'good');
+  });
+  test('no leopard at 240–279 °C → good', () => {
+    assert.equal(bakeVerdict({ leopard: false }, 250).tone, 'good');
+    assert.equal(bakeVerdict({ leopard: false }, 240).tone, 'good');
+  });
+  test('no leopard below 240 °C → warn', () => {
+    assert.equal(bakeVerdict({ leopard: false }, 200).tone, 'warn');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// compute — preferment factor and fresh-yeast tsp=null
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('compute — preferment and yeast-type branches', () => {
+  test('preferment reduces yeast by 15% vs straight (pfYeast=0.85)', () => {
+    const straight = compute({ ...BASE, preferment: 'straight' });
+    const biga     = compute({ ...BASE, preferment: 'biga' });
+    near(biga.pct, straight.pct * 0.85, 0.001, 'biga pct = straight × 0.85');
+  });
+
+  test('fresh yeast has null tsp (no volume conversion)', () => {
+    const r = compute({ ...BASE, yeastType: 'fresh' });
+    assert.equal(r.tsp, null);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// geometryFn
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('geometryFn', () => {
+  test('returns the four required fields', () => {
+    const g = geometryFn(65, 12, 300, 1, 0);
+    assert.ok('openness' in g && 'strength' in g && 'springFrac' in g && 'rimIndex' in g);
+  });
+
+  test('higher hydration → more open crumb', () => {
+    const lo = geometryFn(55, 12, 300, 1, 0);
+    const hi = geometryFn(75, 12, 300, 1, 0);
+    assert.ok(hi.openness > lo.openness);
+  });
+
+  test('higher protein → stronger dough', () => {
+    const lo = geometryFn(65, 10, 300, 1, 0);
+    const hi = geometryFn(65, 14, 300, 1, 0);
+    assert.ok(hi.strength > lo.strength);
+  });
+
+  test('hotter oven → more oven spring', () => {
+    const cool = geometryFn(65, 12, 230, 1, 0);
+    const hot  = geometryFn(65, 12, 470, 1, 0);
+    assert.ok(hot.springFrac > cool.springFrac);
+  });
+
+  test('openness and strength clamped to [0, 1]', () => {
+    const g = geometryFn(65, 12, 300, 1, 0);
+    assert.ok(g.openness >= 0 && g.openness <= 1);
+    assert.ok(g.strength >= 0 && g.strength <= 1);
+    assert.ok(g.springFrac >= 0 && g.springFrac <= 1);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// buildRisePaths
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('buildRisePaths', () => {
+  const m   = riseModel(21, 8, 12);
+  const pad = { l: 40, r: 20, t: 20, b: 30 };
+  const P   = buildRisePaths(m, 400, 200, pad, 260);
+
+  test('returns required keys: line, area, target, lagX, baselineY', () => {
+    assert.ok('line' in P && 'area' in P && 'target' in P && 'lagX' in P && 'baselineY' in P);
+  });
+  test('line SVG path starts with M (moveto)', () => {
+    assert.ok(P.line.trim().startsWith('M'), `line starts with: ${P.line.slice(0, 5)}`);
+  });
+  test('area SVG path closes with Z', () => {
+    assert.ok(P.area.trim().endsWith('Z'), `area ends with: ${P.area.slice(-5)}`);
+  });
+  test('target.x and target.y are finite numbers', () => {
+    assert.ok(Number.isFinite(P.target.x) && Number.isFinite(P.target.y));
+  });
+  test('lagX is between left pad and right edge', () => {
+    assert.ok(P.lagX >= pad.l && P.lagX <= 400 - pad.r);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// overProofRecommendations — all branches
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('overProofRecommendations', () => {
+  // protein=12, maxHours=24
+  const fp12 = flourProfile(12, 0);
+
+  const baseInp = { ...BASE, protein: 12, tempC: 21, salt: 2.5, preferment: 'straight', hydration: 60 };
+
+  test('returns null when raw < 0.8 (hours well under capacity)', () => {
+    const r = overProofRecommendations({ ...baseInp, hours: 10 }, fp12); // 10/24 ≈ 0.42
+    assert.equal(r, null);
+  });
+
+  test('returns null at exactly 79% of capacity', () => {
+    const r = overProofRecommendations({ ...baseInp, hours: 19 }, fp12); // 19/24 ≈ 0.79
+    assert.equal(r, null);
+  });
+
+  test('caution severity at 80–99% of capacity', () => {
+    const op = overProofRecommendations({ ...baseInp, hours: 20 }, fp12); // 20/24 ≈ 0.83
+    assert.equal(op.severity, 'caution');
+    assert.equal(op.label, 'Approaching limit');
+  });
+
+  test('warn severity at 100–124% of capacity', () => {
+    const op = overProofRecommendations({ ...baseInp, hours: 26 }, fp12); // 26/24 ≈ 1.08
+    assert.equal(op.severity, 'warn');
+    assert.equal(op.label, 'Exceeds capacity');
+  });
+
+  test('bad severity at ≥125% of capacity', () => {
+    const op = overProofRecommendations({ ...baseInp, hours: 32 }, fp12); // 32/24 ≈ 1.33
+    assert.equal(op.severity, 'bad');
+    assert.equal(op.label, 'Over-proved');
+  });
+
+  test('raw field equals hours / maxHours', () => {
+    const op = overProofRecommendations({ ...baseInp, hours: 20 }, fp12);
+    near(op.raw, 20 / 24, 0.001, 'raw = hours / maxHours');
+  });
+
+  test('why text mentions headroom when below capacity', () => {
+    const op = overProofRecommendations({ ...baseInp, hours: 20 }, fp12);
+    assert.ok(op.why.toLowerCase().includes('headroom'), op.why);
+  });
+
+  test('why text mentions collapsing when at/over capacity', () => {
+    const op = overProofRecommendations({ ...baseInp, hours: 26 }, fp12);
+    assert.ok(op.why.toLowerCase().includes('collapses') || op.why.toLowerCase().includes('rupture'), op.why);
+  });
+
+  // ── lever conditions ──
+
+  test('protein lever appears when protein < 13', () => {
+    const op = overProofRecommendations({ ...baseInp, hours: 26, protein: 12 }, fp12);
+    assert.ok(op.levers.some(l => l.k === 'Flour protein'));
+  });
+
+  test('protein lever absent when protein >= 13', () => {
+    const fp13 = flourProfile(13, 0);
+    const op   = overProofRecommendations({ ...baseInp, hours: 40, protein: 13 }, fp13);
+    assert.ok(!op.levers.some(l => l.k === 'Flour protein'));
+  });
+
+  test('temperature lever appears when tempC > 10', () => {
+    const op = overProofRecommendations({ ...baseInp, hours: 26, tempC: 20 }, fp12);
+    assert.ok(op.levers.some(l => l.k === 'Temperature'));
+  });
+
+  test('temperature lever absent when tempC <= 10', () => {
+    const op = overProofRecommendations({ ...baseInp, hours: 26, tempC: 8 }, fp12);
+    assert.ok(!op.levers.some(l => l.k === 'Temperature'));
+  });
+
+  test('salt lever appears when salt < 2.5', () => {
+    const op = overProofRecommendations({ ...baseInp, hours: 26, salt: 2.0 }, fp12);
+    assert.ok(op.levers.some(l => l.k === 'Salt'));
+  });
+
+  test('salt lever absent when salt >= 2.5', () => {
+    const op = overProofRecommendations({ ...baseInp, hours: 26, salt: 2.5 }, fp12);
+    assert.ok(!op.levers.some(l => l.k === 'Salt'));
+  });
+
+  test('time lever is always present', () => {
+    const op = overProofRecommendations({ ...baseInp, hours: 26 }, fp12);
+    assert.ok(op.levers.some(l => l.k === 'Time'));
+  });
+
+  test('preferment lever appears for straight dough', () => {
+    const op = overProofRecommendations({ ...baseInp, hours: 26, preferment: 'straight' }, fp12);
+    assert.ok(op.levers.some(l => l.k === 'Preferment'));
+  });
+
+  test('preferment lever absent for biga or poolish', () => {
+    const opBiga   = overProofRecommendations({ ...baseInp, hours: 26, preferment: 'biga' },   fp12);
+    const opPoolish = overProofRecommendations({ ...baseInp, hours: 26, preferment: 'poolish' }, fp12);
+    assert.ok(!opBiga.levers.some(l => l.k === 'Preferment'));
+    assert.ok(!opPoolish.levers.some(l => l.k === 'Preferment'));
+  });
+
+  test('hydration lever appears when hydration > 68', () => {
+    const op = overProofRecommendations({ ...baseInp, hours: 26, hydration: 70 }, fp12);
+    assert.ok(op.levers.some(l => l.k === 'Hydration'));
+  });
+
+  test('hydration lever absent when hydration <= 68', () => {
+    const op = overProofRecommendations({ ...baseInp, hours: 26, hydration: 65 }, fp12);
+    assert.ok(!op.levers.some(l => l.k === 'Hydration'));
   });
 });

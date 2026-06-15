@@ -224,6 +224,24 @@ function fermentVerdict(hours, fp) {
   return { tone: "good", text: `Comfortable — this flour holds up to ~${m} h here.` };
 }
 
+function overProofRecommendations(inp, fp) {
+  const raw = inp.hours / fp.maxHours;
+  if (raw < 0.8) return null;
+  const severity = raw >= 1.25 ? 'bad' : raw >= 1 ? 'warn' : 'caution';
+  const label = severity === 'bad' ? 'Over-proved' : severity === 'warn' ? 'Exceeds capacity' : 'Approaching limit';
+  const why = raw >= 1
+    ? `At ${inp.tempC} °C with ${inp.protein}% protein flour, protease enzymes and CO₂ pressure begin to irreversibly rupture the gluten network after ~${Math.round(fp.maxHours)} h. The dough loses gas-holding capacity and collapses into a slack, dense mass.`
+    : `Beyond ${Math.round(fp.maxHours)} h this flour's gluten becomes vulnerable — protease enzymes attack the protein bonds and CO₂ pressure physically tears the network. You have ~${Math.round(fp.maxHours - inp.hours)} h of headroom.`;
+  const levers = [];
+  if (inp.protein < 13)             levers.push({ k: 'Flour protein', v: `raise to 13%+ — fermentation capacity roughly doubles per +1.5% protein (now ${inp.protein}%)` });
+  if (inp.tempC > 10)               levers.push({ k: 'Temperature',   v: `drop below 10 °C — cold slows yeast ~90% while enzymes only slow ~55%, dramatically extending the safe window (now ${inp.tempC} °C)` });
+  if (inp.salt < 2.5)               levers.push({ k: 'Salt',          v: `raise to 2.5–3% — tightens the gluten network and slows yeast exponentially via osmotic stress (now ${inp.salt}%)` });
+  levers.push(                       { k: 'Time',         v: `reduce by ${Math.max(1, Math.round(inp.hours - fp.maxHours * 0.85))} h to return inside the safe window` });
+  if (inp.preferment === 'straight') levers.push({ k: 'Preferment',   v: 'switch to biga or poolish — pre-fermented acidity buffers further yeast activity and reduces the fresh yeast load' });
+  if (inp.hydration > 68)           levers.push({ k: 'Hydration',     v: `reduce to ≤68% — more water creates a more mobile environment that accelerates enzyme activity (now ${inp.hydration}%)` });
+  return { raw, severity, label, why, levers };
+}
+
 // ---- bake model ------------------------------------------------------
 function bakeProfile(ovenC, hydration, salt, sugarPct, oilPct, surface) {
   const k = SURF[surface].k;
@@ -358,7 +376,7 @@ function computeAll(inp) {
     digestion: digestVerdict(digest),
     bake: bakeVerdict(bake, inp.ovenC),
   };
-  return { r, fp, rise, proof, bake, digest, water, batch, geometry, verdicts, pl };
+  return { r, fp, rise, proof, bake, digest, water, batch, geometry, verdicts, pl, overProof: overProofRecommendations(inp, fp) };
 }
 
 // view-only: turn a rise model into SVG path strings
@@ -379,6 +397,7 @@ module.exports = {
   flourProfile,
   hydrationVerdict,
   fermentVerdict,
+  overProofRecommendations,
   bakeProfile,
   digestScore,
   digestVerdict,
