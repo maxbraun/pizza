@@ -232,6 +232,16 @@ const SOURCES = [
     { t: "Salt, water & temperature on wheat dough rheology", u: "https://www.researchgate.net/publication/230486758" },
     { t: "Low-sodium sea salt → dough rheology & bread", u: "https://www.mdpi.com/2076-3417/12/9/4344" },
   ] },
+  { group: "Over-fermentation", items: [
+    { t: "CO₂-induced gluten network rupture and yeast metabolites during fermentation", u: "https://pmc.ncbi.nlm.nih.gov/articles/PMC7795266/" },
+    { t: "Microbial proteases in baked goods: gluten modification and immunogenicity", u: "https://pmc.ncbi.nlm.nih.gov/articles/PMC5302405/" },
+    { t: "Under- and over-fermented pizza dough: causes and effects (PizzaBlab)", u: "https://www.pizzablab.com/learning-and-resources/fermentation/under-and-over-fermentation/" },
+    { t: "Cold vs. room-temperature fermentation: which makes the best pizza? (PizzaBlab)", u: "https://www.pizzablab.com/learning-and-resources/fermentation/pizza-dough-fermentation-methods/" },
+    { t: "Cold-proofing pizza dough — technique and science (Modernist Cuisine)", u: "https://modernistcuisine.com/mp/cold-proofing-pizza-dough/" },
+    { t: "Temperature control in pizza dough fermentation (PMQ Pizza)", u: "https://www.pmq.com/dont-underestimate-the-importance-of-temperature-control-in-pizza-dough-fermentation/" },
+    { t: "The science behind pizza fermentation: yeast, enzymes & flavour (Dough School)", u: "https://www.dough.school/guides/fermentation-science" },
+    { t: "Effects of temperature on fermentation rate of baker's yeast — Q10 study (OSU)", u: "https://undergradsciencejournals.okstate.edu/index.php/jibi/article/view/8265" },
+  ] },
   { group: "Baking & storage", items: [
     { t: "Salts → acrylamide, HMF & flavour in crust-like dough", u: "https://www.sciencedirect.com/science/article/pii/S0308814622033209" },
     { t: "Acrylamide in bakery, snack & fried products", u: "https://pmc.ncbi.nlm.nih.gov/articles/PMC9749820/" },
@@ -445,6 +455,57 @@ function Slider({ label, value, unit, min, max, step, onChange, accent, note, no
         style={{ background: `linear-gradient(to right, ${accent} ${pctPos}%, #d9cfbe ${pctPos}%)` }}
       />
       {note && <p className="fc-note-line" style={noteColor ? { color: noteColor } : undefined}>{note}</p>}
+    </div>
+  );
+}
+
+
+function CapacityMeter({ hours, maxHours }) {
+  const raw = hours / maxHours;
+  const pct = clamp(raw, 0, 1);
+  const over = clamp(raw - 1, 0, 0.5);
+  const color = raw < 0.7 ? '#648A45' : raw < 1 ? '#C2641F' : '#C5362A';
+  return (
+    <div className="fc-cap">
+      <div className="fc-cap-head">
+        <span className="fc-fit-label">Capacity</span>
+        <span className="fc-cap-val" style={{ color }}>{Math.round(raw * 100)}% of {Math.round(maxHours)} h</span>
+      </div>
+      <div className="fc-cap-track">
+        <div className="fc-cap-fill" style={{ width: `${pct * 100}%`, background: color }} />
+        {over > 0 && <div className="fc-cap-over" style={{ width: `${over * 100}%` }} />}
+      </div>
+    </div>
+  );
+}
+
+function OverProofPanel({ hours, fp, tempC, protein, salt, preferment, hydration }) {
+  const raw = hours / fp.maxHours;
+  if (raw < 0.8) return null;
+  const sev = raw >= 1.25 ? 'bad' : raw >= 1 ? 'warn' : 'caution';
+  const col = sev === 'bad' ? '#C5362A' : sev === 'warn' ? '#C2641F' : '#D99B36';
+  const label = sev === 'bad' ? 'Over-proved' : sev === 'warn' ? 'Exceeds capacity' : 'Approaching limit';
+  const why = raw >= 1
+    ? `At ${tempC} °C with ${protein}% protein flour, protease enzymes and CO₂ pressure begin to irreversibly rupture the gluten network after ~${Math.round(fp.maxHours)} h. The dough loses gas-holding capacity and collapses into a slack, dense mass.`
+    : `Beyond ${Math.round(fp.maxHours)} h this flour's gluten becomes vulnerable — protease enzymes attack the protein bonds and CO₂ pressure physically tears the network. You have ~${Math.round(fp.maxHours - hours)} h of headroom.`;
+  const levers = [];
+  if (protein < 13)        levers.push({ k: 'Flour protein',  v: `raise to 13%+ — fermentation capacity roughly doubles per +1.5% protein (now ${protein}%)` });
+  if (tempC > 10)          levers.push({ k: 'Temperature',    v: `drop below 10 °C — cold slows yeast ~90% while enzymes only slow ~55%, dramatically extending the safe window (now ${tempC} °C)` });
+  if (salt < 2.5)          levers.push({ k: 'Salt',           v: `raise to 2.5–3% — tightens the gluten network and slows yeast exponentially via osmotic stress (now ${salt}%)` });
+  levers.push(              { k: 'Time',           v: `reduce by ${Math.max(1, Math.round(hours - fp.maxHours * 0.85))} h to return inside the safe window` });
+  if (preferment === 'straight') levers.push({ k: 'Preferment', v: 'switch to biga or poolish — pre-fermented acidity buffers further yeast activity and reduces the fresh yeast load' });
+  if (hydration > 68)      levers.push({ k: 'Hydration',      v: `reduce to ≤68% — more water creates a more mobile environment that accelerates enzyme activity (now ${hydration}%)` });
+  return (
+    <div className="fc-op" style={{ borderColor: col }}>
+      <div className="fc-op-head" style={{ color: col }}>
+        <span className="fc-dot" style={{ background: col, alignSelf: 'center', transform: 'none', marginTop: 1 }} />
+        {label}
+      </div>
+      <p className="fc-op-why">{why}</p>
+      <p className="fc-op-lbl">What helps</p>
+      <ul className="fc-op-list">
+        {levers.map((l, i) => <li key={i}><b>{l.k}</b> — {l.v}</li>)}
+      </ul>
     </div>
   );
 }
@@ -896,6 +957,33 @@ function FermentCalculator() {
         @media (prefers-reduced-motion: no-preference){
           .fc-line{ stroke-dasharray:1400; animation:fc-draw 1.1s cubic-bezier(.4,0,.2,1) forwards; }
         }
+
+        /* ── capacity meter ── */
+        .fc-cap{ margin:16px 0 4px; }
+        .fc-cap-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:7px; }
+        .fc-cap-val{ font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:500;
+          transition:color .35s cubic-bezier(.4,0,.2,1); }
+        .fc-cap-track{ height:6px; border-radius:99px; background:var(--line);
+          box-shadow:inset 0 2px 5px rgba(58,40,26,0.10); display:flex; overflow:hidden; }
+        .fc-cap-fill{ height:100%; border-radius:99px 0 0 99px;
+          transition:width .4s cubic-bezier(.4,0,.2,1),background .4s; }
+        .fc-cap-over{ height:100%; background:rgba(197,54,42,0.30);
+          transition:width .4s cubic-bezier(.4,0,.2,1); }
+
+        /* ── over-proof panel ── */
+        .fc-op{ margin:14px 0 2px; padding:14px 16px; border-radius:14px; border:1.5px solid;
+          background:rgba(58,40,26,0.04); }
+        .fc-op-head{ display:flex; align-items:center; gap:8px;
+          font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.12em;
+          text-transform:uppercase; font-weight:600; margin-bottom:9px; }
+        .fc-op-why{ font-size:13px; line-height:1.55; color:var(--ink); margin:0 0 12px; }
+        .fc-op-lbl{ font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.12em;
+          text-transform:uppercase; color:var(--ink-soft); margin:0 0 8px; }
+        .fc-op-list{ list-style:none; margin:0; padding:0; }
+        .fc-op-list li{ font-size:13px; line-height:1.55; color:var(--ink);
+          padding:6px 0; border-bottom:1px solid var(--line); }
+        .fc-op-list li:last-child{ border-bottom:none; }
+        .fc-op-list b{ color:var(--ink); font-weight:600; }
         .fc-target-dot, .fc-target-line, .fc-area{ transition:all .45s cubic-bezier(.4,0,.2,1); }
         button:focus-visible, input:focus-visible{
           outline:2px solid #D27A52; outline-offset:2px; border-radius:inherit; }
@@ -1061,6 +1149,10 @@ function FermentCalculator() {
               <StatusRow label="Digestion" verdict={dVerdict} />
             </div>
             <Help>These three checks read your settings: whether the water suits the flour, whether the flour can survive that long a prove, and how gentle the result is on the gut.</Help>
+
+            <CapacityMeter hours={hours} maxHours={fp.maxHours} />
+            <Help>How much of this flour's fermentation capacity you're using. Past 100%, protease enzymes begin to irreversibly break down the gluten — the dough slackens and collapses.</Help>
+            <OverProofPanel hours={hours} fp={fp} tempC={tempC} protein={protein} salt={salt} preferment={preferment} hydration={hydration} />
 
             <svg className="fc-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Predicted dough rise over time">
               <defs>
