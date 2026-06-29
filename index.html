@@ -31,18 +31,6 @@
   </style>
 </head>
 <body>
-  <header style="background:#FCF8F0; border-bottom:1px solid #F0E6D2;">
-    <div class="forno-header">
-      <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Forno mark">
-          <rect x="4" y="4" width="40" height="40" rx="14" fill="#1E1814"/>
-          <path d="M14 34a10 10 0 0 0 20 0c0-6-4-9-5.5-13.5C27 25 24 25.5 24 29c-2-1.5-2-4.5-1-7-4 2-9 6-9 12Z" fill="#C25A33"/>
-          <path d="M19.5 33.5a4.5 4.5 0 0 0 9 0c0-3-2.2-4.6-2.8-7-1.2 2.4-3 2.8-3.4 4.6-1-.8-1-2.2-.6-3.4-1.6 1.2-2.2 3.2-2.2 5.8Z" fill="#D99B36"/>
-        </svg>
-      <span class="forno-header-wordmark">Forno</span>
-      <span class="forno-header-tagline">Pizza dough calculator</span>
-    </div>
-  </header>
-
   <div id="root"></div>
 
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
@@ -50,7 +38,341 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <script type="text/babel">
-const { useState, useMemo } = React;
+const { useState, useMemo, useEffect, useContext, createContext } = React;
+
+const LangCtx = createContext(null);
+function useT() { return useContext(LangCtx); }
+
+function makeTFn(lang, dict) {
+  return function t(key, params) {
+    let str = (dict[lang] && dict[lang][key]) || (dict.en && dict.en[key]) || key;
+    if (params) Object.entries(params).forEach(([k, v]) => {
+      str = str.replace(new RegExp('\\{' + k + '\\}', 'g'), String(v));
+    });
+    return str;
+  };
+}
+
+const TRANSLATIONS = {
+  en: {
+    'header.tagline': 'Pizza dough calculator',
+    'toggle.simple': 'Simple', 'toggle.learn': 'Learn', 'toggle.nerd': 'Nerd mode', 'toggle.lang': 'DE',
+    'eyebrow': 'Ferment · flour · bake',
+    'title.main': 'From yeast to crust,', 'title.em': 'one dough modelled',
+    'lede': 'Three stages of pizza science in one place: how much yeast for your time and temperature, whether the flour can hold that ferment and hydration, and what the oven does to the crust. Colour tracks the driving variable at each step.',
+    'lede.learnOn': 'Learn mode is on — explanations sit under each control.',
+    'lede.learnOff': 'New here? Tap Learn for plain-English notes on every control.',
+    'label.style': 'Style', 'label.oven': 'Oven',
+    'guidelines.head': 'Style guidelines · {style}',
+    'panel.dough': '1 · Dough', 'panel.bake': '2 · The bake', 'panel.recipe': 'The recipe',
+    'panel.nerd': 'Nerd mode · all values', 'panel.nerd.live': 'live',
+    'subhead.prove': 'Prove', 'subhead.flour': 'Flour', 'subhead.mixins': 'Mix-ins',
+    'subhead.leaven': 'Leaven', 'subhead.batch': 'Batch', 'subhead.mixing': 'Mixing & batch',
+    'label.fermTemp': 'Fermentation temperature', 'label.targetTime': 'Target time',
+    'label.flourProtein': 'Flour protein', 'label.pl': 'Extensible ↔ elastic (P/L)',
+    'label.hydration': 'Hydration', 'label.salt': 'Salt', 'label.oil': 'Oil', 'label.sugar': 'Sugar',
+    'label.leavening': 'Leavening', 'label.starterStr': 'Starter strength', 'label.yeastType': 'Yeast type',
+    'label.preferment': 'Preferment', 'label.roomTemp': 'Room temperature',
+    'label.ddt': 'Target dough temp (FDT)', 'label.mixMethod': 'Mixing method',
+    'label.doughWeight': 'Total dough weight', 'label.ovenTemp': 'Oven temperature',
+    'label.bakingSurface': 'Baking surface',
+    'leaven.commercial': 'Commercial', 'leaven.sourdough': 'Sourdough',
+    'preferment.straight': 'Straight', 'preferment.poolish': 'Poolish', 'preferment.biga': 'Biga',
+    'yeast.idy': 'Instant dry', 'yeast.ady': 'Active dry', 'yeast.fresh': 'Fresh / cake',
+    'surface.steel': 'Steel', 'surface.stone': 'Stone', 'surface.pan': 'Pan', 'surface.rack': 'Rack',
+    'friction.hand': 'By hand', 'friction.mixer': 'Stand mixer', 'friction.processor': 'Processor',
+    'preset.neapolitan': 'Neapolitan', 'preset.ny': 'New York', 'preset.detroit': 'Detroit',
+    'preset.roman': 'Roman al taglio', 'preset.sourdough': 'Sourdough',
+    'ovenPreset.home': 'Home oven', 'ovenPreset.homehot': 'Home + stone', 'ovenPreset.deck': 'Deck oven',
+    'ovenPreset.electric': 'Electric pizza', 'ovenPreset.wood': 'Wood-fired',
+    'flour.soft': 'Soft / weak', 'flour.medium': 'Medium', 'flour.strong': 'Strong (pizza)', 'flour.veryStrong': 'Very strong',
+    'bakeStyle.neapolitan': 'Neapolitan', 'bakeStyle.artisan': 'Artisan / high-heat',
+    'bakeStyle.ny': 'New York', 'bakeStyle.homeOven': 'Home oven', 'bakeStyle.lowPan': 'Low / pan',
+    'bakeStyle.tip': '≥ 430 °C  Neapolitan\n≥ 340 °C  Artisan / high-heat\n≥ 280 °C  New York\n≥ 240 °C  Home oven\n< 240 °C  Low / pan',
+    'crust.pale': 'Pale · light gold', 'crust.golden': 'Golden', 'crust.deepGolden': 'Deep golden', 'crust.charred': 'Charred · leopard',
+    'verdict.hydration': 'Hydration', 'verdict.ferment': 'Ferment', 'verdict.digest': 'Digestion', 'verdict.bake': 'Bake', 'verdict.caution': 'Caution',
+    'verdict.hydration.high': "High for this flour — expect a slack, sticky dough that's hard to shape.",
+    'verdict.hydration.wet': 'A touch wet; workable with confident handling.',
+    'verdict.hydration.dry': 'Drier than this flour can take — room for a more open crumb.',
+    'verdict.hydration.good': 'Well matched to a {lo}–{hi}% range.',
+    'verdict.ferment.tooLong': 'Too long (~{m} h max). Gluten breaks down — the dough slackens and over-proofs.',
+    'verdict.ferment.limit': "Near this flour's limit (~{m} h). Watch for over-proofing.",
+    'verdict.ferment.good': 'Comfortable — this flour holds up to ~{m} h here.',
+    'verdict.digest.easy': 'Easy on the gut ({d}/100) — long, slow fermentation breaks down more fructans.',
+    'verdict.digest.moderate': 'Moderate ({d}/100) — a longer or sourdough prove breaks down more.',
+    'verdict.digest.short': 'Short prove ({d}/100) — less FODMAP breakdown; extend the time for easier digestion.',
+    'verdict.bake.leopard': 'Leoparding likely — fast bake, soft interior, charred spots. Needs a pizza or wood oven.',
+    'verdict.bake.veryHot': 'Very hot and quick, but only a dedicated pizza oven reaches this.',
+    'verdict.bake.golden': 'Even golden crust with a crisp base — the classic range.',
+    'verdict.bake.homeOven': 'Home-oven territory — golden and even; bake on a preheated steel or stone.',
+    'verdict.bake.low': 'Low — the crust can dry and stay pale before it browns. Preheat a steel hard.',
+    'verdict.bake.acrylamide': 'Very dark crust — acrylamide rises at this char. Pull a touch sooner or drop the heat.',
+    'overproof.bad': 'Over-proved', 'overproof.warn': 'Exceeds capacity', 'overproof.caution': 'Approaching limit',
+    'overproof.why.over': 'At {tempC} °C with {protein}% protein flour, protease enzymes and CO₂ pressure begin to irreversibly rupture the gluten network after ~{maxHours} h. The dough loses gas-holding capacity and collapses into a slack, dense mass.',
+    'overproof.why.near': "Beyond {maxHours} h this flour's gluten becomes vulnerable — protease enzymes attack the protein bonds and CO₂ pressure physically tears the network. You have ~{headroom} h of headroom.",
+    'overproof.whatHelps': 'What helps',
+    'overproof.lever.proteinKey': 'Flour protein', 'overproof.lever.protein': 'raise to 13%+ — fermentation capacity roughly doubles per +1.5% protein (now {val}%)',
+    'overproof.lever.temperatureKey': 'Temperature', 'overproof.lever.temperature': 'drop below 10 °C — cold slows yeast ~90% while enzymes only slow ~55%, dramatically extending the safe window (now {val} °C)',
+    'overproof.lever.saltKey': 'Salt', 'overproof.lever.salt': 'raise to 2.5–3% — tightens the gluten network and slows yeast exponentially via osmotic stress (now {val}%)',
+    'overproof.lever.timeKey': 'Time', 'overproof.lever.time': 'reduce by {val} h to return inside the safe window',
+    'overproof.lever.prefermentKey': 'Preferment', 'overproof.lever.preferment': 'switch to biga or poolish — pre-fermented acidity buffers further yeast activity and reduces the fresh yeast load',
+    'overproof.lever.hydrationKey': 'Hydration', 'overproof.lever.hydration': 'reduce to ≤68% — more water creates a more mobile environment that accelerates enzyme activity (now {val}%)',
+    'capacity.label': 'Capacity', 'capacity.val': '{pct}% of {maxH} h',
+    'panel.starterRequired': 'Starter required', 'panel.yeastRequired': 'Yeast required',
+    'unit.gStarter': 'g starter', 'unit.grams': 'grams',
+    'yeast.levainSub': '{levainPct}% levain of flour ({flourG} g) · {saltG} g salt',
+    'yeast.commercialSub': '{pct}% of flour ({flourG} g) · {saltG} g salt',
+    'yeast.tsp': ' · ≈ {tsp} tsp yeast',
+    'rise.lagLabel': '↤ lag', 'rise.activeRise': 'active rise', 'rise.collapse': 'collapse ↦', 'rise.overProof': 'over-proof ↦',
+    'rise.target': '{hours} h · target',
+    'crumb.label': 'Predicted crumb · rim cross-section',
+    'bake.time': 'Bake time', 'bake.topBase': 'Top / base', 'bake.yourPizza': 'Your pizza', 'bake.crustColour': 'Crust colour (top)',
+    'bake.formula': 'bake ≈ 116·e^(−0.0098·T) · surface · hydration',
+    'gauge.pale': 'pale', 'gauge.golden': 'golden', 'gauge.charred': 'charred',
+    'recipe.ingredients': 'Ingredients', 'recipe.method': 'Method',
+    'recipe.flour': 'Flour', 'recipe.water': 'Water', 'recipe.salt': 'Salt', 'recipe.oil': 'Oil', 'recipe.sugar': 'Sugar',
+    'recipe.sourdoughStarter': 'Sourdough starter', 'recipe.yeast': 'Yeast',
+    'recipe.levainPct': '{pct}% levain',
+    'recipe.makes': 'Makes {balls} ball{suffix} · {weight} g total', 'recipe.ballSuffix': 's', 'recipe.each': ' each',
+    'recipe.step.poolish': 'The night before, whisk a pinch of the yeast into equal parts flour and water (a poolish) and leave covered overnight; mix it into the dough at the start.',
+    'recipe.step.biga': 'The night before, mix a pinch of the yeast into flour with half its weight in water (a stiff biga) and leave covered overnight; break it into the dough at the start.',
+    'recipe.step.mixSourdough': 'Mix the active sourdough starter ({levainG} g) into the water ({waterG} g at ~{waterTemp} °C), add the flour ({flourG} g), mix to a shaggy mass and rest 20 min.',
+    'recipe.step.mixYeast': 'Whisk the {yeastLabel} yeast ({yeastG} g) into the water ({waterG} g at ~{waterTemp} °C), add the flour ({flourG} g), mix to a shaggy mass and rest 20 min.',
+    'recipe.step.addSalt': 'Add the salt ({saltG} g){oilText}{sugarText}, then {kneadText}',
+    'recipe.step.addOil': ' and oil ({oilG} g)', 'recipe.step.addSugar': ' and sugar ({sugarG} g)',
+    'recipe.step.bulkRise': 'Cover and bulk-rise until puffy, then divide into {balls} ball{suffix} of ~{ballW} g{eachText}.',
+    'recipe.step.prove': 'Prove {fermentLoc} for {hours} h.{coldNote}',
+    'recipe.step.overFerment': 'Heads up — at {protein}% protein this flour may over-ferment across {hours} h and slacken. A stronger flour or a shorter prove keeps the rim intact.',
+    'recipe.step.openBall': 'Open each ball into a base, leaving a thicker rim, and top lightly so it bakes through.',
+    'recipe.step.bake': 'Preheat your {surface}{ovenSuffix} to {ovenC} °C. Bake ~{bakeTime}{bakeFinish}',
+    'recipe.step.bakeOvenSuffix': ' (and oven)',
+    'recipe.bakeFinish.leopard': ', until the rim is puffed and leopard-spotted.',
+    'recipe.bakeFinish.hot': ', until golden with a crisp, spotted base.',
+    'recipe.bakeFinish.normal': ', rotating once, until evenly golden.',
+    'recipe.knead.stretch': 'develop it with 3–4 sets of stretch-and-folds over the first hour rather than hard kneading.',
+    'recipe.knead.long': 'knead just 3–4 minutes — the long prove finishes the gluten for you.',
+    'recipe.knead.normal': 'knead 8–10 minutes until smooth and elastic.',
+    'recipe.fermentLoc.cold': 'in the fridge ({tempC} °C)', 'recipe.fermentLoc.cool': 'somewhere cool (~{tempC} °C)', 'recipe.fermentLoc.room': 'at room temperature (~{tempC} °C)',
+    'recipe.coldNote': ' Pull it out 1–2 h before baking to take off the chill.',
+    'recipe.tip.warm': "Use cool water (~15 °C) so the dough doesn't race ahead.",
+    'recipe.tip.cold': "The long cold prove builds the most flavour — don't rush it.",
+    'note.protein': '≈ W {W} · {category}',
+    'note.pl.extensible': 'extensible — opens easily, spreads', 'note.pl.elastic': 'elastic — springs back, taller rim', 'note.pl.balanced': 'balanced',
+    'note.hydration': 'recommended {lo}–{hi}% for this flour',
+    'note.salt': '{saltG} g · {saltNote}', 'note.salt.fast': 'fast ferment, looser dough', 'note.salt.slow': 'slow ferment, tighter dough', 'note.salt.typical': 'typical pizza range',
+    'note.oil.none': 'none — Neapolitan style', 'note.oil.some': '{oilG} g — softer, crispier crust',
+    'note.sugar.none': 'none', 'note.sugar.some': '{sugarG} g — feeds browning',
+    'note.starter.sluggish': 'sluggish — needs more levain', 'note.starter.vigorous': 'vigorous — needs less', 'note.starter.average': 'average activity',
+    'note.ddt': 'use water at ~{temp} °C{icedNote}', 'note.ddt.iced': ' (iced)',
+    'note.levain': "Levain % is a rule of thumb — your starter's real ripeness and activity dominate.",
+    'nerd.confidence.grounded': 'grounded', 'nerd.confidence.heuristic': 'calibrated heuristic', 'nerd.confidence.illustrative': 'illustrative',
+    'nerd.col.leaven': 'Leaven', 'nerd.col.recipe': 'Recipe & mix', 'nerd.col.flour': 'Flour & rise', 'nerd.col.bake': 'Bake & geometry',
+    'graph.inputs': 'Inputs', 'graph.models': 'Models', 'graph.outputs': 'Outputs',
+    'nerd.graph.head': 'Dependency graph',
+    'nerd.graph.note': 'How a setting becomes a number: inputs feed models feed outputs. Edge colour marks the confidence of what it feeds.',
+    'nerd.formula.note': 'Dots mark confidence: grounded values are arithmetic or standard formulas; heuristics are calibrated guesses; illustrative ones build intuition, not precision. water °C = N·FDT − (N−1)·room − friction (N = 4 with a preferment, else 3). yeast% = 2.4 / (h · Q₁₀^((T−21)/10) · e^(−0.12·(S−2.5))) · type. bake ≈ 116·e^(−0.0098·T) · surface.',
+    'footer': 'A teaching model, not a lab instrument. Yeast assumes one steady temperature (anchored on ~0.3% IDY → full proof in ~8 h at 21 °C, Q₁₀ = {Q10}). Flour W-value, hydration range and ferment capacity are simple heuristics from protein. Bake time follows an inverse-exponential fit and the crust gauge tracks heat — real ovens, stones, steels and toppings all shift it. Use it for intuition: doubling the time halves the yeast, stronger flour buys hydration and ferment length, and a hotter oven trades minutes for leopard spots.',
+    'sources.head': 'Sources', 'sources.note': "Links open the study or resource. Peer-reviewed work is paraphrased in this tool's heuristics, not implemented from the original methods.",
+    'guideline.label.protein': 'Protein', 'guideline.label.hydration': 'Hydration', 'guideline.label.salt': 'Salt',
+    'guideline.label.proveTemp': 'Prove temp', 'guideline.label.proveTime': 'Prove time', 'guideline.label.oven': 'Oven',
+    'guideline.note.neapolitan.protein': '00 flour, W 280–320', 'guideline.note.neapolitan.hydration': 'tight for hand-stretching',
+    'guideline.note.neapolitan.salt': 'AVPN standard', 'guideline.note.neapolitan.proveTemp': 'room temp or cool',
+    'guideline.note.neapolitan.proveTime': 'min 18 h for structure', 'guideline.note.neapolitan.oven': 'pizza oven required',
+    'guideline.note.ny.protein': 'bread or high-gluten flour', 'guideline.note.ny.hydration': 'workable, slightly tacky',
+    'guideline.note.ny.salt': 'restrained — cheese is salty', 'guideline.note.ny.proveTemp': 'cold fridge proof',
+    'guideline.note.ny.proveTime': 'longer = more flavour', 'guideline.note.ny.oven': 'as hot as home oven allows',
+    'guideline.note.detroit.protein': 'AP or bread flour', 'guideline.note.detroit.hydration': 'high — pan holds the dough',
+    'guideline.note.detroit.salt': 'standard', 'guideline.note.detroit.proveTemp': 'room temp, same day',
+    'guideline.note.detroit.proveTime': 'quick same-day rise', 'guideline.note.detroit.oven': 'pan pizza heat',
+    'guideline.note.roman.protein': 'strong flour for high hydration', 'guideline.note.roman.hydration': 'very wet — use a tray',
+    'guideline.note.roman.salt': 'standard', 'guideline.note.roman.proveTemp': 'slow cold proof',
+    'guideline.note.roman.proveTime': 'long cold ferment', 'guideline.note.roman.oven': 'deck-oven style',
+    'guideline.note.sourdough.protein': 'strong flour for long ferment', 'guideline.note.sourdough.hydration': 'manageable with good gluten',
+    'guideline.note.sourdough.salt': 'acid compensates slightly', 'guideline.note.sourdough.proveTemp': 'fridge retard for flavour',
+    'guideline.note.sourdough.proveTime': 'long cold ferment', 'guideline.note.sourdough.oven': 'steel helps at lower temps',
+    'help.fermTemp': 'The biggest lever. Warmer makes the yeast work faster (so you need less of it); colder slows it right down and builds more flavour.',
+    'help.targetTime': 'How long the dough rises before baking. Longer time means less yeast and a tastier, more digestible crust.',
+    'help.flourProtein': 'Protein becomes gluten — the web that traps gas. More of it = a stronger dough that holds bigger bubbles and more water, but resists stretching. ~12–13% suits pizza. (W is the bakery measure of the same thing.)',
+    'help.pl': 'Two flours can have the same protein but behave differently: extensible dough stretches and stays put; elastic dough pings back. It shifts how easily the base opens and how tall the rim sits.',
+    'help.hydration': "Water as a percentage of flour. More water = a lighter, more open crumb — but a wetter, stickier dough that's harder to handle and needs a stronger flour.",
+    'help.salt': 'Seasons the dough, but it also reins in the yeast and tightens the gluten. Too little and the dough over-proofs fast and bakes pale; ~2.5–3% is standard.',
+    'help.oil': 'Fat softens the crumb and crisps the crust. Common in New York and pan pizzas; a true Neapolitan uses none.',
+    'help.sugar': "Feeds the yeast and, more importantly, helps the crust brown — useful when a home oven can't get hot enough to colour it on its own.",
+    'help.leavening': 'What makes the dough rise. Commercial yeast is fast and predictable; sourdough (a live flour-and-water culture) is slower, tangier and gentler on the gut.',
+    'help.starterStr': 'How lively your starter is. A vigorous, recently-fed starter raises dough faster, so you need less of it.',
+    'help.yeastType': 'The same yeast in three forms. Instant and active-dry come in jars; fresh is the cake from the fridge. The tool converts the amounts between them.',
+    'help.preferment': '"Straight" mixes everything at once. A poolish (wet) or biga (stiff) is a bit of dough fermented the night before, then mixed in — more flavour and strength for a little planning.',
+    'help.roomTemp': "How warm your kitchen is. It's used to work out the water temperature so the dough finishes mixing at your target.",
+    'help.ddt': 'The temperature you want the dough to be right after mixing (~24 °C is a good default). The tool tells you what temperature water to use to land there.',
+    'help.mixMethod': 'Mixing adds heat through friction — a machine adds more than your hands — so a mixer or processor needs cooler water to hit the same dough temperature.',
+    'help.doughWeight': 'Total dough you want to make. It’s split into ~250 g balls — one good-sized pizza each.',
+    'help.verdicts': 'These three checks read your settings: whether the water suits the flour, whether the flour can survive that long a prove, and how gentle the result is on the gut.',
+    'help.capacity': "How much of this flour's fermentation capacity you're using. Past 100%, protease enzymes begin to irreversibly break down the gluten — the dough slackens and collapses.",
+    'help.riseCurve': "The rise over time: a slow start (lag), a steep climb, then a plateau. The dot marks your target — ideally on the plateau. If the flour can't hold the prove, the line sags into collapse.",
+    'help.crumb': 'A slice through the edge of the baked pizza: thin sauced base on the left, puffed rim on the right. Hydration and heat open up the holes; a weak, over-proofed dough stays flat and dense.',
+    'help.ovenTemp': 'Hotter bakes faster and puffs the rim harder. A home oven tops out near 250 °C; a true Neapolitan wants 450 °C+, which only a pizza oven reaches.',
+    'help.bakingSurface': 'What the pizza sits on. A preheated steel or stone stores heat and crisps the underside; a bare oven rack browns the base the least.',
+  },
+  de: {
+    'header.tagline': 'Pizzateig-Rechner',
+    'toggle.simple': 'Einfach', 'toggle.learn': 'Lernen', 'toggle.nerd': 'Nerd-Modus', 'toggle.lang': 'EN',
+    'eyebrow': 'Gärung · Mehl · Backen',
+    'title.main': 'Von der Hefe zur Kruste,', 'title.em': 'ein Teig modelliert',
+    'lede': 'Pizzawissenschaft in drei Stufen: wie viel Hefe für Zeit und Temperatur, ob das Mehl diese Gärung und Hydration hält, und was der Ofen mit der Kruste macht. Die Farbe zeigt die entscheidende Variable jedes Schritts.',
+    'lede.learnOn': 'Lernmodus aktiv — Erklärungen erscheinen unter jedem Regler.',
+    'lede.learnOff': 'Neu hier? Lernmodus aktivieren für Erklärungen zu jedem Regler.',
+    'label.style': 'Stil', 'label.oven': 'Ofen',
+    'guidelines.head': 'Stilrichtlinien · {style}',
+    'panel.dough': '1 · Teig', 'panel.bake': '2 · Das Backen', 'panel.recipe': 'Das Rezept',
+    'panel.nerd': 'Nerd-Modus · alle Werte', 'panel.nerd.live': 'live',
+    'subhead.prove': 'Gärung', 'subhead.flour': 'Mehl', 'subhead.mixins': 'Zutaten',
+    'subhead.leaven': 'Triebmittel', 'subhead.batch': 'Charge', 'subhead.mixing': 'Mischen & Charge',
+    'label.fermTemp': 'Gärtemperatur', 'label.targetTime': 'Gärzeit',
+    'label.flourProtein': 'Mehlprotein', 'label.pl': 'Dehnbar ↔ elastisch (P/L)',
+    'label.hydration': 'Hydration', 'label.salt': 'Salz', 'label.oil': 'Öl', 'label.sugar': 'Zucker',
+    'label.leavening': 'Triebmittel', 'label.starterStr': 'Starteraktivität', 'label.yeastType': 'Hefeart',
+    'label.preferment': 'Vorteig', 'label.roomTemp': 'Raumtemperatur',
+    'label.ddt': 'Zielteigtemperatur (ETT)', 'label.mixMethod': 'Knetmethode',
+    'label.doughWeight': 'Gesamtteiggewicht', 'label.ovenTemp': 'Ofentemperatur',
+    'label.bakingSurface': 'Backunterlage',
+    'leaven.commercial': 'Hefe', 'leaven.sourdough': 'Sauerteig',
+    'preferment.straight': 'Direkt', 'preferment.poolish': 'Poolish', 'preferment.biga': 'Biga',
+    'yeast.idy': 'Trockenhefe', 'yeast.ady': 'Aktive Trockenhefe', 'yeast.fresh': 'Frischhefe',
+    'surface.steel': 'Stahlplatte', 'surface.stone': 'Pizzastein', 'surface.pan': 'Backblech', 'surface.rack': 'Gitter',
+    'friction.hand': 'Von Hand', 'friction.mixer': 'Knetmaschine', 'friction.processor': 'Küchenmaschine',
+    'preset.neapolitan': 'Neapolitanisch', 'preset.ny': 'New York', 'preset.detroit': 'Detroit',
+    'preset.roman': 'Römisch al taglio', 'preset.sourdough': 'Sauerteig',
+    'ovenPreset.home': 'Haushaltsbackofen', 'ovenPreset.homehot': 'Haushaltsbackofen + Stein',
+    'ovenPreset.deck': 'Etagenofen', 'ovenPreset.electric': 'Elektro-Pizzaofen', 'ovenPreset.wood': 'Holzbackofen',
+    'flour.soft': 'Weich / schwach', 'flour.medium': 'Mittel', 'flour.strong': 'Stark (Pizza)', 'flour.veryStrong': 'Sehr stark',
+    'bakeStyle.neapolitan': 'Neapolitanisch', 'bakeStyle.artisan': 'Handwerklich / hohe Hitze',
+    'bakeStyle.ny': 'New York', 'bakeStyle.homeOven': 'Haushaltsbackofen', 'bakeStyle.lowPan': 'Niedrig / Blech',
+    'bakeStyle.tip': '≥ 430 °C  Neapolitanisch\n≥ 340 °C  Handwerklich / hohe Hitze\n≥ 280 °C  New York\n≥ 240 °C  Haushaltsbackofen\n< 240 °C  Niedrig / Blech',
+    'crust.pale': 'Blass · Hellgold', 'crust.golden': 'Golden', 'crust.deepGolden': 'Tiefgold', 'crust.charred': 'Verkohlt · Leopard',
+    'verdict.hydration': 'Hydration', 'verdict.ferment': 'Gärung', 'verdict.digest': 'Verträglichkeit', 'verdict.bake': 'Backen', 'verdict.caution': 'Achtung',
+    'verdict.hydration.high': 'Zu viel für dieses Mehl — ergibt einen schlaffen, klebrigen Teig, der schwer zu formen ist.',
+    'verdict.hydration.wet': 'Etwas nass; mit sicherer Hand gut bearbeitbar.',
+    'verdict.hydration.dry': 'Trockener als dieses Mehl verträgt — Spielraum für eine offenere Krume.',
+    'verdict.hydration.good': 'Gut abgestimmt für den Bereich {lo}–{hi}%.',
+    'verdict.ferment.tooLong': 'Zu lang (~{m} h max.). Gluten bricht ab — der Teig erschlafft und übergärt.',
+    'verdict.ferment.limit': 'Nahe an der Grenze dieses Mehls (~{m} h). Auf Übergärung achten.',
+    'verdict.ferment.good': 'Gut — dieses Mehl hält hier bis ~{m} h durch.',
+    'verdict.digest.easy': 'Magenfreundlich ({d}/100) — lange, langsame Gärung baut mehr Fructane ab.',
+    'verdict.digest.moderate': 'Moderat ({d}/100) — längere oder Sauerteig-Gärung baut mehr ab.',
+    'verdict.digest.short': 'Kurze Gärung ({d}/100) — weniger FODMAP-Abbau; Zeit verlängern für bessere Verträglichkeit.',
+    'verdict.bake.leopard': 'Leopardflecken wahrscheinlich — schnelles Backen, weiches Inneres, verkohlte Stellen. Erfordert einen Pizza- oder Holzofen.',
+    'verdict.bake.veryHot': 'Sehr heiß und schnell, aber nur ein spezieller Pizzaofen erreicht das.',
+    'verdict.bake.golden': 'Gleichmäßig goldene Kruste mit knuspriger Basis — der klassische Bereich.',
+    'verdict.bake.homeOven': 'Haushaltsbackofen-Bereich — golden und gleichmäßig; auf vorgeheiztem Stahl oder Stein backen.',
+    'verdict.bake.low': 'Niedrig — die Kruste kann austrocknen und blass bleiben. Stahl stark vorheizen.',
+    'verdict.bake.acrylamide': 'Sehr dunkle Kruste — Acrylamid steigt bei dieser Verkohlung. Früher herausnehmen oder Temperatur senken.',
+    'overproof.bad': 'Übergärt', 'overproof.warn': 'Kapazität überschritten', 'overproof.caution': 'Nähert sich dem Limit',
+    'overproof.why.over': 'Bei {tempC} °C mit {protein}% Protein-Mehl beginnen Protease-Enzyme und CO₂-Druck das Glutennetzwerk nach ~{maxHours} h irreversibel zu zerreißen. Der Teig verliert seine Gashaltung und kollabiert.',
+    'overproof.why.near': 'Über {maxHours} h wird das Gluten dieses Mehls anfällig — Protease-Enzyme greifen die Proteinbindungen an und CO₂-Druck zerreißt das Netzwerk. Du hast noch ~{headroom} h Spielraum.',
+    'overproof.whatHelps': 'Was hilft',
+    'overproof.lever.proteinKey': 'Mehlprotein', 'overproof.lever.protein': 'auf 13%+ erhöhen — Gärkapazität verdoppelt sich ungefähr je +1,5% Protein (aktuell {val}%)',
+    'overproof.lever.temperatureKey': 'Temperatur', 'overproof.lever.temperature': 'unter 10 °C abkühlen — Kälte verlangsamt Hefe ~90%, Enzyme nur ~55% (aktuell {val} °C)',
+    'overproof.lever.saltKey': 'Salz', 'overproof.lever.salt': 'auf 2,5–3% erhöhen — strafft das Glutennetz und verlangsamt Hefe (aktuell {val}%)',
+    'overproof.lever.timeKey': 'Zeit', 'overproof.lever.time': 'um {val} h reduzieren, um wieder im sicheren Bereich zu sein',
+    'overproof.lever.prefermentKey': 'Vorteig', 'overproof.lever.preferment': 'auf Biga oder Poolish wechseln — vorfermentierte Säure puffert die Hefeaktivität',
+    'overproof.lever.hydrationKey': 'Hydration', 'overproof.lever.hydration': 'auf ≤68% reduzieren — mehr Wasser beschleunigt die Enzymaktivität (aktuell {val}%)',
+    'capacity.label': 'Kapazität', 'capacity.val': '{pct}% von {maxH} h',
+    'panel.starterRequired': 'Startermenge', 'panel.yeastRequired': 'Hefemenge',
+    'unit.gStarter': 'g Starter', 'unit.grams': 'Gramm',
+    'yeast.levainSub': '{levainPct}% Levain vom Mehl ({flourG} g) · {saltG} g Salz',
+    'yeast.commercialSub': '{pct}% vom Mehl ({flourG} g) · {saltG} g Salz',
+    'yeast.tsp': ' · ≈ {tsp} TL Hefe',
+    'rise.lagLabel': '↤ Anlauf', 'rise.activeRise': 'aktiver Aufgang', 'rise.collapse': 'Kollaps ↦', 'rise.overProof': 'Übergärung ↦',
+    'rise.target': '{hours} h · Ziel',
+    'crumb.label': 'Vorhergesagte Krume · Randquerschnitt',
+    'bake.time': 'Backzeit', 'bake.topBase': 'Oben / unten', 'bake.yourPizza': 'Deine Pizza', 'bake.crustColour': 'Krustenfarbe (oben)',
+    'bake.formula': 'Backzeit ≈ 116·e^(−0.0098·T) · Fläche · Hydration',
+    'gauge.pale': 'blass', 'gauge.golden': 'golden', 'gauge.charred': 'verkohlt',
+    'recipe.ingredients': 'Zutaten', 'recipe.method': 'Zubereitung',
+    'recipe.flour': 'Mehl', 'recipe.water': 'Wasser', 'recipe.salt': 'Salz', 'recipe.oil': 'Öl', 'recipe.sugar': 'Zucker',
+    'recipe.sourdoughStarter': 'Sauerteigstarter', 'recipe.yeast': 'Hefe',
+    'recipe.levainPct': '{pct}% Levain',
+    'recipe.makes': '{balls} Kugel{suffix} · {weight} g gesamt', 'recipe.ballSuffix': 'n', 'recipe.each': ' je',
+    'recipe.step.poolish': 'Am Abend zuvor eine Prise Hefe in gleiche Teile Mehl und Wasser einrühren (Poolish) und abgedeckt über Nacht stehen lassen; zu Beginn in den Teig einarbeiten.',
+    'recipe.step.biga': 'Am Abend zuvor eine Prise Hefe in Mehl mit der halben Wassermenge einarbeiten (steife Biga) und abgedeckt über Nacht stehen lassen; zu Beginn in den Teig einkneten.',
+    'recipe.step.mixSourdough': 'Den aktiven Sauerteigstarter ({levainG} g) in das Wasser ({waterG} g, ca. {waterTemp} °C) einrühren, Mehl ({flourG} g) zugeben, zu einer groben Masse mischen und 20 Min. ruhen lassen.',
+    'recipe.step.mixYeast': 'Die {yeastLabel} ({yeastG} g) in das Wasser ({waterG} g, ca. {waterTemp} °C) einrühren, Mehl ({flourG} g) zugeben, zu einer groben Masse mischen und 20 Min. ruhen lassen.',
+    'recipe.step.addSalt': 'Salz ({saltG} g){oilText}{sugarText} zugeben, dann {kneadText}',
+    'recipe.step.addOil': ' und Öl ({oilG} g)', 'recipe.step.addSugar': ' und Zucker ({sugarG} g)',
+    'recipe.step.bulkRise': 'Abgedeckt aufgehen lassen bis der Teig sich aufbläht, dann in {balls} Kugel{suffix} à ~{ballW} g teilen{eachText}.',
+    'recipe.step.prove': '{fermentLoc} für {hours} h gären lassen.{coldNote}',
+    'recipe.step.overFerment': 'Achtung — bei {protein}% Protein kann dieses Mehl über {hours} h übergären. Ein stärkeres Mehl oder kürzere Gärzeit hält den Rand intakt.',
+    'recipe.step.openBall': 'Jede Kugel zu einem Boden ausziehen, dabei einen dickeren Rand lassen, und leicht belegen damit es durchbackt.',
+    'recipe.step.bake': '{surface}{ovenSuffix} auf {ovenC} °C vorheizen. Ca. {bakeTime} backen{bakeFinish}',
+    'recipe.step.bakeOvenSuffix': ' (und Ofen)',
+    'recipe.bakeFinish.leopard': ', bis der Rand aufgegangen ist und Leopardflecken hat.',
+    'recipe.bakeFinish.hot': ', bis golden mit knuspriger, gefleckter Basis.',
+    'recipe.bakeFinish.normal': ', einmal wenden, bis gleichmäßig golden.',
+    'recipe.knead.stretch': '3–4 Mal Dehnen und Falten in der ersten Stunde statt kräftigen Knetens.',
+    'recipe.knead.long': 'nur 3–4 Minuten kneten — die lange Gärzeit entwickelt das Gluten.',
+    'recipe.knead.normal': '8–10 Minuten kneten bis der Teig glatt und elastisch ist.',
+    'recipe.fermentLoc.cold': 'im Kühlschrank ({tempC} °C)', 'recipe.fermentLoc.cool': 'an einem kühlen Ort (~{tempC} °C)', 'recipe.fermentLoc.room': 'bei Raumtemperatur (~{tempC} °C)',
+    'recipe.coldNote': ' 1–2 Stunden vor dem Backen herausnehmen, damit der Teig Temperatur annimmt.',
+    'recipe.tip.warm': 'Kühles Wasser (~15 °C) verwenden, damit der Teig nicht zu schnell aufgeht.',
+    'recipe.tip.cold': 'Die lange, kühle Gärung entwickelt das meiste Aroma — nicht hetzen.',
+    'note.protein': '≈ W {W} · {category}',
+    'note.pl.extensible': 'dehnbar — öffnet leicht, verläuft', 'note.pl.elastic': 'elastisch — springt zurück, höherer Rand', 'note.pl.balanced': 'ausgewogen',
+    'note.hydration': 'empfohlen {lo}–{hi}% für dieses Mehl',
+    'note.salt': '{saltG} g · {saltNote}', 'note.salt.fast': 'schnelle Gärung, lockerer Teig', 'note.salt.slow': 'langsame Gärung, strafferer Teig', 'note.salt.typical': 'typischer Pizzabereich',
+    'note.oil.none': 'ohne — neapolitanisch', 'note.oil.some': '{oilG} g — weichere, knusprigere Kruste',
+    'note.sugar.none': 'ohne', 'note.sugar.some': '{sugarG} g — fördert Bräunung',
+    'note.starter.sluggish': 'träge — mehr Levain nötig', 'note.starter.vigorous': 'aktiv — weniger nötig', 'note.starter.average': 'durchschnittliche Aktivität',
+    'note.ddt': 'Wasser bei ~{temp} °C verwenden{icedNote}', 'note.ddt.iced': ' (mit Eis)',
+    'note.levain': 'Levain % ist ein Richtwert — Reife und Aktivität des Starters sind entscheidend.',
+    'nerd.confidence.grounded': 'fundiert', 'nerd.confidence.heuristic': 'kalibrierte Heuristik', 'nerd.confidence.illustrative': 'illustrativ',
+    'nerd.col.leaven': 'Triebmittel', 'nerd.col.recipe': 'Rezept & Mischen', 'nerd.col.flour': 'Mehl & Aufgang', 'nerd.col.bake': 'Backen & Geometrie',
+    'graph.inputs': 'Eingaben', 'graph.models': 'Modelle', 'graph.outputs': 'Ausgaben',
+    'nerd.graph.head': 'Abhängigkeitsgraph',
+    'nerd.graph.note': 'Wie eine Einstellung zur Zahl wird: Eingaben speisen Modelle, Modelle speisen Ausgaben. Kantenfarbe zeigt die Konfidenz.',
+    'nerd.formula.note': 'Punkte markieren Konfidenz: fundierte Werte sind Arithmetik oder Standardformeln; Heuristiken sind kalibrierte Schätzungen; illustrative bauen Intuition auf. Wasser °C = N·ETT − (N−1)·Raum − Reibung. Hefe% = 2,4 / (h · Q₁₀^((T−21)/10) · e^(−0,12·(S−2,5))) · Typ. Backzeit ≈ 116·e^(−0,0098·T) · Fläche.',
+    'footer': 'Ein Lehrmodell, kein Laborinstrument. Hefe setzt eine konstante Temperatur voraus (Anker: ~0,3% Trockenhefe → volle Gärung in ~8 h bei 21 °C, Q₁₀ = {Q10}). Mehl-W-Wert, Hydrations-Fenster und Gärkapazität sind einfache Heuristiken aus dem Proteingehalt. Backzeit folgt einer inversen Exponentialfunktion, die Krustenskala trackt die Hitze — echte Öfen, Steine, Stahlplatten und Beläge verschieben das alles. Zur Intuition: Doppelte Zeit halbiert die Hefe, stärkeres Mehl erlaubt mehr Hydration und Gärzeit, ein heißerer Ofen tauscht Minuten gegen Leopardflecken.',
+    'sources.head': 'Quellen', 'sources.note': 'Links öffnen die Studie oder Ressource. Peer-reviewed-Arbeiten werden in den Heuristiken dieses Tools zusammengefasst, nicht aus den Originalmethoden implementiert.',
+    'guideline.label.protein': 'Protein', 'guideline.label.hydration': 'Hydration', 'guideline.label.salt': 'Salz',
+    'guideline.label.proveTemp': 'Gärtemperatur', 'guideline.label.proveTime': 'Gärzeit', 'guideline.label.oven': 'Ofen',
+    'guideline.note.neapolitan.protein': '00-Mehl, W 280–320', 'guideline.note.neapolitan.hydration': 'straff für Handstreckung',
+    'guideline.note.neapolitan.salt': 'AVPN-Standard', 'guideline.note.neapolitan.proveTemp': 'Raumtemperatur oder kühl',
+    'guideline.note.neapolitan.proveTime': 'mind. 18 h für Struktur', 'guideline.note.neapolitan.oven': 'Pizzaofen erforderlich',
+    'guideline.note.ny.protein': 'Brot- oder High-Gluten-Mehl', 'guideline.note.ny.hydration': 'gut handhabbar, leicht klebrig',
+    'guideline.note.ny.salt': 'zurückhaltend — Käse ist salzig', 'guideline.note.ny.proveTemp': 'Kühlschrankgärung',
+    'guideline.note.ny.proveTime': 'länger = mehr Aroma', 'guideline.note.ny.oven': 'so heiß wie der Haushaltsofen erlaubt',
+    'guideline.note.detroit.protein': 'Allzweck- oder Brotmehl', 'guideline.note.detroit.hydration': 'hoch — das Blech hält den Teig',
+    'guideline.note.detroit.salt': 'Standard', 'guideline.note.detroit.proveTemp': 'Raumtemperatur, gleicher Tag',
+    'guideline.note.detroit.proveTime': 'schneller Aufgang am selben Tag', 'guideline.note.detroit.oven': 'Blechpizza-Hitze',
+    'guideline.note.roman.protein': 'starkes Mehl für hohe Hydration', 'guideline.note.roman.hydration': 'sehr nass — Backblech verwenden',
+    'guideline.note.roman.salt': 'Standard', 'guideline.note.roman.proveTemp': 'langsame Kühlschrankgärung',
+    'guideline.note.roman.proveTime': 'lange Kaltgärung', 'guideline.note.roman.oven': 'Etagenofen-Stil',
+    'guideline.note.sourdough.protein': 'starkes Mehl für lange Gärung', 'guideline.note.sourdough.hydration': 'handhabbar mit gutem Gluten',
+    'guideline.note.sourdough.salt': 'Säure kompensiert leicht', 'guideline.note.sourdough.proveTemp': 'Kühlschrankgärung für Aroma',
+    'guideline.note.sourdough.proveTime': 'lange Kaltgärung', 'guideline.note.sourdough.oven': 'Stahlplatte hilft bei niedrigeren Temps',
+    'help.fermTemp': 'Der wichtigste Regler. Wärmer lässt die Hefe schneller arbeiten (weniger Hefe nötig); kälter verlangsamt sie stark und entwickelt mehr Aroma.',
+    'help.targetTime': 'Wie lange der Teig vor dem Backen aufgeht. Längere Zeit bedeutet weniger Hefe und eine schmackhaftere, verträglichere Kruste.',
+    'help.flourProtein': 'Protein wird zu Gluten — das Netz, das Gas einfängt. Mehr davon = stärkerer Teig mit größeren Blasen und mehr Wasser, aber schwerer dehnbar. ~12–13% eignet sich für Pizza. (W ist das Bäckermaß für dasselbe.)',
+    'help.pl': 'Zwei Mehle können denselben Proteingehalt haben, sich aber unterschiedlich verhalten: dehnbarer Teig lässt sich strecken und bleibt so; elastischer Teig springt zurück. Das beeinflusst, wie leicht sich die Basis öffnet und wie hoch der Rand wird.',
+    'help.hydration': 'Wasser als Prozent vom Mehl. Mehr Wasser = leichtere, offenere Krume — aber nasser, klebriger Teig, der schwerer zu handhaben ist und ein stärkeres Mehl erfordert.',
+    'help.salt': 'Würzt den Teig und bremst die Hefe, strafft das Gluten. Zu wenig und der Teig übergärt schnell und bleibt blass; ~2,5–3% ist Standard.',
+    'help.oil': 'Fett macht die Krume weich und die Kruste knuspriger. Üblich bei New York- und Blechpizza; die echte Neapolitanische verwendet keines.',
+    'help.sugar': 'Nährt die Hefe und fördert vor allem die Bräunung der Kruste — nützlich wenn der Haushaltsofen nicht heiß genug für eine dunkle Kruste wird.',
+    'help.leavening': 'Was den Teig aufgehen lässt. Kommerzielle Hefe ist schnell und berechenbar; Sauerteig (eine lebende Mehl-Wasser-Kultur) ist langsamer, säuerlicher und verträglicher.',
+    'help.starterStr': 'Wie aktiv dein Starter ist. Ein frisch gefütterter, aktiver Starter lässt den Teig schneller aufgehen, also wird weniger benötigt.',
+    'help.yeastType': 'Dieselbe Hefe in drei Formen. Trocken- und aktive Trockenhefe kommen im Päckchen; Frischhefe als Würfel aus dem Kühlregal. Das Tool rechnet die Mengen um.',
+    'help.preferment': '„Direkt" mischt alles auf einmal. Ein Poolish (nass) oder eine Biga (steif) ist ein Stück Teig, der am Vorabend fermentiert wird und dann eingeknetet wird — mehr Aroma und Stärke mit etwas Planung.',
+    'help.roomTemp': 'Wie warm deine Küche ist. Wird verwendet, um die Wassertemperatur zu berechnen, damit der Teig nach dem Kneten deine Zieltemperatur erreicht.',
+    'help.ddt': 'Die gewünschte Teigtemperatur direkt nach dem Kneten (~24 °C ist ein guter Standard). Das Tool sagt, welche Wassertemperatur du brauchst.',
+    'help.mixMethod': 'Kneten erzeugt Wärme durch Reibung — eine Maschine mehr als die Hände — daher braucht eine Knetmaschine kühleres Wasser für die gleiche Teigtemperatur.',
+    'help.doughWeight': 'Gesamtmenge Teig, die du machen möchtest. Wird in ~250-g-Kugeln aufgeteilt — je eine Pizza.',
+    'help.verdicts': 'Diese drei Checks lesen deine Einstellungen: ob das Wasser zum Mehl passt, ob das Mehl so lange Gärung übersteht, und wie verträglich das Ergebnis ist.',
+    'help.capacity': 'Wie viel der Gärkapazität dieses Mehls du verwendest. Über 100% beginnen Protease-Enzyme das Gluten irreversibel abzubauen — der Teig erschlafft und kollabiert.',
+    'help.riseCurve': 'Der Aufgang über die Zeit: langsamer Start (Anlauf), steiler Anstieg, dann ein Plateau. Der Punkt markiert dein Ziel — idealerweise auf dem Plateau. Kann das Mehl die Gärung nicht halten, sinkt die Linie in den Kollaps.',
+    'help.crumb': 'Ein Schnitt durch den Rand der gebackenen Pizza: dünne Basis mit Soße links, aufgepuffter Rand rechts. Hydration und Hitze öffnen die Poren; ein schwacher, übergärter Teig bleibt flach und dicht.',
+    'help.ovenTemp': 'Heißer backt schneller und lässt den Rand stärker aufgehen. Ein Haushaltsofen erreicht ca. 250 °C; eine echte Neapolitanische braucht 450 °C+, was nur ein Pizzaofen erreicht.',
+    'help.bakingSurface': 'Worauf die Pizza liegt. Eine vorgeheizte Stahl- oder Steinplatte speichert Hitze und krispt die Unterseite; ein blankes Gitter bräunt die Basis am wenigsten.',
+  },
+};
 
 /* ------------------------------------------------------------------ *
  *  Dough calculator — three stages
@@ -301,48 +623,49 @@ function flourProfile(protein, pl) {
     : protein < 12 ? "Medium"
     : protein < 13.5 ? "Strong (pizza)"
     : "Very strong";
+  const categoryKey =
+    protein < 10.5 ? "flour.soft"
+    : protein < 12 ? "flour.medium"
+    : protein < 13.5 ? "flour.strong"
+    : "flour.veryStrong";
   const center = 55 + (protein - 9) * 2.833 + pl * 2; // elastic flours take a touch more water
   const hydrLo = Math.round(center - 4);
   const hydrHi = Math.round(center + 4);
   const maxHours = clamp(6 * Math.pow(2, (protein - 9) / 1.5), 8, 120);
-  return { W, category, hydrLo, hydrHi, maxHours };
+  return { W, category, categoryKey, hydrLo, hydrHi, maxHours };
 }
 
 function hydrationVerdict(hydration, fp) {
-  if (hydration > fp.hydrHi + 2)
-    return { tone: "bad", text: `High for this flour — expect a slack, sticky dough that's hard to shape.` };
-  if (hydration > fp.hydrHi)
-    return { tone: "warn", text: `A touch wet; workable with confident handling.` };
-  if (hydration < fp.hydrLo - 2)
-    return { tone: "warn", text: `Drier than this flour can take — room for a more open crumb.` };
-  return { tone: "good", text: `Well matched to a ${fp.hydrLo}–${fp.hydrHi}% range.` };
+  if (hydration > fp.hydrHi + 2) return { tone: "bad", code: "verdict.hydration.high", params: {} };
+  if (hydration > fp.hydrHi) return { tone: "warn", code: "verdict.hydration.wet", params: {} };
+  if (hydration < fp.hydrLo - 2) return { tone: "warn", code: "verdict.hydration.dry", params: {} };
+  return { tone: "good", code: "verdict.hydration.good", params: { lo: fp.hydrLo, hi: fp.hydrHi } };
 }
 
 function fermentVerdict(hours, fp) {
   const m = Math.round(fp.maxHours);
-  if (hours > fp.maxHours * 1.25)
-    return { tone: "bad", text: `Too long (~${m} h max). Gluten breaks down — the dough slackens and over-proofs.` };
-  if (hours > fp.maxHours)
-    return { tone: "warn", text: `Near this flour's limit (~${m} h). Watch for over-proofing.` };
-  return { tone: "good", text: `Comfortable — this flour holds up to ~${m} h here.` };
+  if (hours > fp.maxHours * 1.25) return { tone: "bad", code: "verdict.ferment.tooLong", params: { m } };
+  if (hours > fp.maxHours) return { tone: "warn", code: "verdict.ferment.limit", params: { m } };
+  return { tone: "good", code: "verdict.ferment.good", params: { m } };
 }
 
 function overProofRecommendations(inp, fp) {
   const raw = inp.hours / fp.maxHours;
   if (raw < 0.8) return null;
   const severity = raw >= 1.25 ? 'bad' : raw >= 1 ? 'warn' : 'caution';
-  const label = severity === 'bad' ? 'Over-proved' : severity === 'warn' ? 'Exceeds capacity' : 'Approaching limit';
-  const why = raw >= 1
-    ? `At ${inp.tempC} °C with ${inp.protein}% protein flour, protease enzymes and CO₂ pressure begin to irreversibly rupture the gluten network after ~${Math.round(fp.maxHours)} h. The dough loses gas-holding capacity and collapses into a slack, dense mass.`
-    : `Beyond ${Math.round(fp.maxHours)} h this flour's gluten becomes vulnerable — protease enzymes attack the protein bonds and CO₂ pressure physically tears the network. You have ~${Math.round(fp.maxHours - inp.hours)} h of headroom.`;
+  const labelCode = `overproof.${severity}`;
+  const whyCode = raw >= 1 ? 'overproof.why.over' : 'overproof.why.near';
+  const whyParams = raw >= 1
+    ? { tempC: inp.tempC, protein: inp.protein, maxHours: Math.round(fp.maxHours) }
+    : { maxHours: Math.round(fp.maxHours), headroom: Math.round(fp.maxHours - inp.hours) };
   const levers = [];
-  if (inp.protein < 13)             levers.push({ k: 'Flour protein', v: `raise to 13%+ — fermentation capacity roughly doubles per +1.5% protein (now ${inp.protein}%)` });
-  if (inp.tempC > 10)               levers.push({ k: 'Temperature',   v: `drop below 10 °C — cold slows yeast ~90% while enzymes only slow ~55%, dramatically extending the safe window (now ${inp.tempC} °C)` });
-  if (inp.salt < 2.5)               levers.push({ k: 'Salt',          v: `raise to 2.5–3% — tightens the gluten network and slows yeast exponentially via osmotic stress (now ${inp.salt}%)` });
-  levers.push(                       { k: 'Time',         v: `reduce by ${Math.max(1, Math.round(inp.hours - fp.maxHours * 0.85))} h to return inside the safe window` });
-  if (inp.preferment === 'straight') levers.push({ k: 'Preferment',   v: 'switch to biga or poolish — pre-fermented acidity buffers further yeast activity and reduces the fresh yeast load' });
-  if (inp.hydration > 68)           levers.push({ k: 'Hydration',     v: `reduce to ≤68% — more water creates a more mobile environment that accelerates enzyme activity (now ${inp.hydration}%)` });
-  return { raw, severity, label, why, levers };
+  if (inp.protein < 13)             levers.push({ kCode: 'overproof.lever.proteinKey',     vCode: 'overproof.lever.protein',     params: { val: inp.protein } });
+  if (inp.tempC > 10)               levers.push({ kCode: 'overproof.lever.temperatureKey', vCode: 'overproof.lever.temperature', params: { val: inp.tempC } });
+  if (inp.salt < 2.5)               levers.push({ kCode: 'overproof.lever.saltKey',        vCode: 'overproof.lever.salt',        params: { val: inp.salt } });
+  levers.push(                       { kCode: 'overproof.lever.timeKey',         vCode: 'overproof.lever.time',        params: { val: Math.max(1, Math.round(inp.hours - fp.maxHours * 0.85)) } });
+  if (inp.preferment === 'straight') levers.push({ kCode: 'overproof.lever.prefermentKey', vCode: 'overproof.lever.preferment',  params: {} });
+  if (inp.hydration > 68)           levers.push({ kCode: 'overproof.lever.hydrationKey',   vCode: 'overproof.lever.hydration',   params: { val: inp.hydration } });
+  return { raw, severity, labelCode, whyCode, whyParams, levers };
 }
 
 // ---- bake model ------------------------------------------------------
@@ -364,7 +687,13 @@ function bakeProfile(ovenC, hydration, salt, sugarPct, oilPct, surface) {
     : ovenC >= 280 ? "New York"
     : ovenC >= 240 ? "Home oven"
     : "Low / pan";
-  return { t, colour: top, base, leopard, acryl, style };
+  const styleKey =
+    ovenC >= 430 ? "bakeStyle.neapolitan"
+    : ovenC >= 340 ? "bakeStyle.artisan"
+    : ovenC >= 280 ? "bakeStyle.ny"
+    : ovenC >= 240 ? "bakeStyle.homeOven"
+    : "bakeStyle.lowPan";
+  return { t, colour: top, base, leopard, acryl, style, styleKey };
 }
 
 function digestScore(hours, tempC, leavening, preferment) {
@@ -375,21 +704,17 @@ function digestScore(hours, tempC, leavening, preferment) {
   return clamp(Math.round(d), 5, 99);
 }
 function digestVerdict(d) {
-  if (d >= 68) return { tone: "good", text: `Easy on the gut (${d}/100) — long, slow fermentation breaks down more fructans.` };
-  if (d >= 45) return { tone: "warn", text: `Moderate (${d}/100) — a longer or sourdough prove breaks down more.` };
-  return { tone: "warn", text: `Short prove (${d}/100) — less FODMAP breakdown; extend the time for easier digestion.` };
+  if (d >= 68) return { tone: "good", code: "verdict.digest.easy", params: { d } };
+  if (d >= 45) return { tone: "warn", code: "verdict.digest.moderate", params: { d } };
+  return { tone: "warn", code: "verdict.digest.short", params: { d } };
 }
 
 function bakeVerdict(b, ovenC) {
-  if (b.leopard)
-    return { tone: "good", text: `Leoparding likely — fast bake, soft interior, charred spots. Needs a pizza or wood oven.` };
-  if (ovenC >= 430)
-    return { tone: "warn", text: `Very hot and quick, but only a dedicated pizza oven reaches this.` };
-  if (ovenC >= 280)
-    return { tone: "good", text: `Even golden crust with a crisp base — the classic range.` };
-  if (ovenC >= 240)
-    return { tone: "good", text: `Home-oven territory — golden and even; bake on a preheated steel or stone.` };
-  return { tone: "warn", text: `Low — the crust can dry and stay pale before it browns. Preheat a steel hard.` };
+  if (b.leopard) return { tone: "good", code: "verdict.bake.leopard", params: {} };
+  if (ovenC >= 430) return { tone: "warn", code: "verdict.bake.veryHot", params: {} };
+  if (ovenC >= 280) return { tone: "good", code: "verdict.bake.golden", params: {} };
+  if (ovenC >= 240) return { tone: "good", code: "verdict.bake.homeOven", params: {} };
+  return { tone: "warn", code: "verdict.bake.low", params: {} };
 }
 
 function fmtBake(t) {
@@ -399,6 +724,9 @@ function fmtBake(t) {
 }
 function crustLabel(c) {
   return c < 30 ? "Pale · light gold" : c < 55 ? "Golden" : c < 78 ? "Deep golden" : "Charred · leopard";
+}
+function crustLabelKey(c) {
+  return c < 30 ? "crust.pale" : c < 55 ? "crust.golden" : c < 78 ? "crust.deepGolden" : "crust.charred";
 }
 
 function compute({ tempC, hours, yeastType, doughWeight, hydration, salt, oilPct, sugarPct, leavening, preferment, starterStr }) {
@@ -522,6 +850,7 @@ function Slider({ label, value, unit, min, max, step, onChange, accent, note, no
 
 
 function CapacityMeter({ hours, maxHours }) {
+  const t = useT();
   const raw = hours / maxHours;
   const pct = clamp(raw, 0, 1);
   const over = clamp(raw - 1, 0, 0.5);
@@ -529,8 +858,8 @@ function CapacityMeter({ hours, maxHours }) {
   return (
     <div className="fc-cap">
       <div className="fc-cap-head">
-        <span className="fc-fit-label">Capacity</span>
-        <span className="fc-cap-val" style={{ color }}>{Math.round(raw * 100)}% of {Math.round(maxHours)} h</span>
+        <span className="fc-fit-label">{t('capacity.label')}</span>
+        <span className="fc-cap-val" style={{ color }}>{t('capacity.val', { pct: Math.round(raw * 100), maxH: Math.round(maxHours) })}</span>
       </div>
       <div className="fc-cap-track">
         <div className="fc-cap-fill" style={{ width: `${pct * 100}%`, background: color }} />
@@ -541,29 +870,31 @@ function CapacityMeter({ hours, maxHours }) {
 }
 
 function OverProofPanel({ op }) {
+  const t = useT();
   if (!op) return null;
   const col = op.severity === 'bad' ? '#C5362A' : op.severity === 'warn' ? '#C2641F' : '#D99B36';
   return (
     <div className="fc-op" style={{ borderColor: col }}>
       <div className="fc-op-head" style={{ color: col }}>
         <span className="fc-dot" style={{ background: col, alignSelf: 'center', transform: 'none', marginTop: 1 }} />
-        {op.label}
+        {t(op.labelCode)}
       </div>
-      <p className="fc-op-why">{op.why}</p>
-      <p className="fc-op-lbl">What helps</p>
+      <p className="fc-op-why">{t(op.whyCode, op.whyParams)}</p>
+      <p className="fc-op-lbl">{t('overproof.whatHelps')}</p>
       <ul className="fc-op-list">
-        {op.levers.map((l, i) => <li key={i}><b>{l.k}</b> — {l.v}</li>)}
+        {op.levers.map((l, i) => <li key={i}><b>{t(l.kCode)}</b> — {t(l.vCode, l.params)}</li>)}
       </ul>
     </div>
   );
 }
 
 function StatusRow({ label, verdict }) {
+  const t = useT();
   return (
     <div className="fc-fit-row">
       <span className="fc-dot" style={{ background: TONE[verdict.tone] }} />
       <span className="fc-fit-label">{label}</span>
-      <span className="fc-fit-text">{verdict.text}</span>
+      <span className="fc-fit-text">{t(verdict.code, verdict.params)}</span>
     </div>
   );
 }
@@ -585,7 +916,8 @@ function DepGraph() {
       pos[node[0]] = { x: DG.colX[ci], w: DG.colW[ci], cyc: DG.top + (ri + 0.5) * (DG.H - DG.top - 10) / n };
     });
   });
-  const titles = ["Inputs", "Models", "Outputs"];
+  const t = useT();
+  const titles = [t('graph.inputs'), t('graph.models'), t('graph.outputs')];
   return (
     <svg className="fc-depgraph" viewBox={`0 0 ${DG.W} ${DG.H}`} role="img" aria-label="Dependency graph: inputs to models to outputs">
       {titles.map((t, i) => (
@@ -757,6 +1089,9 @@ function FermentCalculator() {
   const [learn, setLearn] = useState(false);
   const [simple, setSimple] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState(null);
+  const [lang, setLang] = useState('en');
+  const t = useMemo(() => makeTFn(lang, TRANSLATIONS), [lang]);
+  useEffect(() => { document.documentElement.lang = lang; }, [lang]);
 
   const accent = tempColor(tempC);
   const inputs = { tempC, hours, protein, plVal, hydration, salt, oilPct, sugarPct, leavening, yeastType, starterStr, preferment, roomTemp, ddt, mixMethod, doughWeight, ovenC, surface };
@@ -773,28 +1108,17 @@ function FermentCalculator() {
   const yLabel = TYPE[yeastType].label;
   const cold = tempC <= 10;
   const guideRules = simple && selectedStyle ? STYLE_GUIDELINES[selectedStyle] : null;
-  const selectedPresetLabel = selectedStyle ? PIZZA_PRESETS.find(p => p.id === selectedStyle)?.label : null;
+  const selectedPresetLabel = selectedStyle ? t('preset.' + selectedStyle) : null;
 
   // ---- recipe copy (presentation text derived from the engine's numbers) ----
-  const kneadText = hydration > 68
-    ? "develop it with 3–4 sets of stretch-and-folds over the first hour rather than hard kneading."
-    : hours >= 24
-    ? "knead just 3–4 minutes — the long prove finishes the gluten for you."
-    : "knead 8–10 minutes until smooth and elastic.";
-  const fermentLoc = tempC <= 10 ? `in the fridge (${tempC} °C)`
-    : tempC <= 18 ? `somewhere cool (~${tempC} °C)`
-    : `at room temperature (~${tempC} °C)`;
-  const coldNote = cold ? " Pull it out 1–2 h before baking to take off the chill." : "";
-  const bakeFinish = bake.leopard ? ", until the rim is puffed and leopard-spotted."
-    : ovenC >= 280 ? ", until golden with a crisp, spotted base."
-    : ", rotating once, until evenly golden.";
-  const recipeTip = tempC >= 22 ? "Use cool water (~15 °C) so the dough doesn't race ahead."
-    : cold ? "The long cold prove builds the most flavour — don't rush it." : null;
-  const prefermentText = preferment === "poolish"
-    ? "The night before, whisk a pinch of the yeast into equal parts flour and water (a poolish) and leave covered overnight; mix it into the dough at the start."
-    : preferment === "biga"
-    ? "The night before, mix a pinch of the yeast into flour with half its weight in water (a stiff biga) and leave covered overnight; break it into the dough at the start."
-    : null;
+  const kneadText = hydration > 68 ? t('recipe.knead.stretch') : hours >= 24 ? t('recipe.knead.long') : t('recipe.knead.normal');
+  const fermentLocKey = tempC <= 10 ? 'recipe.fermentLoc.cold' : tempC <= 18 ? 'recipe.fermentLoc.cool' : 'recipe.fermentLoc.room';
+  const fermentLoc = t(fermentLocKey, { tempC });
+  const coldNote = cold ? t('recipe.coldNote') : '';
+  const bakeFinish = bake.leopard ? t('recipe.bakeFinish.leopard') : ovenC >= 280 ? t('recipe.bakeFinish.hot') : t('recipe.bakeFinish.normal');
+  const recipeTip = tempC >= 22 ? t('recipe.tip.warm') : cold ? t('recipe.tip.cold') : null;
+  const prefermentText = preferment === "poolish" ? t('recipe.step.poolish') : preferment === "biga" ? t('recipe.step.biga') : null;
+  const ballSuffix = balls > 1 ? t('recipe.ballSuffix') : '';
 
   // ---- presets (view-side state wiring) ----
   const setters = {
@@ -817,6 +1141,7 @@ function FermentCalculator() {
     : `${gramsTxt} g ${yLabel.toLowerCase()} yeast`;
 
   return (
+    <LangCtx.Provider value={t}>
     <div className="fc-root">
       <style>{`
         
@@ -1063,35 +1388,46 @@ function FermentCalculator() {
 
       <div className="fc-wrap">
        <LearnCtx.Provider value={learn}>
-        <div className="fc-top">
-          <p className="fc-eyebrow">Ferment · flour · bake</p>
+        <header style={{background:'#FCF8F0', borderBottom:'1px solid #F0E6D2', margin:'0 -20px 0', padding:'0'}}>
+          <div className="forno-header">
+            <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Forno mark">
+              <rect x="4" y="4" width="40" height="40" rx="14" fill="#1E1814"/>
+              <path d="M14 34a10 10 0 0 0 20 0c0-6-4-9-5.5-13.5C27 25 24 25.5 24 29c-2-1.5-2-4.5-1-7-4 2-9 6-9 12Z" fill="#C25A33"/>
+              <path d="M19.5 33.5a4.5 4.5 0 0 0 9 0c0-3-2.2-4.6-2.8-7-1.2 2.4-3 2.8-3.4 4.6-1-.8-1-2.2-.6-3.4-1.6 1.2-2.2 3.2-2.2 5.8Z" fill="#D99B36"/>
+            </svg>
+            <span className="forno-header-wordmark">Forno</span>
+            <span className="forno-header-tagline">{t('header.tagline')}</span>
+            <button className="fc-nerd-toggle" style={{marginLeft:'auto'}} onClick={() => setLang(l => l === 'en' ? 'de' : 'en')}>{t('toggle.lang')}</button>
+          </div>
+        </header>
+        <div className="fc-top" style={{marginTop:'20px'}}>
+          <p className="fc-eyebrow">{t('eyebrow')}</p>
           <div className="fc-toggles">
-            <button className="fc-nerd-toggle" data-on={simple} onClick={() => setSimple((v) => !v)}>Simple</button>
-            <button className="fc-nerd-toggle" data-on={learn} onClick={() => setLearn((v) => !v)}>Learn</button>
-            <button className="fc-nerd-toggle" data-on={nerdMode} onClick={() => setNerdMode((v) => !v)}>Nerd mode</button>
+            <button className="fc-nerd-toggle" data-on={simple} onClick={() => setSimple((v) => !v)}>{t('toggle.simple')}</button>
+            <button className="fc-nerd-toggle" data-on={learn} onClick={() => setLearn((v) => !v)}>{t('toggle.learn')}</button>
+            <button className="fc-nerd-toggle" data-on={nerdMode} onClick={() => setNerdMode((v) => !v)}>{t('toggle.nerd')}</button>
           </div>
         </div>
-        <h1 className="fc-title">From yeast to crust, <em>one dough modelled</em></h1>
+        <h1 className="fc-title">{t('title.main')} <em>{t('title.em')}</em></h1>
         <p className="fc-lede">
-          Three stages of pizza science in one place: how much yeast for your
-          time and temperature, whether the flour can hold that ferment and
-          hydration, and what the oven does to the crust. Colour tracks the
-          driving variable at each step.{" "}
-          {learn ? "Learn mode is on — explanations sit under each control." : "New here? Tap Learn for plain-English notes on every control."}
+          {t('lede')}{" "}
+          {learn ? t('lede.learnOn') : t('lede.learnOff')}
         </p>
 
         <div className="fc-presets">
-          <span className="fc-preset-label">Style</span>
+          <span className="fc-preset-label">{t('label.style')}</span>
           {PIZZA_PRESETS.map((p) => (
-            <button key={p.id} className="fc-chip" data-on={presetMatches(p.set)} onClick={() => { applyPreset(p.set); setSelectedStyle(p.id); }}>{p.label}</button>
+            <button key={p.id} className="fc-chip" data-on={presetMatches(p.set)} onClick={() => { applyPreset(p.set); setSelectedStyle(p.id); }}>{t('preset.' + p.id)}</button>
           ))}
         </div>
 
         {guideRules && (
           <div className="fc-guidelines">
-            <p className="fc-guidelines-head">Style guidelines · {selectedPresetLabel}</p>
+            <p className="fc-guidelines-head">{t('guidelines.head', { style: selectedPresetLabel })}</p>
             <div className="fc-guide-list">
-              {guideRules.map(({ key, label, lo, hi, unit, note }) => {
+              {guideRules.map(({ key, lo, hi, unit }) => {
+                const labelKey = key === 'tempC' ? 'guideline.label.proveTemp' : key === 'hours' ? 'guideline.label.proveTime' : key === 'ovenC' ? 'guideline.label.oven' : 'guideline.label.' + key;
+                const noteKey = 'guideline.note.' + selectedStyle + '.' + (key === 'tempC' ? 'proveTemp' : key === 'hours' ? 'proveTime' : key === 'ovenC' ? 'oven' : key);
                 const val = inputs[key];
                 const margin = (hi - lo) * 0.5;
                 const inRange = val >= lo && val <= hi;
@@ -1100,9 +1436,9 @@ function FermentCalculator() {
                 return (
                   <div key={key} className="fc-guide-row">
                     <span className="fc-dot" style={{ background: TONE[tone], transition: "background .35s cubic-bezier(.4,0,.2,1)" }} />
-                    <span className="fc-guide-label">{label}</span>
+                    <span className="fc-guide-label">{t(labelKey)}</span>
                     <span className="fc-guide-range">{lo}–{hi}{unit}</span>
-                    <span className="fc-guide-note">{note}</span>
+                    <span className="fc-guide-note">{t(noteKey)}</span>
                   </div>
                 );
               })}
@@ -1113,157 +1449,157 @@ function FermentCalculator() {
         <div className="fc-grid">
           {/* ---- controls ---- */}
           <div className="fc-panel">
-            <p className="fc-panel-head"><span>1 · Dough</span><span style={{ color: accent }}>{tempC} °C</span></p>
+            <p className="fc-panel-head"><span>{t('panel.dough')}</span><span style={{ color: accent }}>{tempC} °C</span></p>
 
-            <p className="fc-subhead first">Prove</p>
-            <Slider label="Fermentation temperature" value={tempC} unit="°C"
+            <p className="fc-subhead first">{t('subhead.prove')}</p>
+            <Slider label={t('label.fermTemp')} value={tempC} unit="°C"
               min={2} max={35} step={1} onChange={setTempC} accent={accent} />
-            <Help>The biggest lever. Warmer makes the yeast work faster (so you need less of it); colder slows it right down and builds more flavour.</Help>
-            <Slider label="Target time" value={hours} unit="h"
+            <Help>{t('help.fermTemp')}</Help>
+            <Slider label={t('label.targetTime')} value={hours} unit="h"
               min={2} max={96} step={1} onChange={setHours} accent={accent} />
-            <Help>How long the dough rises before baking. Longer time means less yeast and a tastier, more digestible crust.</Help>
+            <Help>{t('help.targetTime')}</Help>
 
-            <p className="fc-subhead">Flour</p>
-            <Slider label="Flour protein" value={protein} unit="%"
+            <p className="fc-subhead">{t('subhead.flour')}</p>
+            <Slider label={t('label.flourProtein')} value={protein} unit="%"
               min={8} max={15} step={0.5} onChange={setProtein} accent={accent}
-              note={`≈ W ${fp.W} · ${fp.category}`} />
-            <Help>Protein becomes gluten — the web that traps gas. More of it = a stronger dough that holds bigger bubbles and more water, but resists stretching. ~12–13% suits pizza. (W is the bakery measure of the same thing.)</Help>
+              note={t('note.protein', { W: fp.W, category: t(fp.categoryKey) })} />
+            <Help>{t('help.flourProtein')}</Help>
             {!simple && (
               <>
-                <Slider label="Extensible ↔ elastic (P/L)" value={plVal} unit=""
+                <Slider label={t('label.pl')} value={plVal} unit=""
                   min={0} max={100} step={1} onChange={setPlVal} accent={accent}
-                  note={pl < -0.2 ? "extensible — opens easily, spreads" : pl > 0.2 ? "elastic — springs back, taller rim" : "balanced"} />
-                <Help>Two flours can have the same protein but behave differently: extensible dough stretches and stays put; elastic dough pings back. It shifts how easily the base opens and how tall the rim sits.</Help>
+                  note={pl < -0.2 ? t('note.pl.extensible') : pl > 0.2 ? t('note.pl.elastic') : t('note.pl.balanced')} />
+                <Help>{t('help.pl')}</Help>
               </>
             )}
-            <Slider label="Hydration" value={hydration} unit="%"
+            <Slider label={t('label.hydration')} value={hydration} unit="%"
               min={50} max={85} step={1} onChange={setHydration} accent={accent}
-              note={`recommended ${fp.hydrLo}–${fp.hydrHi}% for this flour`}
+              note={t('note.hydration', { lo: fp.hydrLo, hi: fp.hydrHi })}
               noteColor={TONE[hVerdict.tone]} />
-            <Help>Water as a percentage of flour. More water = a lighter, more open crumb — but a wetter, stickier dough that's harder to handle and needs a stronger flour.</Help>
-            <Slider label="Salt" value={salt} unit="%"
+            <Help>{t('help.hydration')}</Help>
+            <Slider label={t('label.salt')} value={salt} unit="%"
               min={0} max={4} step={0.1} onChange={setSalt} accent={accent}
-              note={`${r.saltGrams.toFixed(1)} g · ${salt < 1.8 ? "fast ferment, looser dough" : salt > 3 ? "slow ferment, tighter dough" : "typical pizza range"}`} />
-            <Help>Seasons the dough, but it also reins in the yeast and tightens the gluten. Too little and the dough over-proofs fast and bakes pale; ~2.5–3% is standard.</Help>
+              note={t('note.salt', { saltG: r.saltGrams.toFixed(1), saltNote: salt < 1.8 ? t('note.salt.fast') : salt > 3 ? t('note.salt.slow') : t('note.salt.typical') })} />
+            <Help>{t('help.salt')}</Help>
 
             {!simple && (
               <>
-                <p className="fc-subhead">Mix-ins</p>
-                <Slider label="Oil" value={oilPct} unit="%"
+                <p className="fc-subhead">{t('subhead.mixins')}</p>
+                <Slider label={t('label.oil')} value={oilPct} unit="%"
                   min={0} max={6} step={0.5} onChange={setOilPct} accent={accent}
-                  note={oilPct === 0 ? "none — Neapolitan style" : `${r.oilGrams.toFixed(0)} g — softer, crispier crust`} />
-                <Help>Fat softens the crumb and crisps the crust. Common in New York and pan pizzas; a true Neapolitan uses none.</Help>
-                <Slider label="Sugar" value={sugarPct} unit="%"
+                  note={oilPct === 0 ? t('note.oil.none') : t('note.oil.some', { oilG: r.oilGrams.toFixed(0) })} />
+                <Help>{t('help.oil')}</Help>
+                <Slider label={t('label.sugar')} value={sugarPct} unit="%"
                   min={0} max={4} step={0.25} onChange={setSugarPct} accent={accent}
-                  note={sugarPct === 0 ? "none" : `${r.sugarGrams.toFixed(0)} g — feeds browning`} />
-                <Help>Feeds the yeast and, more importantly, helps the crust brown — useful when a home oven can't get hot enough to colour it on its own.</Help>
+                  note={sugarPct === 0 ? t('note.sugar.none') : t('note.sugar.some', { sugarG: r.sugarGrams.toFixed(0) })} />
+                <Help>{t('help.sugar')}</Help>
               </>
             )}
 
-            <p className="fc-subhead">Leaven</p>
+            <p className="fc-subhead">{t('subhead.leaven')}</p>
             <div className="fc-field">
-              <div className="fc-field-head"><span className="fc-label">Leavening</span></div>
+              <div className="fc-field-head"><span className="fc-label">{t('label.leavening')}</span></div>
               <div className="fc-seg">
-                {[["commercial", "Commercial"], ["sourdough", "Sourdough"]].map(([k, l]) => (
-                  <button key={k} data-on={leavening === k} onClick={() => setLeavening(k)}>{l}</button>
+                {["commercial", "sourdough"].map(k => (
+                  <button key={k} data-on={leavening === k} onClick={() => setLeavening(k)}>{t('leaven.' + k)}</button>
                 ))}
               </div>
             </div>
-            <Help>What makes the dough rise. Commercial yeast is fast and predictable; sourdough (a live flour-and-water culture) is slower, tangier and gentler on the gut.</Help>
+            <Help>{t('help.leavening')}</Help>
             {sourdough && (
               <>
-                <Slider label="Starter strength" value={starterStr} unit=""
+                <Slider label={t('label.starterStr')} value={starterStr} unit=""
                   min={0} max={100} step={1} onChange={setStarterStr} accent={accent}
-                  note={starterStr < 35 ? "sluggish — needs more levain" : starterStr > 65 ? "vigorous — needs less" : "average activity"} />
-                <Help>How lively your starter is. A vigorous, recently-fed starter raises dough faster, so you need less of it.</Help>
+                  note={starterStr < 35 ? t('note.starter.sluggish') : starterStr > 65 ? t('note.starter.vigorous') : t('note.starter.average')} />
+                <Help>{t('help.starterStr')}</Help>
                 <p className="fc-note-line" style={{ color: CONF.i }}>
-                  Levain % is a rule of thumb — your starter's real ripeness and activity dominate.
+                  {t('note.levain')}
                 </p>
               </>
             )}
             {!sourdough && !simple && (
               <>
                 <div className="fc-field">
-                  <div className="fc-field-head"><span className="fc-label">Yeast type</span></div>
+                  <div className="fc-field-head"><span className="fc-label">{t('label.yeastType')}</span></div>
                   <div className="fc-seg">
-                    {Object.entries(TYPE).map(([k, v]) => (
-                      <button key={k} data-on={yeastType === k} onClick={() => setYeastType(k)}>{v.label}</button>
+                    {Object.keys(TYPE).map(k => (
+                      <button key={k} data-on={yeastType === k} onClick={() => setYeastType(k)}>{t('yeast.' + k)}</button>
                     ))}
                   </div>
                 </div>
-                <Help>The same yeast in three forms. Instant and active-dry come in jars; fresh is the cake from the fridge. The tool converts the amounts between them.</Help>
+                <Help>{t('help.yeastType')}</Help>
               </>
             )}
             {!simple && (
               <>
                 <div className="fc-field">
-                  <div className="fc-field-head"><span className="fc-label">Preferment</span></div>
+                  <div className="fc-field-head"><span className="fc-label">{t('label.preferment')}</span></div>
                   <div className="fc-seg">
-                    {[["straight", "Straight"], ["poolish", "Poolish"], ["biga", "Biga"]].map(([k, l]) => (
-                      <button key={k} data-on={preferment === k} onClick={() => setPreferment(k)}>{l}</button>
+                    {["straight", "poolish", "biga"].map(k => (
+                      <button key={k} data-on={preferment === k} onClick={() => setPreferment(k)}>{t('preferment.' + k)}</button>
                     ))}
                   </div>
                 </div>
-                <Help>"Straight" mixes everything at once. A poolish (wet) or biga (stiff) is a bit of dough fermented the night before, then mixed in — more flavour and strength for a little planning.</Help>
+                <Help>{t('help.preferment')}</Help>
               </>
             )}
 
-            <p className="fc-subhead">{simple ? "Batch" : "Mixing & batch"}</p>
+            <p className="fc-subhead">{t(simple ? 'subhead.batch' : 'subhead.mixing')}</p>
             {!simple && (
               <>
-                <Slider label="Room temperature" value={roomTemp} unit="°C"
+                <Slider label={t('label.roomTemp')} value={roomTemp} unit="°C"
                   min={12} max={30} step={1} onChange={setRoomTemp} accent={accent} />
-                <Help>How warm your kitchen is. It's used to work out the water temperature so the dough finishes mixing at your target.</Help>
-                <Slider label="Target dough temp (FDT)" value={ddt} unit="°C"
+                <Help>{t('help.roomTemp')}</Help>
+                <Slider label={t('label.ddt')} value={ddt} unit="°C"
                   min={20} max={28} step={0.5} onChange={setDdt} accent={accent}
-                  note={`use water at ~${waterTempReco} °C${waterTempReco <= 4 ? " (iced)" : ""}`} />
-                <Help>The temperature you want the dough to be right after mixing (~24 °C is a good default). The tool tells you what temperature water to use to land there.</Help>
+                  note={t('note.ddt', { temp: waterTempReco, icedNote: waterTempReco <= 4 ? t('note.ddt.iced') : '' })} />
+                <Help>{t('help.ddt')}</Help>
                 <div className="fc-field">
-                  <div className="fc-field-head"><span className="fc-label">Mixing method</span></div>
+                  <div className="fc-field-head"><span className="fc-label">{t('label.mixMethod')}</span></div>
                   <div className="fc-seg">
-                    {Object.entries(FRICTION).map(([k, v]) => (
-                      <button key={k} data-on={mixMethod === k} onClick={() => setMixMethod(k)}>{v.label}</button>
+                    {Object.keys(FRICTION).map(k => (
+                      <button key={k} data-on={mixMethod === k} onClick={() => setMixMethod(k)}>{t('friction.' + k)}</button>
                     ))}
                   </div>
                 </div>
-                <Help>Mixing adds heat through friction — a machine adds more than your hands — so a mixer or processor needs cooler water to hit the same dough temperature.</Help>
+                <Help>{t('help.mixMethod')}</Help>
               </>
             )}
             <div className="fc-field">
-              <div className="fc-field-head"><span className="fc-label">Total dough weight</span></div>
+              <div className="fc-field-head"><span className="fc-label">{t('label.doughWeight')}</span></div>
               <div className="fc-stepper">
                 <button onClick={() => setDoughWeight((w) => Math.max(200, w - 100))}>−</button>
                 <span className="fc-step-val">{doughWeight} g</span>
                 <button onClick={() => setDoughWeight((w) => Math.min(4000, w + 100))}>+</button>
               </div>
             </div>
-            <Help>Total dough you want to make. It's split into ~250 g balls — one good-sized pizza each.</Help>
+            <Help>{t('help.doughWeight')}</Help>
           </div>
 
           {/* ---- ferment output ---- */}
           <div className="fc-panel">
-            <p className="fc-panel-head"><span>{sourdough ? "Starter required" : "Yeast required"}</span><span>{sourdough ? "Sourdough" : TYPE[yeastType].label}</span></p>
+            <p className="fc-panel-head"><span>{t(sourdough ? 'panel.starterRequired' : 'panel.yeastRequired')}</span><span>{t(sourdough ? 'leaven.sourdough' : 'yeast.' + yeastType)}</span></p>
 
             <div className="fc-readout">
               <span className="fc-big" style={{ color: accent }}>{sourdough ? r.levainGrams.toFixed(0) : gramsTxt}</span>
-              <span className="fc-big-unit">{sourdough ? `g starter` : "grams"}</span>
+              <span className="fc-big-unit">{t(sourdough ? 'unit.gStarter' : 'unit.grams')}</span>
             </div>
             <p className="fc-sub">
               {sourdough
-                ? `${r.levainPct.toFixed(0)}% levain of flour (${Math.round(r.flour)} g) · ${r.saltGrams.toFixed(1)} g salt`
-                : `${r.pct.toFixed(3)}% of flour (${Math.round(r.flour)} g) · ${r.saltGrams.toFixed(1)} g salt`}
-              {!sourdough && r.tsp != null && ` · ≈ ${r.tsp.toFixed(2)} tsp yeast`}
+                ? t('yeast.levainSub', { levainPct: r.levainPct.toFixed(0), flourG: Math.round(r.flour), saltG: r.saltGrams.toFixed(1) })
+                : t('yeast.commercialSub', { pct: r.pct.toFixed(3), flourG: Math.round(r.flour), saltG: r.saltGrams.toFixed(1) })}
+              {!sourdough && r.tsp != null && t('yeast.tsp', { tsp: r.tsp.toFixed(2) })}
             </p>
 
             <div className="fc-fit">
-              <StatusRow label="Hydration" verdict={hVerdict} />
-              <StatusRow label="Ferment" verdict={fVerdict} />
-              <StatusRow label="Digestion" verdict={dVerdict} />
+              <StatusRow label={t('verdict.hydration')} verdict={hVerdict} />
+              <StatusRow label={t('verdict.ferment')} verdict={fVerdict} />
+              <StatusRow label={t('verdict.digest')} verdict={dVerdict} />
             </div>
-            <Help>These three checks read your settings: whether the water suits the flour, whether the flour can survive that long a prove, and how gentle the result is on the gut.</Help>
+            <Help>{t('help.verdicts')}</Help>
 
             <CapacityMeter hours={hours} maxHours={fp.maxHours} />
-            <Help>How much of this flour's fermentation capacity you're using. Past 100%, protease enzymes begin to irreversibly break down the gluten — the dough slackens and collapses.</Help>
+            <Help>{t('help.capacity')}</Help>
             <OverProofPanel op={M.overProof} />
 
             <svg className="fc-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Predicted dough rise over time">
@@ -1282,73 +1618,73 @@ function FermentCalculator() {
               <circle className="fc-target-dot" cx={curve.target.x} cy={curve.target.y} r="5.5"
                       fill="#f4eee2" stroke={accent} strokeWidth="2.5" />
               <text x={curve.target.x} y={pad.t - 7} textAnchor="middle"
-                    fontFamily="'JetBrains Mono', monospace" fontSize="11" fill="#7A6A5B">{hours} h · target</text>
+                    fontFamily="'JetBrains Mono', monospace" fontSize="11" fill="#7A6A5B">{t('rise.target', { hours })}</text>
             </svg>
 
             <div className="fc-zones">
-              <span style={{ width: `${(curve.lambda / curve.tMax) * 100}%` }}>↤ lag</span>
-              <span style={{ flex: 1, textAlign: "center" }}>active rise</span>
-              <span>{curve.collapses ? "collapse ↦" : "over-proof ↦"}</span>
+              <span style={{ width: `${(curve.lambda / curve.tMax) * 100}%` }}>{t('rise.lagLabel')}</span>
+              <span style={{ flex: 1, textAlign: "center" }}>{t('rise.activeRise')}</span>
+              <span>{t(curve.collapses ? 'rise.collapse' : 'rise.overProof')}</span>
             </div>
-            <Help>The rise over time: a slow start (lag), a steep climb, then a plateau. The dot marks your target — ideally on the plateau. If the flour can't hold the prove, the line sags into collapse.</Help>
+            <Help>{t('help.riseCurve')}</Help>
 
             <div className="fc-crumb-wrap">
-              <span className="fc-stat-label">Predicted crumb · rim cross-section</span>
+              <span className="fc-stat-label">{t('crumb.label')}</span>
               <CrumbSlice hydration={hydration} protein={protein} ovenC={ovenC}
                 base={bake.base} proofQuality={proofQuality} pl={pl} />
             </div>
-            <Help>A slice through the edge of the baked pizza: thin sauced base on the left, puffed rim on the right. Hydration and heat open up the holes; a weak, over-proofed dough stays flat and dense.</Help>
+            <Help>{t('help.crumb')}</Help>
           </div>
         </div>
 
         {/* ---- bake stage ---- */}
         <div className="fc-panel fc-bake">
-          <p className="fc-panel-head"><span>2 · The bake</span><span className="fc-style-tip" data-tip={"≥ 430 °C  Neapolitan\n≥ 340 °C  Artisan / high-heat\n≥ 280 °C  New York\n≥ 240 °C  Home oven\n< 240 °C  Low / pan"} style={{ color: EMBER }}>{bake.style}<span className="fc-style-i">ⓘ</span></span></p>
+          <p className="fc-panel-head"><span>{t('panel.bake')}</span><span className="fc-style-tip" data-tip={t('bakeStyle.tip')} style={{ color: EMBER }}>{t(bake.styleKey)}<span className="fc-style-i">ⓘ</span></span></p>
           <div className="fc-presets bake">
-            <span className="fc-preset-label">Oven</span>
+            <span className="fc-preset-label">{t('label.oven')}</span>
             {OVEN_PRESETS.map((p) => (
-              <button key={p.id} className="fc-chip" data-on={presetMatches(p.set)} onClick={() => applyPreset(p.set)}>{p.label}</button>
+              <button key={p.id} className="fc-chip" data-on={presetMatches(p.set)} onClick={() => applyPreset(p.set)}>{t('ovenPreset.' + p.id)}</button>
             ))}
           </div>
           <div className="fc-bake-grid">
             <div>
-              <Slider label="Oven temperature" value={ovenC} unit="°C"
+              <Slider label={t('label.ovenTemp')} value={ovenC} unit="°C"
                 min={200} max={500} step={5} onChange={setOvenC} accent={EMBER} />
-              <Help>Hotter bakes faster and puffs the rim harder. A home oven tops out near 250 °C; a true Neapolitan wants 450 °C+, which only a pizza oven reaches.</Help>
+              <Help>{t('help.ovenTemp')}</Help>
               <div className="fc-field">
-                <div className="fc-field-head"><span className="fc-label">Baking surface</span></div>
+                <div className="fc-field-head"><span className="fc-label">{t('label.bakingSurface')}</span></div>
                 <div className="fc-seg">
-                  {Object.entries(SURF).map(([k, v]) => (
-                    <button key={k} data-on={surface === k} onClick={() => setSurface(k)}>{v.label}</button>
+                  {Object.keys(SURF).map(k => (
+                    <button key={k} data-on={surface === k} onClick={() => setSurface(k)}>{t('surface.' + k)}</button>
                   ))}
                 </div>
               </div>
-              <Help>What the pizza sits on. A preheated steel or stone stores heat and crisps the underside; a bare oven rack browns the base the least.</Help>
+              <Help>{t('help.bakingSurface')}</Help>
               <div className="fc-bake-stats">
                 <div>
-                  <span className="fc-stat-label">Bake time</span>
+                  <span className="fc-stat-label">{t('bake.time')}</span>
                   <span className="fc-stat-val" style={{ color: EMBER }}>{fmtBake(bake.t)}</span>
                 </div>
                 <div>
-                  <span className="fc-stat-label">Top / base</span>
-                  <span className="fc-stat-val small">{crustLabel(bake.colour)} / {crustLabel(bake.base)}</span>
+                  <span className="fc-stat-label">{t('bake.topBase')}</span>
+                  <span className="fc-stat-val small">{t(crustLabelKey(bake.colour))} / {t(crustLabelKey(bake.base))}</span>
                 </div>
               </div>
-              <p className="fc-formula">bake ≈ 116·e^(−0.0098·T) · surface · hydration</p>
+              <p className="fc-formula">{t('bake.formula')}</p>
             </div>
 
             <div>
-              <span className="fc-stat-label">Your pizza</span>
+              <span className="fc-stat-label">{t('bake.yourPizza')}</span>
               <Pizza colour={bake.colour} leopard={bake.leopard} protein={protein} proofQuality={proofQuality} />
-              <span className="fc-stat-label">Crust colour (top)</span>
+              <span className="fc-stat-label">{t('bake.crustColour')}</span>
               <div className="fc-gauge">
                 <div className="fc-gauge-mark" style={{ left: `${bake.colour}%` }} />
               </div>
-              <div className="fc-gauge-labels"><span>pale</span><span>golden</span><span>charred</span></div>
+              <div className="fc-gauge-labels"><span>{t('gauge.pale')}</span><span>{t('gauge.golden')}</span><span>{t('gauge.charred')}</span></div>
               <div className="fc-bake-verdict">
-                <StatusRow label="Bake" verdict={bVerdict} />
+                <StatusRow label={t('verdict.bake')} verdict={bVerdict} />
                 {bake.acryl && (
-                  <StatusRow label="Caution" verdict={{ tone: "bad", text: "Very dark crust — acrylamide rises at this char. Pull a touch sooner or drop the heat." }} />
+                  <StatusRow label={t('verdict.caution')} verdict={{ tone: "bad", code: "verdict.bake.acrylamide", params: {} }} />
                 )}
               </div>
             </div>
@@ -1356,40 +1692,39 @@ function FermentCalculator() {
         </div>
 
         <div className="fc-panel fc-recipe">
-          <p className="fc-panel-head"><span>The recipe</span><span style={{ color: accent }}>{balls} × {ballW} g</span></p>
+          <p className="fc-panel-head"><span>{t('panel.recipe')}</span><span style={{ color: accent }}>{balls} × {ballW} g</span></p>
           <div className="fc-recipe-grid">
             <div>
-              <p className="fc-src-label">Ingredients</p>
+              <p className="fc-src-label">{t('recipe.ingredients')}</p>
               <ul className="fc-ing">
-                <li><span className="nm">Flour<small>{fp.category}, ~{protein}%</small></span><span className="amt">{Math.round(r.flour)} g</span></li>
-                <li><span className="nm">Water<small>{hydration}% · ~{waterTempReco} °C</small></span><span className="amt">{Math.round(waterTotal)} g</span></li>
-                <li><span className="nm">Salt<small>{salt}%</small></span><span className="amt">{r.saltGrams.toFixed(1)} g</span></li>
-                {oilPct > 0 && <li><span className="nm">Oil<small>{oilPct}%</small></span><span className="amt">{r.oilGrams.toFixed(0)} g</span></li>}
-                {sugarPct > 0 && <li><span className="nm">Sugar<small>{sugarPct}%</small></span><span className="amt">{r.sugarGrams.toFixed(0)} g</span></li>}
+                <li><span className="nm">{t('recipe.flour')}<small>{t(fp.categoryKey)}, ~{protein}%</small></span><span className="amt">{Math.round(r.flour)} g</span></li>
+                <li><span className="nm">{t('recipe.water')}<small>{hydration}% · ~{waterTempReco} °C</small></span><span className="amt">{Math.round(waterTotal)} g</span></li>
+                <li><span className="nm">{t('recipe.salt')}<small>{salt}%</small></span><span className="amt">{r.saltGrams.toFixed(1)} g</span></li>
+                {oilPct > 0 && <li><span className="nm">{t('recipe.oil')}<small>{oilPct}%</small></span><span className="amt">{r.oilGrams.toFixed(0)} g</span></li>}
+                {sugarPct > 0 && <li><span className="nm">{t('recipe.sugar')}<small>{sugarPct}%</small></span><span className="amt">{r.sugarGrams.toFixed(0)} g</span></li>}
                 {sourdough
-                  ? <li><span className="nm">Sourdough starter<small>{r.levainPct.toFixed(0)}% levain</small></span><span className="amt">{r.levainGrams.toFixed(0)} g</span></li>
-                  : <li><span className="nm">Yeast<small>{yLabel.toLowerCase()}</small></span><span className="amt">{gramsTxt} g</span></li>}
+                  ? <li><span className="nm">{t('recipe.sourdoughStarter')}<small>{t('recipe.levainPct', { pct: r.levainPct.toFixed(0) })}</small></span><span className="amt">{r.levainGrams.toFixed(0)} g</span></li>
+                  : <li><span className="nm">{t('recipe.yeast')}<small>{t('yeast.' + yeastType)}</small></span><span className="amt">{gramsTxt} g</span></li>}
               </ul>
-              <p className="fc-recipe-yield">Makes {balls} ball{balls > 1 ? "s" : ""} · {doughWeight} g total</p>
+              <p className="fc-recipe-yield">{t('recipe.makes', { balls, suffix: ballSuffix, weight: doughWeight })}</p>
             </div>
             <div>
-              <p className="fc-src-label">Method</p>
+              <p className="fc-src-label">{t('recipe.method')}</p>
               <ol className="fc-steps">
                 {prefermentText && <li>{prefermentText}</li>}
                 <li>
                   {sourdough
-                    ? `Mix the active sourdough starter (${r.levainGrams.toFixed(0)} g) into the water (${Math.round(waterTotal)} g at ~${waterTempReco} °C), `
-                    : `Whisk the ${yLabel.toLowerCase()} yeast (${gramsTxt} g) into the water (${Math.round(waterTotal)} g at ~${waterTempReco} °C), `}
-                  add the flour ({Math.round(r.flour)} g), mix to a shaggy mass and rest 20 min.
+                    ? t('recipe.step.mixSourdough', { levainG: r.levainGrams.toFixed(0), waterG: Math.round(waterTotal), waterTemp: waterTempReco, flourG: Math.round(r.flour) })
+                    : t('recipe.step.mixYeast', { yeastLabel: t('yeast.' + yeastType), yeastG: gramsTxt, waterG: Math.round(waterTotal), waterTemp: waterTempReco, flourG: Math.round(r.flour) })}
                 </li>
-                <li>Add the salt ({r.saltGrams.toFixed(1)} g){oilPct > 0 ? ` and oil (${r.oilGrams.toFixed(0)} g)` : ""}{sugarPct > 0 ? ` and sugar (${r.sugarGrams.toFixed(0)} g)` : ""}, then {kneadText}</li>
-                <li>Cover and bulk-rise until puffy, then divide into {balls} ball{balls > 1 ? "s" : ""} of ~{ballW} g{balls > 1 ? " each" : ""}.</li>
-                <li>Prove {fermentLoc} for {hours} h.{coldNote}</li>
+                <li>{t('recipe.step.addSalt', { saltG: r.saltGrams.toFixed(1), oilText: oilPct > 0 ? t('recipe.step.addOil', { oilG: r.oilGrams.toFixed(0) }) : '', sugarText: sugarPct > 0 ? t('recipe.step.addSugar', { sugarG: r.sugarGrams.toFixed(0) }) : '', kneadText })}</li>
+                <li>{t('recipe.step.bulkRise', { balls, suffix: ballSuffix, ballW, eachText: balls > 1 ? t('recipe.each') : '' })}</li>
+                <li>{t('recipe.step.prove', { fermentLoc, hours, coldNote })}</li>
                 {curve.collapses && (
-                  <li>Heads up — at {protein}% protein this flour may over-ferment across {hours} h and slacken. A stronger flour or a shorter prove keeps the rim intact.</li>
+                  <li>{t('recipe.step.overFerment', { protein, hours })}</li>
                 )}
-                <li>Open each ball into a base, leaving a thicker rim, and top lightly so it bakes through.</li>
-                <li>Preheat your {SURF[surface].label.toLowerCase()}{surface === "rack" ? "" : " (and oven)"} to {ovenC} °C. Bake ~{fmtBake(bake.t)}{bakeFinish}</li>
+                <li>{t('recipe.step.openBall')}</li>
+                <li>{t('recipe.step.bake', { surface: t('surface.' + surface), ovenSuffix: surface === "rack" ? "" : t('recipe.step.bakeOvenSuffix'), ovenC, bakeTime: fmtBake(bake.t), bakeFinish })}</li>
               </ol>
               {recipeTip && <p className="fc-recipe-tip">{recipeTip}</p>}
             </div>
@@ -1398,15 +1733,15 @@ function FermentCalculator() {
 
         {nerdMode && (
           <div className="fc-panel fc-nerd">
-            <p className="fc-panel-head"><span>Nerd mode · all values</span><span>live</span></p>
+            <p className="fc-panel-head"><span>{t('panel.nerd')}</span><span>{t('panel.nerd.live')}</span></p>
             <div className="fc-conf-legend">
-              <span><i style={{ background: CONF.g }} /> grounded</span>
-              <span><i style={{ background: CONF.h }} /> calibrated heuristic</span>
-              <span><i style={{ background: CONF.i }} /> illustrative</span>
+              <span><i style={{ background: CONF.g }} /> {t('nerd.confidence.grounded')}</span>
+              <span><i style={{ background: CONF.h }} /> {t('nerd.confidence.heuristic')}</span>
+              <span><i style={{ background: CONF.i }} /> {t('nerd.confidence.illustrative')}</span>
             </div>
             <div className="fc-nerd-grid">
               <div className="fc-nerd-col">
-                <p className="fc-src-label">Leaven</p>
+                <p className="fc-src-label">{t('nerd.col.leaven')}</p>
                 <NRow k="Q₁₀ rate factor" v={`${r.rateFactor.toFixed(3)}×`} t="g" />
                 <NRow k="salt slowing factor" v={`${r.saltRate.toFixed(3)}×`} t="h" />
                 <NRow k="mode" v={sourdough ? "sourdough" : "commercial"} />
@@ -1427,7 +1762,7 @@ function FermentCalculator() {
                 <NRow k="digestibility" v={`${digest} / 100`} t="i" />
               </div>
               <div className="fc-nerd-col">
-                <p className="fc-src-label">Recipe & mix</p>
+                <p className="fc-src-label">{t('nerd.col.recipe')}</p>
                 <NRow k="flour" v={`${r.flour.toFixed(0)} g`} t="g" />
                 <NRow k="water" v={`${r.waterG.toFixed(0)} g`} t="g" />
                 <NRow k="salt" v={`${r.saltGrams.toFixed(1)} g`} t="g" />
@@ -1440,7 +1775,7 @@ function FermentCalculator() {
                 <NRow k="→ water temp" v={`~${waterTempReco} °C`} t="g" />
               </div>
               <div className="fc-nerd-col">
-                <p className="fc-src-label">Flour & rise</p>
+                <p className="fc-src-label">{t('nerd.col.flour')}</p>
                 <NRow k="protein" v={`${protein}%`} t="g" />
                 <NRow k="est. W" v={`${fp.W}`} t="h" />
                 <NRow k="P/L balance" v={pl.toFixed(2)} t="i" />
@@ -1453,7 +1788,7 @@ function FermentCalculator() {
                 <NRow k="collapse decay k" v={curve.kd.toFixed(3)} t="h" />
               </div>
               <div className="fc-nerd-col">
-                <p className="fc-src-label">Bake & geometry</p>
+                <p className="fc-src-label">{t('nerd.col.bake')}</p>
                 <NRow k="oven" v={`${ovenC} °C`} t="g" />
                 <NRow k="surface (k)" v={`${SURF[surface].label} · ${SURF[surface].k}`} t="h" />
                 <NRow k="bake time" v={`${bake.t.toFixed(2)} min · ${Math.round(bake.t * 60)} s`} t="h" />
@@ -1466,34 +1801,17 @@ function FermentCalculator() {
                 <NRow k="rim spring index" v={rimIndex.toFixed(1)} t="i" />
               </div>
             </div>
-            <p className="fc-subhead">Dependency graph</p>
-            <p className="fc-src-note" style={{ marginTop: 0, marginBottom: 6 }}>
-              How a setting becomes a number: inputs feed models feed outputs. Edge colour marks the
-              confidence of what it feeds.
-            </p>
+            <p className="fc-subhead">{t('nerd.graph.head')}</p>
+            <p className="fc-src-note" style={{ marginTop: 0, marginBottom: 6 }}>{t('nerd.graph.note')}</p>
             <DepGraph />
-            <p className="fc-src-note">
-              Dots mark confidence: grounded values are arithmetic or standard formulas; heuristics are
-              calibrated guesses; illustrative ones build intuition, not precision. water °C =
-              N·FDT − (N−1)·room − friction (N = 4 with a preferment, else 3). yeast% = 2.4 / (h ·
-              Q₁₀^((T−21)/10) · e^(−0.12·(S−2.5))) · type. bake ≈ 116·e^(−0.0098·T) · surface.
-            </p>
+            <p className="fc-src-note">{t('nerd.formula.note')}</p>
           </div>
         )}
 
-        <p className="fc-foot">
-          A teaching model, not a lab instrument. Yeast assumes one steady
-          temperature (anchored on ~0.3% IDY → full proof in ~8 h at 21 °C,
-          Q₁₀ = {Q10}). Flour W-value, hydration range and ferment capacity are
-          simple heuristics from protein. Bake time follows an inverse-exponential
-          fit and the crust gauge tracks heat — real ovens, stones, steels and
-          toppings all shift it. Use it for intuition: doubling the time halves
-          the yeast, stronger flour buys hydration and ferment length, and a
-          hotter oven trades minutes for leopard spots.
-        </p>
+        <p className="fc-foot">{t('footer', { Q10 })}</p>
 
         <div className="fc-sources">
-          <p className="fc-sources-head">Sources</p>
+          <p className="fc-sources-head">{t('sources.head')}</p>
           {SOURCES.map((g) => (
             <div className="fc-src-group" key={g.group}>
               <p className="fc-src-label">{g.group}</p>
@@ -1506,14 +1824,12 @@ function FermentCalculator() {
               </ul>
             </div>
           ))}
-          <p className="fc-src-note">
-            Links open the study or resource. Peer-reviewed work is paraphrased
-            in this tool's heuristics, not implemented from the original methods.
-          </p>
+          <p className="fc-src-note">{t('sources.note')}</p>
         </div>
        </LearnCtx.Provider>
       </div>
     </div>
+    </LangCtx.Provider>
   );
 }
 
