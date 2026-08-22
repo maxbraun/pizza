@@ -403,8 +403,8 @@ function waterTempFn(ddt, roomTemp, mixMethod, preferment) {
   const nFactor = preferment !== "straight" ? 4 : 3; // preferment held at room temp -> 4-factor
   return { temp: clamp(Math.round(nFactor * ddt - (nFactor - 1) * roomTemp - friction), 0, 48), friction, nFactor };
 }
-function batchFn(doughWeight) {
-  const balls = Math.max(1, Math.round(doughWeight / 250));
+function batchFn(doughWeight, ballCount) {
+  const balls = ballCount ? Math.max(1, Math.round(ballCount)) : Math.max(1, Math.round(doughWeight / 250));
   return { balls, ballW: Math.round(doughWeight / balls) };
 }
 function geometryFn(hydration, protein, ovenC, proof, pl) {
@@ -425,7 +425,7 @@ function computeAll(inp) {
   const bake = bakeProfile(inp.ovenC, inp.hydration, inp.salt, inp.sugarPct, inp.oilPct, inp.surface);
   const digest = digestScore(inp.hours, inp.tempC, inp.leavening, inp.preferment);
   const water = waterTempFn(inp.ddt, inp.roomTemp, inp.mixMethod, inp.preferment);
-  const batch = batchFn(inp.doughWeight);
+  const batch = batchFn(inp.doughWeight, inp.ballCount);
   const geometry = geometryFn(inp.hydration, inp.protein, inp.ovenC, proof, pl);
   const verdicts = {
     hydration: hydrationVerdict(inp.hydration, fp),
