@@ -90,7 +90,7 @@ const TRANSLATIONS = {
     'label.leavening': 'Leavening', 'label.starterStr': 'Starter strength', 'label.yeastType': 'Yeast type',
     'label.preferment': 'Preferment', 'label.roomTemp': 'Room temperature',
     'label.ddt': 'Target dough temp (FDT)', 'label.mixMethod': 'Mixing method',
-    'label.doughWeight': 'Total dough weight', 'label.ballCount': 'Number of dough balls', 'label.ovenTemp': 'Oven temperature',
+    'label.ballCount': 'Number of dough balls', 'label.ballWeight': 'Dough ball size', 'label.ovenTemp': 'Oven temperature',
     'label.bakingSurface': 'Baking surface',
     'leaven.commercial': 'Commercial', 'leaven.sourdough': 'Sourdough',
     'preferment.straight': 'Straight', 'preferment.poolish': 'Poolish', 'preferment.biga': 'Biga',
@@ -221,8 +221,9 @@ const TRANSLATIONS = {
     'help.roomTemp': "How warm your kitchen is. It's used to work out the water temperature so the dough finishes mixing at your target.",
     'help.ddt': 'The temperature you want the dough to be right after mixing (~24 °C is a good default). The tool tells you what temperature water to use to land there.',
     'help.mixMethod': 'Mixing adds heat through friction — a machine adds more than your hands — so a mixer or processor needs cooler water to hit the same dough temperature.',
-    'help.doughWeight': 'Total dough you want to make, split evenly across your dough balls.',
-    'help.ballCount': 'How many pizzas this batch makes. Each ball works out to about {ballW} g — adjust the total dough weight to change that.',
+    'help.ballCount': 'How many pizzas you want to make this batch.',
+    'help.ballWeight': 'How much dough goes into each ball — a good everyday pizza is around 250 g.',
+    'note.totalDough': '= {weight} g dough total',
     'help.verdicts': 'These three checks read your settings: whether the water suits the flour, whether the flour can survive that long a prove, and how gentle the result is on the gut.',
     'help.capacity': "How much of this flour's fermentation capacity you're using. Past 100%, protease enzymes begin to irreversibly break down the gluten — the dough slackens and collapses.",
     'help.riseCurve': "The rise over time: a slow start (lag), a steep climb, then a plateau. The dot marks your target — ideally on the plateau. If the flour can't hold the prove, the line sags into collapse.",
@@ -285,7 +286,7 @@ const TRANSLATIONS = {
     'label.leavening': 'Triebmittel', 'label.starterStr': 'Starteraktivität', 'label.yeastType': 'Hefeart',
     'label.preferment': 'Vorteig', 'label.roomTemp': 'Raumtemperatur',
     'label.ddt': 'Zielteigtemperatur (ETT)', 'label.mixMethod': 'Knetmethode',
-    'label.doughWeight': 'Gesamtteiggewicht', 'label.ballCount': 'Anzahl Teigkugeln', 'label.ovenTemp': 'Ofentemperatur',
+    'label.ballCount': 'Anzahl Teigkugeln', 'label.ballWeight': 'Kugelgröße', 'label.ovenTemp': 'Ofentemperatur',
     'label.bakingSurface': 'Backunterlage',
     'leaven.commercial': 'Hefe', 'leaven.sourdough': 'Sauerteig',
     'preferment.straight': 'Direkt', 'preferment.poolish': 'Poolish', 'preferment.biga': 'Biga',
@@ -416,8 +417,9 @@ const TRANSLATIONS = {
     'help.roomTemp': 'Wie warm deine Küche ist. Wird verwendet, um die Wassertemperatur zu berechnen, damit der Teig nach dem Kneten deine Zieltemperatur erreicht.',
     'help.ddt': 'Die gewünschte Teigtemperatur direkt nach dem Kneten (~24 °C ist ein guter Standard). Das Tool sagt, welche Wassertemperatur du brauchst.',
     'help.mixMethod': 'Kneten erzeugt Wärme durch Reibung — eine Maschine mehr als die Hände — daher braucht eine Knetmaschine kühleres Wasser für die gleiche Teigtemperatur.',
-    'help.doughWeight': 'Gesamtmenge Teig, die du machen möchtest, gleichmäßig auf deine Teigkugeln aufgeteilt.',
-    'help.ballCount': 'Wie viele Pizzen diese Menge ergibt. Jede Kugel wiegt dann etwa {ballW} g — passe das Gesamtteiggewicht an, um das zu ändern.',
+    'help.ballCount': 'Wie viele Pizzen du mit dieser Menge machen möchtest.',
+    'help.ballWeight': 'Wie viel Teig in jede Kugel kommt — eine gute Alltagspizza liegt bei etwa 250 g.',
+    'note.totalDough': '= {weight} g Teig insgesamt',
     'help.verdicts': 'Diese drei Checks lesen deine Einstellungen: ob das Wasser zum Mehl passt, ob das Mehl so lange Gärung übersteht, und wie verträglich das Ergebnis ist.',
     'help.capacity': 'Wie viel der Gärkapazität dieses Mehls du verwendest. Über 100% beginnen Protease-Enzyme das Gluten irreversibel abzubauen — der Teig erschlafft und kollabiert.',
     'help.riseCurve': 'Der Aufgang über die Zeit: langsamer Start (Anlauf), steiler Anstieg, dann ein Plateau. Der Punkt markiert dein Ziel — idealerweise auf dem Plateau. Kann das Mehl die Gärung nicht halten, sinkt die Linie in den Kollaps.',
@@ -732,8 +734,9 @@ function FermentCalculator() {
   const [leavening, setLeavening] = useState("commercial");
   const [starterStr, setStarterStr] = useState(50);
   const [preferment, setPreferment] = useState("straight");
-  const [doughWeight, setDoughWeight] = useState(1000);
   const [ballCount, setBallCount] = useState(4);
+  const [ballWeight, setBallWeight] = useState(250);
+  const doughWeight = ballCount * ballWeight;
   const [roomTemp, setRoomTemp] = useState(20);
   const [ddt, setDdt] = useState(24);
   const [mixMethod, setMixMethod] = useState("hand");
@@ -782,7 +785,7 @@ function FermentCalculator() {
     tempC: setTempC, hours: setHours, protein: setProtein, plVal: setPlVal, hydration: setHydration,
     salt: setSalt, oilPct: setOilPct, sugarPct: setSugarPct, leavening: setLeavening, preferment: setPreferment,
     ovenC: setOvenC, surface: setSurface, ddt: setDdt, starterStr: setStarterStr, yeastType: setYeastType,
-    mixMethod: setMixMethod, doughWeight: setDoughWeight, ballCount: setBallCount, roomTemp: setRoomTemp,
+    mixMethod: setMixMethod, ballCount: setBallCount, ballWeight: setBallWeight, roomTemp: setRoomTemp,
   };
   const applyPreset = (obj) => Object.entries(obj).forEach(([k, v]) => setters[k] && setters[k](v));
   const presetMatches = (obj) => Object.entries(obj).every(([k, v]) => inputs[k] === v);
@@ -1220,15 +1223,6 @@ function FermentCalculator() {
               </>
             )}
             <div className="fc-field">
-              <div className="fc-field-head"><span className="fc-label">{t('label.doughWeight')}</span></div>
-              <div className="fc-stepper">
-                <button onClick={() => setDoughWeight((w) => Math.max(200, w - 100))}>−</button>
-                <span className="fc-step-val">{doughWeight} g</span>
-                <button onClick={() => setDoughWeight((w) => Math.min(4000, w + 100))}>+</button>
-              </div>
-            </div>
-            <Help>{t('help.doughWeight')}</Help>
-            <div className="fc-field">
               <div className="fc-field-head"><span className="fc-label">{t('label.ballCount')}</span></div>
               <div className="fc-stepper">
                 <button onClick={() => setBallCount((n) => Math.max(1, n - 1))}>−</button>
@@ -1236,7 +1230,17 @@ function FermentCalculator() {
                 <button onClick={() => setBallCount((n) => Math.min(12, n + 1))}>+</button>
               </div>
             </div>
-            <Help>{t('help.ballCount', { ballW })}</Help>
+            <Help>{t('help.ballCount')}</Help>
+            <div className="fc-field">
+              <div className="fc-field-head"><span className="fc-label">{t('label.ballWeight')}</span></div>
+              <div className="fc-stepper">
+                <button onClick={() => setBallWeight((w) => Math.max(100, w - 25))}>−</button>
+                <span className="fc-step-val">{ballWeight} g</span>
+                <button onClick={() => setBallWeight((w) => Math.min(500, w + 25))}>+</button>
+              </div>
+            </div>
+            <Help>{t('help.ballWeight')}</Help>
+            <p className="fc-note-line">{t('note.totalDough', { weight: doughWeight })}</p>
           </div>
 
           {/* ---- ferment output ---- */}
