@@ -83,7 +83,7 @@ const TRANSLATIONS = {
     'panel.dough': '1 · Dough', 'panel.bake': '2 · The bake', 'panel.recipe': 'The recipe',
     'panel.nerd': 'Nerd mode · all values', 'panel.nerd.live': 'live',
     'subhead.prove': 'Prove', 'subhead.flour': 'Flour', 'subhead.mixins': 'Mix-ins',
-    'subhead.leaven': 'Leaven', 'subhead.batch': 'Batch', 'subhead.mixing': 'Mixing & batch',
+    'subhead.leaven': 'Leaven', 'subhead.batch': 'Batch', 'subhead.mixing': 'Mixing',
     'label.fermTemp': 'Fermentation temperature', 'label.targetTime': 'Target time',
     'label.flourProtein': 'Flour protein', 'label.pl': 'Extensible ↔ elastic (P/L)',
     'label.hydration': 'Hydration', 'label.salt': 'Salt', 'label.oil': 'Oil', 'label.sugar': 'Sugar',
@@ -279,7 +279,7 @@ const TRANSLATIONS = {
     'panel.dough': '1 · Teig', 'panel.bake': '2 · Das Backen', 'panel.recipe': 'Das Rezept',
     'panel.nerd': 'Nerd-Modus · alle Werte', 'panel.nerd.live': 'live',
     'subhead.prove': 'Gärung', 'subhead.flour': 'Mehl', 'subhead.mixins': 'Zutaten',
-    'subhead.leaven': 'Triebmittel', 'subhead.batch': 'Charge', 'subhead.mixing': 'Mischen & Charge',
+    'subhead.leaven': 'Triebmittel', 'subhead.batch': 'Charge', 'subhead.mixing': 'Mischen',
     'label.fermTemp': 'Gärtemperatur', 'label.targetTime': 'Gärzeit',
     'label.flourProtein': 'Mehlprotein', 'label.pl': 'Dehnbar ↔ elastisch (P/L)',
     'label.hydration': 'Hydration', 'label.salt': 'Salz', 'label.oil': 'Öl', 'label.sugar': 'Zucker',
@@ -1108,7 +1108,28 @@ function FermentCalculator() {
           <div className="fc-panel">
             <p className="fc-panel-head"><span>{t('panel.dough')}</span><span style={{ color: accent }}>{tempC} °C</span></p>
 
-            <p className="fc-subhead first">{t('subhead.prove')}</p>
+            <p className="fc-subhead first">{t('subhead.batch')}</p>
+            <div className="fc-field">
+              <div className="fc-field-head"><span className="fc-label">{t('label.ballCount')}</span></div>
+              <div className="fc-stepper">
+                <button onClick={() => setBallCount((n) => Math.max(1, n - 1))}>−</button>
+                <span className="fc-step-val">{ballCount}</span>
+                <button onClick={() => setBallCount((n) => Math.min(12, n + 1))}>+</button>
+              </div>
+            </div>
+            <Help>{t('help.ballCount')}</Help>
+            <div className="fc-field">
+              <div className="fc-field-head"><span className="fc-label">{t('label.ballWeight')}</span></div>
+              <div className="fc-stepper">
+                <button onClick={() => setBallWeight((w) => Math.max(100, w - 25))}>−</button>
+                <span className="fc-step-val">{ballWeight} g</span>
+                <button onClick={() => setBallWeight((w) => Math.min(500, w + 25))}>+</button>
+              </div>
+            </div>
+            <Help>{t('help.ballWeight')}</Help>
+            <p className="fc-note-line">{t('note.totalDough', { weight: doughWeight })}</p>
+
+            <p className="fc-subhead">{t('subhead.prove')}</p>
             <Slider label={t('label.fermTemp')} value={tempC} unit="°C"
               min={2} max={35} step={1} onChange={setTempC} accent={accent} />
             <Help>{t('help.fermTemp')}</Help>
@@ -1201,9 +1222,9 @@ function FermentCalculator() {
               </>
             )}
 
-            <p className="fc-subhead">{t(simple ? 'subhead.batch' : 'subhead.mixing')}</p>
             {!simple && (
               <>
+                <p className="fc-subhead">{t('subhead.mixing')}</p>
                 <Slider label={t('label.roomTemp')} value={roomTemp} unit="°C"
                   min={12} max={30} step={1} onChange={setRoomTemp} accent={accent} />
                 <Help>{t('help.roomTemp')}</Help>
@@ -1222,25 +1243,6 @@ function FermentCalculator() {
                 <Help>{t('help.mixMethod')}</Help>
               </>
             )}
-            <div className="fc-field">
-              <div className="fc-field-head"><span className="fc-label">{t('label.ballCount')}</span></div>
-              <div className="fc-stepper">
-                <button onClick={() => setBallCount((n) => Math.max(1, n - 1))}>−</button>
-                <span className="fc-step-val">{ballCount}</span>
-                <button onClick={() => setBallCount((n) => Math.min(12, n + 1))}>+</button>
-              </div>
-            </div>
-            <Help>{t('help.ballCount')}</Help>
-            <div className="fc-field">
-              <div className="fc-field-head"><span className="fc-label">{t('label.ballWeight')}</span></div>
-              <div className="fc-stepper">
-                <button onClick={() => setBallWeight((w) => Math.max(100, w - 25))}>−</button>
-                <span className="fc-step-val">{ballWeight} g</span>
-                <button onClick={() => setBallWeight((w) => Math.min(500, w + 25))}>+</button>
-              </div>
-            </div>
-            <Help>{t('help.ballWeight')}</Help>
-            <p className="fc-note-line">{t('note.totalDough', { weight: doughWeight })}</p>
           </div>
 
           {/* ---- ferment output ---- */}
