@@ -1,6 +1,28 @@
-// Pure computation engine — no DOM, no React, no JSX.
-// All functions are deterministic: same inputs → same outputs.
-// Exported for testing; also inlined into index.html.
+// Pizza dough calculation engine — single source of truth.
+//
+// Loaded two ways:
+//   - Node (tests):   require('./doughEngine.js')
+//   - Browser (app):  <script src="doughEngine.js"> before index.html's babel
+//                     block, which reads these off window.DoughEngine.
+//
+// Verdict-style functions return { tone, code, params } rather than finished
+// prose so the UI can translate them; see TRANSLATIONS in index.html.
+
+
+// Wrapped in an IIFE so its internals stay off the global scope — index.html
+// destructures the same names from window.DoughEngine in the page's own scope.
+(function () {
+'use strict';
+
+/* ------------------------------------------------------------------ *
+ *  Dough calculator — three stages
+ *  1. Ferment: yeast from a temperature/time "budget" (Q10); modified
+ *     Gompertz rise curve coloured along a cold->warm axis
+ *  2. Flour: protein -> W estimate, hydration range, ferment capacity;
+ *     weak flour over-fermented visibly collapses
+ *  3. Bake: oven temp -> bake time (exponential), crust-colour gauge,
+ *     leoparding flag at the high-temp / short-time corner
+ * ------------------------------------------------------------------ */
 
 const REF = { yeastPct: 0.3, hours: 8, tempC: 21 }; // IDY anchor
 const K = REF.yeastPct * REF.hours; // 2.4 (%·h) at 21°C
@@ -93,6 +115,49 @@ const OVEN_PRESETS = [
   { id: "wood", label: "Wood-fired", set: { ovenC: 490, surface: "stone" } },
 ];
 
+const STYLE_GUIDELINES = {
+  neapolitan: [
+    { key:"protein",   label:"Protein",    lo:12.5, hi:13.5, unit:"%",  note:"00 flour, W 280–320" },
+    { key:"hydration", label:"Hydration",  lo:58,   hi:65,   unit:"%",  note:"tight for hand-stretching" },
+    { key:"salt",      label:"Salt",       lo:2.5,  hi:3.0,  unit:"%",  note:"AVPN standard" },
+    { key:"tempC",     label:"Prove temp", lo:16,   hi:24,   unit:"°C", note:"room temp or cool" },
+    { key:"hours",     label:"Prove time", lo:18,   hi:48,   unit:"h",  note:"min 18 h for structure" },
+    { key:"ovenC",     label:"Oven",       lo:430,  hi:500,  unit:"°C", note:"pizza oven required" },
+  ],
+  ny: [
+    { key:"protein",   label:"Protein",    lo:12.0, hi:13.5, unit:"%",  note:"bread or high-gluten flour" },
+    { key:"hydration", label:"Hydration",  lo:60,   hi:65,   unit:"%",  note:"workable, slightly tacky" },
+    { key:"salt",      label:"Salt",       lo:1.8,  hi:2.5,  unit:"%",  note:"restrained — cheese is salty" },
+    { key:"tempC",     label:"Prove temp", lo:2,    hi:7,    unit:"°C", note:"cold fridge proof" },
+    { key:"hours",     label:"Prove time", lo:24,   hi:72,   unit:"h",  note:"longer = more flavour" },
+    { key:"ovenC",     label:"Oven",       lo:260,  hi:320,  unit:"°C", note:"as hot as home oven allows" },
+  ],
+  detroit: [
+    { key:"protein",   label:"Protein",    lo:12.0, hi:13.0, unit:"%",  note:"AP or bread flour" },
+    { key:"hydration", label:"Hydration",  lo:68,   hi:78,   unit:"%",  note:"high — pan holds the dough" },
+    { key:"salt",      label:"Salt",       lo:1.8,  hi:2.5,  unit:"%",  note:"standard" },
+    { key:"tempC",     label:"Prove temp", lo:18,   hi:26,   unit:"°C", note:"room temp, same day" },
+    { key:"hours",     label:"Prove time", lo:3,    hi:8,    unit:"h",  note:"quick same-day rise" },
+    { key:"ovenC",     label:"Oven",       lo:260,  hi:295,  unit:"°C", note:"pan pizza heat" },
+  ],
+  roman: [
+    { key:"protein",   label:"Protein",    lo:12.0, hi:13.5, unit:"%",  note:"strong flour for high hydration" },
+    { key:"hydration", label:"Hydration",  lo:75,   hi:85,   unit:"%",  note:"very wet — use a tray" },
+    { key:"salt",      label:"Salt",       lo:2.0,  hi:2.5,  unit:"%",  note:"standard" },
+    { key:"tempC",     label:"Prove temp", lo:2,    hi:7,    unit:"°C", note:"slow cold proof" },
+    { key:"hours",     label:"Prove time", lo:24,   hi:72,   unit:"h",  note:"long cold ferment" },
+    { key:"ovenC",     label:"Oven",       lo:280,  hi:320,  unit:"°C", note:"deck-oven style" },
+  ],
+  sourdough: [
+    { key:"protein",   label:"Protein",    lo:12.0, hi:13.5, unit:"%",  note:"strong flour for long ferment" },
+    { key:"hydration", label:"Hydration",  lo:68,   hi:78,   unit:"%",  note:"manageable with good gluten" },
+    { key:"salt",      label:"Salt",       lo:2.0,  hi:2.8,  unit:"%",  note:"acid compensates slightly" },
+    { key:"tempC",     label:"Prove temp", lo:2,    hi:8,    unit:"°C", note:"fridge retard for flavour" },
+    { key:"hours",     label:"Prove time", lo:18,   hi:48,   unit:"h",  note:"long cold ferment" },
+    { key:"ovenC",     label:"Oven",       lo:250,  hi:320,  unit:"°C", note:"steel helps at lower temps" },
+  ],
+};
+
 const TONE = { good: "#648A45", warn: "#C2641F", bad: "#C5362A" };
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
@@ -152,7 +217,7 @@ function lerpStops(stops, t) {
 }
 
 const SOURCES = [
-  { group: "Fermentation", items: [
+  { group: "Fermentation", groupKey: "sources.group.fermentation", items: [
     { t: "Microbial leavening & time → digestibility/FODMAPs of Neapolitan pizza", u: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12027146/" },
     { t: "Sourdough biga → glycemic index of Pinsa Romana", u: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10346773/" },
     { t: "Lactobacillus groups in semolina pizza doughs", u: "https://www.mdpi.com/2311-5637/4/3/61" },
@@ -160,7 +225,7 @@ const SOURCES = [
     { t: "Fermentation & baking → antioxidant content", u: "https://www.eurekalert.org/news-releases/848139" },
     { t: "Thermodynamic sensors to monitor fermentation", u: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8914819/" },
   ] },
-  { group: "Flour & gluten", items: [
+  { group: "Flour & gluten", groupKey: "sources.group.flourGluten", items: [
     { t: "Flour protein → dough & crust (etliekmek)", u: "https://pmc.ncbi.nlm.nih.gov/articles/PMC7026350/" },
     { t: "Gluten content → water migration (LF-NMR)", u: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11012212/" },
     { t: "Gluten protein transformations during processing", u: "https://www.sciencedirect.com/science/article/pii/S0023643825000258" },
@@ -168,11 +233,11 @@ const SOURCES = [
     { t: "Protein & baking quality across flour brands", u: "https://www.tandfonline.com/doi/full/10.1080/15428052.2023.2191874" },
     { t: "Extruded lentil flour → gluten-free pizza", u: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8834442/" },
   ] },
-  { group: "Salt & rheology", items: [
+  { group: "Salt & rheology", groupKey: "sources.group.saltRheology", items: [
     { t: "Salt, water & temperature on wheat dough rheology", u: "https://www.researchgate.net/publication/230486758" },
     { t: "Low-sodium sea salt → dough rheology & bread", u: "https://www.mdpi.com/2076-3417/12/9/4344" },
   ] },
-  { group: "Over-fermentation", items: [
+  { group: "Over-fermentation", groupKey: "sources.group.overFermentation", items: [
     { t: "CO₂-induced gluten network rupture and yeast metabolites during fermentation", u: "https://pmc.ncbi.nlm.nih.gov/articles/PMC7795266/" },
     { t: "Microbial proteases in baked goods: gluten modification and immunogenicity", u: "https://pmc.ncbi.nlm.nih.gov/articles/PMC5302405/" },
     { t: "Under- and over-fermented pizza dough: causes and effects (PizzaBlab)", u: "https://www.pizzablab.com/learning-and-resources/fermentation/under-and-over-fermentation/" },
@@ -182,7 +247,7 @@ const SOURCES = [
     { t: "The science behind pizza fermentation: yeast, enzymes & flavour (Dough School)", u: "https://www.dough.school/guides/fermentation-science" },
     { t: "Effects of temperature on fermentation rate of baker's yeast — Q10 study (OSU)", u: "https://undergradsciencejournals.okstate.edu/index.php/jibi/article/view/8265" },
   ] },
-  { group: "Baking & storage", items: [
+  { group: "Baking & storage", groupKey: "sources.group.bakingStorage", items: [
     { t: "Salts → acrylamide, HMF & flavour in crust-like dough", u: "https://www.sciencedirect.com/science/article/pii/S0308814622033209" },
     { t: "Acrylamide in bakery, snack & fried products", u: "https://pmc.ncbi.nlm.nih.gov/articles/PMC9749820/" },
     { t: "Glycerol monooleate → frozen dough quality", u: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11765111/" },
@@ -193,53 +258,49 @@ const SOURCES = [
 // ---- flour-strength model -------------------------------------------
 function flourProfile(protein, pl) {
   const W = clamp(Math.round((protein - 6) * 40), 60, 400);
-  const category =
-    protein < 10.5 ? "Soft / weak"
-    : protein < 12 ? "Medium"
-    : protein < 13.5 ? "Strong (pizza)"
-    : "Very strong";
+  const categoryKey =
+    protein < 10.5 ? "flour.soft"
+    : protein < 12 ? "flour.medium"
+    : protein < 13.5 ? "flour.strong"
+    : "flour.veryStrong";
   const center = 55 + (protein - 9) * 2.833 + pl * 2; // elastic flours take a touch more water
   const hydrLo = Math.round(center - 4);
   const hydrHi = Math.round(center + 4);
   const maxHours = clamp(6 * Math.pow(2, (protein - 9) / 1.5), 8, 120);
-  return { W, category, hydrLo, hydrHi, maxHours };
+  return { W, categoryKey, hydrLo, hydrHi, maxHours };
 }
 
 function hydrationVerdict(hydration, fp) {
-  if (hydration > fp.hydrHi + 2)
-    return { tone: "bad", text: `High for this flour — expect a slack, sticky dough that's hard to shape.` };
-  if (hydration > fp.hydrHi)
-    return { tone: "warn", text: `A touch wet; workable with confident handling.` };
-  if (hydration < fp.hydrLo - 2)
-    return { tone: "warn", text: `Drier than this flour can take — room for a more open crumb.` };
-  return { tone: "good", text: `Well matched to a ${fp.hydrLo}–${fp.hydrHi}% range.` };
+  if (hydration > fp.hydrHi + 2) return { tone: "bad", code: "verdict.hydration.high", params: {} };
+  if (hydration > fp.hydrHi) return { tone: "warn", code: "verdict.hydration.wet", params: {} };
+  if (hydration < fp.hydrLo - 2) return { tone: "warn", code: "verdict.hydration.dry", params: {} };
+  return { tone: "good", code: "verdict.hydration.good", params: { lo: fp.hydrLo, hi: fp.hydrHi } };
 }
 
 function fermentVerdict(hours, fp) {
   const m = Math.round(fp.maxHours);
-  if (hours > fp.maxHours * 1.25)
-    return { tone: "bad", text: `Too long (~${m} h max). Gluten breaks down — the dough slackens and over-proofs.` };
-  if (hours > fp.maxHours)
-    return { tone: "warn", text: `Near this flour's limit (~${m} h). Watch for over-proofing.` };
-  return { tone: "good", text: `Comfortable — this flour holds up to ~${m} h here.` };
+  if (hours > fp.maxHours * 1.25) return { tone: "bad", code: "verdict.ferment.tooLong", params: { m } };
+  if (hours > fp.maxHours) return { tone: "warn", code: "verdict.ferment.limit", params: { m } };
+  return { tone: "good", code: "verdict.ferment.good", params: { m } };
 }
 
 function overProofRecommendations(inp, fp) {
   const raw = inp.hours / fp.maxHours;
   if (raw < 0.8) return null;
   const severity = raw >= 1.25 ? 'bad' : raw >= 1 ? 'warn' : 'caution';
-  const label = severity === 'bad' ? 'Over-proved' : severity === 'warn' ? 'Exceeds capacity' : 'Approaching limit';
-  const why = raw >= 1
-    ? `At ${inp.tempC} °C with ${inp.protein}% protein flour, protease enzymes and CO₂ pressure begin to irreversibly rupture the gluten network after ~${Math.round(fp.maxHours)} h. The dough loses gas-holding capacity and collapses into a slack, dense mass.`
-    : `Beyond ${Math.round(fp.maxHours)} h this flour's gluten becomes vulnerable — protease enzymes attack the protein bonds and CO₂ pressure physically tears the network. You have ~${Math.round(fp.maxHours - inp.hours)} h of headroom.`;
+  const labelCode = `overproof.${severity}`;
+  const whyCode = raw >= 1 ? 'overproof.why.over' : 'overproof.why.near';
+  const whyParams = raw >= 1
+    ? { tempC: inp.tempC, protein: inp.protein, maxHours: Math.round(fp.maxHours) }
+    : { maxHours: Math.round(fp.maxHours), headroom: Math.round(fp.maxHours - inp.hours) };
   const levers = [];
-  if (inp.protein < 13)             levers.push({ k: 'Flour protein', v: `raise to 13%+ — fermentation capacity roughly doubles per +1.5% protein (now ${inp.protein}%)` });
-  if (inp.tempC > 10)               levers.push({ k: 'Temperature',   v: `drop below 10 °C — cold slows yeast ~90% while enzymes only slow ~55%, dramatically extending the safe window (now ${inp.tempC} °C)` });
-  if (inp.salt < 2.5)               levers.push({ k: 'Salt',          v: `raise to 2.5–3% — tightens the gluten network and slows yeast exponentially via osmotic stress (now ${inp.salt}%)` });
-  levers.push(                       { k: 'Time',         v: `reduce by ${Math.max(1, Math.round(inp.hours - fp.maxHours * 0.85))} h to return inside the safe window` });
-  if (inp.preferment === 'straight') levers.push({ k: 'Preferment',   v: 'switch to biga or poolish — pre-fermented acidity buffers further yeast activity and reduces the fresh yeast load' });
-  if (inp.hydration > 68)           levers.push({ k: 'Hydration',     v: `reduce to ≤68% — more water creates a more mobile environment that accelerates enzyme activity (now ${inp.hydration}%)` });
-  return { raw, severity, label, why, levers };
+  if (inp.protein < 13)             levers.push({ kCode: 'overproof.lever.proteinKey',     vCode: 'overproof.lever.protein',     params: { val: inp.protein } });
+  if (inp.tempC > 10)               levers.push({ kCode: 'overproof.lever.temperatureKey', vCode: 'overproof.lever.temperature', params: { val: inp.tempC } });
+  if (inp.salt < 2.5)               levers.push({ kCode: 'overproof.lever.saltKey',        vCode: 'overproof.lever.salt',        params: { val: inp.salt } });
+  levers.push(                       { kCode: 'overproof.lever.timeKey',         vCode: 'overproof.lever.time',        params: { val: Math.max(1, Math.round(inp.hours - fp.maxHours * 0.85)) } });
+  if (inp.preferment === 'straight') levers.push({ kCode: 'overproof.lever.prefermentKey', vCode: 'overproof.lever.preferment',  params: {} });
+  if (inp.hydration > 68)           levers.push({ kCode: 'overproof.lever.hydrationKey',   vCode: 'overproof.lever.hydration',   params: { val: inp.hydration } });
+  return { raw, severity, labelCode, whyCode, whyParams, levers };
 }
 
 // ---- bake model ------------------------------------------------------
@@ -255,13 +316,13 @@ function bakeProfile(ovenC, hydration, salt, sugarPct, oilPct, surface) {
   const base = clamp(top * (0.4 + 0.5 * k) + k * 22, 3, 100);  // surface drives base browning
   const leopard = ovenC >= 425 && t <= 2.2;
   const acryl = top >= 86 || base >= 90;        // very dark crust -> acrylamide rises
-  const style =
-    ovenC >= 430 ? "Neapolitan"
-    : ovenC >= 340 ? "Artisan / high-heat"
-    : ovenC >= 280 ? "New York"
-    : ovenC >= 240 ? "Home oven"
-    : "Low / pan";
-  return { t, colour: top, base, leopard, acryl, style };
+  const styleKey =
+    ovenC >= 430 ? "bakeStyle.neapolitan"
+    : ovenC >= 340 ? "bakeStyle.artisan"
+    : ovenC >= 280 ? "bakeStyle.ny"
+    : ovenC >= 240 ? "bakeStyle.homeOven"
+    : "bakeStyle.lowPan";
+  return { t, colour: top, base, leopard, acryl, styleKey };
 }
 
 function digestScore(hours, tempC, leavening, preferment) {
@@ -272,21 +333,17 @@ function digestScore(hours, tempC, leavening, preferment) {
   return clamp(Math.round(d), 5, 99);
 }
 function digestVerdict(d) {
-  if (d >= 68) return { tone: "good", text: `Easy on the gut (${d}/100) — long, slow fermentation breaks down more fructans.` };
-  if (d >= 45) return { tone: "warn", text: `Moderate (${d}/100) — a longer or sourdough prove breaks down more.` };
-  return { tone: "warn", text: `Short prove (${d}/100) — less FODMAP breakdown; extend the time for easier digestion.` };
+  if (d >= 68) return { tone: "good", code: "verdict.digest.easy", params: { d } };
+  if (d >= 45) return { tone: "warn", code: "verdict.digest.moderate", params: { d } };
+  return { tone: "warn", code: "verdict.digest.short", params: { d } };
 }
 
 function bakeVerdict(b, ovenC) {
-  if (b.leopard)
-    return { tone: "good", text: `Leoparding likely — fast bake, soft interior, charred spots. Needs a pizza or wood oven.` };
-  if (ovenC >= 430)
-    return { tone: "warn", text: `Very hot and quick, but only a dedicated pizza oven reaches this.` };
-  if (ovenC >= 280)
-    return { tone: "good", text: `Even golden crust with a crisp base — the classic range.` };
-  if (ovenC >= 240)
-    return { tone: "good", text: `Home-oven territory — golden and even; bake on a preheated steel or stone.` };
-  return { tone: "warn", text: `Low — the crust can dry and stay pale before it browns. Preheat a steel hard.` };
+  if (b.leopard) return { tone: "good", code: "verdict.bake.leopard", params: {} };
+  if (ovenC >= 430) return { tone: "warn", code: "verdict.bake.veryHot", params: {} };
+  if (ovenC >= 280) return { tone: "good", code: "verdict.bake.golden", params: {} };
+  if (ovenC >= 240) return { tone: "good", code: "verdict.bake.homeOven", params: {} };
+  return { tone: "warn", code: "verdict.bake.low", params: {} };
 }
 
 function fmtBake(t) {
@@ -294,8 +351,8 @@ function fmtBake(t) {
   if (t < 6) return `~${t.toFixed(1)} min`;
   return `~${Math.round(t)} min`;
 }
-function crustLabel(c) {
-  return c < 30 ? "Pale · light gold" : c < 55 ? "Golden" : c < 78 ? "Deep golden" : "Charred · leopard";
+function crustLabelKey(c) {
+  return c < 30 ? "crust.pale" : c < 55 ? "crust.golden" : c < 78 ? "crust.deepGolden" : "crust.charred";
 }
 
 function compute({ tempC, hours, yeastType, doughWeight, hydration, salt, oilPct, sugarPct, leavening, preferment, starterStr }) {
@@ -390,10 +447,12 @@ function buildRisePaths(m, w, h, pad, vAxis) {
   return { line, area, target: { x: x(m.hours), y: y(m.vAt(m.hours)) }, lagX: x(m.lambda), baselineY };
 }
 
-
-
-module.exports = {
+// ---- dual export: CommonJS for tests, global for the browser -----------
+const __ENGINE__ = {
   clamp,
+  tempColor,
+  mulberry32,
+  lerpStops,
   flourProfile,
   hydrationVerdict,
   fermentVerdict,
@@ -403,7 +462,7 @@ module.exports = {
   digestVerdict,
   bakeVerdict,
   fmtBake,
-  crustLabel,
+  crustLabelKey,
   compute,
   riseModel,
   proofQualityFn,
@@ -412,5 +471,30 @@ module.exports = {
   geometryFn,
   computeAll,
   buildRisePaths,
-  REF, K, Q10, SALT_REF, TYPE, SURF, FRICTION,
+  REF,
+  K,
+  Q10,
+  SALT_REF,
+  TYPE,
+  SURF,
+  FRICTION,
+  V_AXIS,
+  EMBER,
+  CONF,
+  GRAPH,
+  DG,
+  PIZZA_PRESETS,
+  OVEN_PRESETS,
+  STYLE_GUIDELINES,
+  TONE,
+  CRUMB_PTS,
+  TOPPINGS,
+  LEOPARD,
+  CRUST_STOPS,
+  SOURCES,
 };
+
+if (typeof module !== 'undefined' && module.exports) module.exports = __ENGINE__;
+if (typeof window !== 'undefined') window.DoughEngine = __ENGINE__;
+
+})();
