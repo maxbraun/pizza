@@ -16,7 +16,7 @@ const {
   digestVerdict,
   bakeVerdict,
   fmtBake,
-  crustLabel,
+  crustLabelKey,
   compute,
   riseModel,
   proofQualityFn,
@@ -76,10 +76,10 @@ describe('flourProfile', () => {
   });
 
   test('protein categories', () => {
-    assert.equal(flourProfile(9.5, 0).category, 'Soft / weak');
-    assert.equal(flourProfile(11, 0).category, 'Medium');
-    assert.equal(flourProfile(12.5, 0).category, 'Strong (pizza)');
-    assert.equal(flourProfile(14, 0).category, 'Very strong');
+    assert.equal(flourProfile(9.5, 0).categoryKey, 'flour.soft');
+    assert.equal(flourProfile(11, 0).categoryKey, 'flour.medium');
+    assert.equal(flourProfile(12.5, 0).categoryKey, 'flour.strong');
+    assert.equal(flourProfile(14, 0).categoryKey, 'flour.veryStrong');
   });
 
   test('maxHours doubles roughly per +1.5% protein', () => {
@@ -453,7 +453,7 @@ describe('digestScore', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// fmtBake / crustLabel helpers
+// fmtBake / crustLabelKey helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('fmtBake', () => {
@@ -470,11 +470,11 @@ describe('fmtBake', () => {
   });
 });
 
-describe('crustLabel', () => {
-  test('< 30 → pale', () => assert.ok(crustLabel(20).includes('ale')));
-  test('30-55 → golden', () => assert.ok(crustLabel(40).toLowerCase().includes('golden')));
-  test('55-78 → deep golden', () => assert.ok(crustLabel(70).toLowerCase().includes('deep')));
-  test('≥ 78 → charred', () => assert.ok(crustLabel(90).toLowerCase().includes('charred')));
+describe('crustLabelKey', () => {
+  test('< 30 → pale', () => assert.equal(crustLabelKey(20), 'crust.pale'));
+  test('30-55 → golden', () => assert.equal(crustLabelKey(40), 'crust.golden'));
+  test('55-78 → deep golden', () => assert.equal(crustLabelKey(70), 'crust.deepGolden'));
+  test('≥ 78 → charred', () => assert.equal(crustLabelKey(90), 'crust.charred'));
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -589,23 +589,23 @@ describe('computeAll — overProof null when well within capacity', () => {
 
 describe('bakeProfile — style branches', () => {
   test('Neapolitan style at ≥430 °C', () => {
-    assert.equal(bakeProfile(460, 60, 2.5, 0, 0, 'stone').style, 'Neapolitan');
-    assert.equal(bakeProfile(430, 60, 2.5, 0, 0, 'stone').style, 'Neapolitan');
+    assert.equal(bakeProfile(460, 60, 2.5, 0, 0, 'stone').styleKey, 'bakeStyle.neapolitan');
+    assert.equal(bakeProfile(430, 60, 2.5, 0, 0, 'stone').styleKey, 'bakeStyle.neapolitan');
   });
   test('Artisan / high-heat style at 340–429 °C', () => {
-    assert.equal(bakeProfile(380, 60, 2.5, 0, 0, 'stone').style, 'Artisan / high-heat');
-    assert.equal(bakeProfile(340, 60, 2.5, 0, 0, 'stone').style, 'Artisan / high-heat');
+    assert.equal(bakeProfile(380, 60, 2.5, 0, 0, 'stone').styleKey, 'bakeStyle.artisan');
+    assert.equal(bakeProfile(340, 60, 2.5, 0, 0, 'stone').styleKey, 'bakeStyle.artisan');
   });
   test('New York style at 280–339 °C', () => {
-    assert.equal(bakeProfile(300, 60, 2.5, 0, 0, 'steel').style, 'New York');
-    assert.equal(bakeProfile(280, 60, 2.5, 0, 0, 'steel').style, 'New York');
+    assert.equal(bakeProfile(300, 60, 2.5, 0, 0, 'steel').styleKey, 'bakeStyle.ny');
+    assert.equal(bakeProfile(280, 60, 2.5, 0, 0, 'steel').styleKey, 'bakeStyle.ny');
   });
   test('Home oven style at 240–279 °C', () => {
-    assert.equal(bakeProfile(250, 60, 2.5, 0, 0, 'steel').style, 'Home oven');
-    assert.equal(bakeProfile(240, 60, 2.5, 0, 0, 'steel').style, 'Home oven');
+    assert.equal(bakeProfile(250, 60, 2.5, 0, 0, 'steel').styleKey, 'bakeStyle.homeOven');
+    assert.equal(bakeProfile(240, 60, 2.5, 0, 0, 'steel').styleKey, 'bakeStyle.homeOven');
   });
   test('Low / pan style below 240 °C', () => {
-    assert.equal(bakeProfile(200, 60, 2.5, 0, 0, 'pan').style, 'Low / pan');
+    assert.equal(bakeProfile(200, 60, 2.5, 0, 0, 'pan').styleKey, 'bakeStyle.lowPan');
   });
 });
 
@@ -618,15 +618,17 @@ describe('digestVerdict', () => {
     assert.equal(digestVerdict(68).tone, 'good');
     assert.equal(digestVerdict(80).tone, 'good');
   });
-  test('45 ≤ d < 68 → warn tone with "Moderate" text', () => {
+  test('45 ≤ d < 68 → warn tone with moderate code', () => {
     const v = digestVerdict(50);
     assert.equal(v.tone, 'warn');
-    assert.ok(v.text.toLowerCase().includes('moderate'), v.text);
+    assert.equal(v.code, 'verdict.digest.moderate');
+    assert.equal(v.params.d, 50);
   });
-  test('d < 45 → warn tone with "Short" text', () => {
+  test('d < 45 → warn tone with short code', () => {
     const v = digestVerdict(30);
     assert.equal(v.tone, 'warn');
-    assert.ok(v.text.toLowerCase().includes('short'), v.text);
+    assert.equal(v.code, 'verdict.digest.short');
+    assert.equal(v.params.d, 30);
   });
 });
 
@@ -756,19 +758,19 @@ describe('overProofRecommendations', () => {
   test('caution severity at 80–99% of capacity', () => {
     const op = overProofRecommendations({ ...baseInp, hours: 20 }, fp12); // 20/24 ≈ 0.83
     assert.equal(op.severity, 'caution');
-    assert.equal(op.label, 'Approaching limit');
+    assert.equal(op.labelCode, 'overproof.caution');
   });
 
   test('warn severity at 100–124% of capacity', () => {
     const op = overProofRecommendations({ ...baseInp, hours: 26 }, fp12); // 26/24 ≈ 1.08
     assert.equal(op.severity, 'warn');
-    assert.equal(op.label, 'Exceeds capacity');
+    assert.equal(op.labelCode, 'overproof.warn');
   });
 
   test('bad severity at ≥125% of capacity', () => {
     const op = overProofRecommendations({ ...baseInp, hours: 32 }, fp12); // 32/24 ≈ 1.33
     assert.equal(op.severity, 'bad');
-    assert.equal(op.label, 'Over-proved');
+    assert.equal(op.labelCode, 'overproof.bad');
   });
 
   test('raw field equals hours / maxHours', () => {
@@ -778,71 +780,72 @@ describe('overProofRecommendations', () => {
 
   test('why text mentions headroom when below capacity', () => {
     const op = overProofRecommendations({ ...baseInp, hours: 20 }, fp12);
-    assert.ok(op.why.toLowerCase().includes('headroom'), op.why);
+    assert.equal(op.whyCode, 'overproof.why.near');
+    assert.ok(op.whyParams.headroom > 0, JSON.stringify(op.whyParams));
   });
 
   test('why text mentions collapsing when at/over capacity', () => {
     const op = overProofRecommendations({ ...baseInp, hours: 26 }, fp12);
-    assert.ok(op.why.toLowerCase().includes('collapses') || op.why.toLowerCase().includes('rupture'), op.why);
+    assert.equal(op.whyCode, 'overproof.why.over');
   });
 
   // ── lever conditions ──
 
   test('protein lever appears when protein < 13', () => {
     const op = overProofRecommendations({ ...baseInp, hours: 26, protein: 12 }, fp12);
-    assert.ok(op.levers.some(l => l.k === 'Flour protein'));
+    assert.ok(op.levers.some(l => l.kCode === 'overproof.lever.proteinKey'));
   });
 
   test('protein lever absent when protein >= 13', () => {
     const fp13 = flourProfile(13, 0);
     const op   = overProofRecommendations({ ...baseInp, hours: 40, protein: 13 }, fp13);
-    assert.ok(!op.levers.some(l => l.k === 'Flour protein'));
+    assert.ok(!op.levers.some(l => l.kCode === 'overproof.lever.proteinKey'));
   });
 
   test('temperature lever appears when tempC > 10', () => {
     const op = overProofRecommendations({ ...baseInp, hours: 26, tempC: 20 }, fp12);
-    assert.ok(op.levers.some(l => l.k === 'Temperature'));
+    assert.ok(op.levers.some(l => l.kCode === 'overproof.lever.temperatureKey'));
   });
 
   test('temperature lever absent when tempC <= 10', () => {
     const op = overProofRecommendations({ ...baseInp, hours: 26, tempC: 8 }, fp12);
-    assert.ok(!op.levers.some(l => l.k === 'Temperature'));
+    assert.ok(!op.levers.some(l => l.kCode === 'overproof.lever.temperatureKey'));
   });
 
   test('salt lever appears when salt < 2.5', () => {
     const op = overProofRecommendations({ ...baseInp, hours: 26, salt: 2.0 }, fp12);
-    assert.ok(op.levers.some(l => l.k === 'Salt'));
+    assert.ok(op.levers.some(l => l.kCode === 'overproof.lever.saltKey'));
   });
 
   test('salt lever absent when salt >= 2.5', () => {
     const op = overProofRecommendations({ ...baseInp, hours: 26, salt: 2.5 }, fp12);
-    assert.ok(!op.levers.some(l => l.k === 'Salt'));
+    assert.ok(!op.levers.some(l => l.kCode === 'overproof.lever.saltKey'));
   });
 
   test('time lever is always present', () => {
     const op = overProofRecommendations({ ...baseInp, hours: 26 }, fp12);
-    assert.ok(op.levers.some(l => l.k === 'Time'));
+    assert.ok(op.levers.some(l => l.kCode === 'overproof.lever.timeKey'));
   });
 
   test('preferment lever appears for straight dough', () => {
     const op = overProofRecommendations({ ...baseInp, hours: 26, preferment: 'straight' }, fp12);
-    assert.ok(op.levers.some(l => l.k === 'Preferment'));
+    assert.ok(op.levers.some(l => l.kCode === 'overproof.lever.prefermentKey'));
   });
 
   test('preferment lever absent for biga or poolish', () => {
     const opBiga   = overProofRecommendations({ ...baseInp, hours: 26, preferment: 'biga' },   fp12);
     const opPoolish = overProofRecommendations({ ...baseInp, hours: 26, preferment: 'poolish' }, fp12);
-    assert.ok(!opBiga.levers.some(l => l.k === 'Preferment'));
-    assert.ok(!opPoolish.levers.some(l => l.k === 'Preferment'));
+    assert.ok(!opBiga.levers.some(l => l.kCode === 'overproof.lever.prefermentKey'));
+    assert.ok(!opPoolish.levers.some(l => l.kCode === 'overproof.lever.prefermentKey'));
   });
 
   test('hydration lever appears when hydration > 68', () => {
     const op = overProofRecommendations({ ...baseInp, hours: 26, hydration: 70 }, fp12);
-    assert.ok(op.levers.some(l => l.k === 'Hydration'));
+    assert.ok(op.levers.some(l => l.kCode === 'overproof.lever.hydrationKey'));
   });
 
   test('hydration lever absent when hydration <= 68', () => {
     const op = overProofRecommendations({ ...baseInp, hours: 26, hydration: 65 }, fp12);
-    assert.ok(!op.levers.some(l => l.k === 'Hydration'));
+    assert.ok(!op.levers.some(l => l.kCode === 'overproof.lever.hydrationKey'));
   });
 });
