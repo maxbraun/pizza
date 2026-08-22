@@ -37,6 +37,7 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="doughEngine.js"></script>
+  <script src="shareLink.js"></script>
 
   <script type="text/babel">
 const { useState, useMemo, useEffect, useContext, createContext } = React;
@@ -59,6 +60,17 @@ function initialLang() {
   return nav || 'en';
 }
 
+// A share link puts its token in the hash (`#d=...`), never the query
+// string or a server, so it works on a static host and never touches a log.
+function readShareToken() {
+  const m = /(?:^#|[&])d=([^&]+)/.exec(window.location.hash || '');
+  return m ? decodeURIComponent(m[1]) : null;
+}
+// Read once at script load — a single source of truth for both the initial
+// dough state below and the "couldn't read that link" notice.
+const SHARE_TOKEN = readShareToken();
+const SHARED_DOUGH = SHARE_TOKEN ? window.ShareLink.decodeShareToken(SHARE_TOKEN) : null;
+
 function makeTFn(lang, dict) {
   return function t(key, params) {
     let str = (dict[lang] && dict[lang][key]) || (dict.en && dict.en[key]) || key;
@@ -73,6 +85,8 @@ const TRANSLATIONS = {
   en: {
     'header.tagline': 'Pizza dough calculator',
     'toggle.simple': 'Simple', 'toggle.learn': 'Learn', 'toggle.nerd': 'Nerd mode', 'toggle.lang': 'DE',
+    'share.button': 'Share', 'share.copied': 'Link copied ✓',
+    'share.badLink': "This share link couldn't be read — showing the default dough instead.",
     'eyebrow': 'Ferment · flour · bake',
     'title.main': 'From yeast to crust,', 'title.em': 'one dough modelled',
     'lede': 'Three stages of pizza science in one place: how much yeast for your time and temperature, whether the flour can hold that ferment and hydration, and what the oven does to the crust. Colour tracks the driving variable at each step.',
@@ -269,6 +283,8 @@ const TRANSLATIONS = {
   de: {
     'header.tagline': 'Pizzateig-Rechner',
     'toggle.simple': 'Einfach', 'toggle.learn': 'Lernen', 'toggle.nerd': 'Nerd-Modus', 'toggle.lang': 'EN',
+    'share.button': 'Teilen', 'share.copied': 'Link kopiert ✓',
+    'share.badLink': 'Dieser Link konnte nicht gelesen werden — Standardteig wird angezeigt.',
     'eyebrow': 'Gärung · Mehl · Backen',
     'title.main': 'Von der Hefe zur Kruste,', 'title.em': 'ein Teig modelliert',
     'lede': 'Pizzawissenschaft in drei Stufen: wie viel Hefe für Zeit und Temperatur, ob das Mehl diese Gärung und Hydration hält, und was der Ofen mit der Kruste macht. Die Farbe zeigt die entscheidende Variable jedes Schritts.',
@@ -473,6 +489,7 @@ const {
   EMBER, CONF, GRAPH, DG, PIZZA_PRESETS, OVEN_PRESETS, STYLE_GUIDELINES, TONE, CRUMB_PTS,
   TOPPINGS, LEOPARD, CRUST_STOPS, SOURCES
 } = window.DoughEngine;
+const { encodeShareToken, decodeShareToken } = window.ShareLink;
 
 // ---- UI atoms --------------------------------------------------------
 const LearnCtx = React.createContext(false);
@@ -722,37 +739,63 @@ function Pizza({ colour, leopard, protein, proofQuality }) {
 }
 
 function FermentCalculator() {
-  const [tempC, setTempC] = useState(5);
-  const [hours, setHours] = useState(24);
-  const [protein, setProtein] = useState(12.5);
-  const [plVal, setPlVal] = useState(50);
-  const [hydration, setHydration] = useState(60);
-  const [salt, setSalt] = useState(2.5);
-  const [oilPct, setOilPct] = useState(0);
-  const [sugarPct, setSugarPct] = useState(0);
-  const [yeastType, setYeastType] = useState("idy");
-  const [leavening, setLeavening] = useState("commercial");
-  const [starterStr, setStarterStr] = useState(50);
-  const [preferment, setPreferment] = useState("straight");
-  const [ballCount, setBallCount] = useState(4);
-  const [ballWeight, setBallWeight] = useState(250);
+  const shared = SHARED_DOUGH; // a decoded share link's dough, or null
+  const [tempC, setTempC] = useState(shared?.tempC ?? 5);
+  const [hours, setHours] = useState(shared?.hours ?? 24);
+  const [protein, setProtein] = useState(shared?.protein ?? 12.5);
+  const [plVal, setPlVal] = useState(shared?.plVal ?? 50);
+  const [hydration, setHydration] = useState(shared?.hydration ?? 60);
+  const [salt, setSalt] = useState(shared?.salt ?? 2.5);
+  const [oilPct, setOilPct] = useState(shared?.oilPct ?? 0);
+  const [sugarPct, setSugarPct] = useState(shared?.sugarPct ?? 0);
+  const [yeastType, setYeastType] = useState(shared?.yeastType ?? "idy");
+  const [leavening, setLeavening] = useState(shared?.leavening ?? "commercial");
+  const [starterStr, setStarterStr] = useState(shared?.starterStr ?? 50);
+  const [preferment, setPreferment] = useState(shared?.preferment ?? "straight");
+  const [ballCount, setBallCount] = useState(shared?.ballCount ?? 4);
+  const [ballWeight, setBallWeight] = useState(shared?.ballWeight ?? 250);
   const doughWeight = ballCount * ballWeight;
-  const [roomTemp, setRoomTemp] = useState(20);
-  const [ddt, setDdt] = useState(24);
-  const [mixMethod, setMixMethod] = useState("hand");
-  const [ovenC, setOvenC] = useState(250);
-  const [surface, setSurface] = useState("steel");
+  const [roomTemp, setRoomTemp] = useState(shared?.roomTemp ?? 20);
+  const [ddt, setDdt] = useState(shared?.ddt ?? 24);
+  const [mixMethod, setMixMethod] = useState(shared?.mixMethod ?? "hand");
+  const [ovenC, setOvenC] = useState(shared?.ovenC ?? 250);
+  const [surface, setSurface] = useState(shared?.surface ?? "steel");
   const [nerdMode, setNerdMode] = useState(false);
   const [learn, setLearn] = useState(false);
   const [simple, setSimple] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState(null);
   const [lang, setLang] = useState(initialLang);
+  const [shareCopied, setShareCopied] = useState(false);
+  const [shareBadNotice, setShareBadNotice] = useState(!!SHARE_TOKEN && !shared);
   const t = useMemo(() => makeTFn(lang, TRANSLATIONS), [lang]);
   useEffect(() => {
     document.documentElement.lang = lang;
     document.title = t('doc.title');
     try { localStorage.setItem(LANG_KEY, lang); } catch (e) { /* private mode, etc. */ }
   }, [lang, t]);
+
+  // Consume the share token once — its dough is already loaded into state
+  // above, so drop it from the visible URL rather than leaving a stale
+  // link (with today's parameters) sitting in the address bar.
+  useEffect(() => {
+    if (SHARE_TOKEN) {
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+  }, []);
+
+  const handleShare = async () => {
+    const token = encodeShareToken(inputs);
+    const url = window.location.origin + window.location.pathname + '#d=' + token;
+    if (navigator.share) {
+      try { await navigator.share({ title: t('doc.title'), url }); } catch (e) { /* cancelled */ }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    } catch (e) { /* clipboard unavailable */ }
+  };
 
   const accent = tempColor(tempC);
   const inputs = { tempC, hours, protein, plVal, hydration, salt, oilPct, sugarPct, leavening, yeastType, starterStr, preferment, roomTemp, ddt, mixMethod, doughWeight, ballCount, ovenC, surface };
@@ -1063,8 +1106,15 @@ function FermentCalculator() {
             <button className="fc-nerd-toggle" data-on={simple} onClick={() => setSimple((v) => !v)}>{t('toggle.simple')}</button>
             <button className="fc-nerd-toggle" data-on={learn} onClick={() => setLearn((v) => !v)}>{t('toggle.learn')}</button>
             <button className="fc-nerd-toggle" data-on={nerdMode} onClick={() => setNerdMode((v) => !v)}>{t('toggle.nerd')}</button>
+            <button className="fc-nerd-toggle" data-on={shareCopied} onClick={handleShare}>{shareCopied ? t('share.copied') : t('share.button')}</button>
           </div>
         </div>
+        {shareBadNotice && (
+          <p className="fc-help" style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
+            <span>{t('share.badLink')}</span>
+            <button className="fc-nerd-toggle" onClick={() => setShareBadNotice(false)}>×</button>
+          </p>
+        )}
         <h1 className="fc-title">{t('title.main')} <em>{t('title.em')}</em></h1>
         <p className="fc-lede">
           {t('lede')}{" "}
