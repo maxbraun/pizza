@@ -474,61 +474,56 @@ const {
   TOPPINGS, LEOPARD, CRUST_STOPS, SOURCES
 } = window.DoughEngine;
 
-// ---- config-in-URL: read/write every calculator input as a query param ----
-// so a reload (or a shared link) reproduces the exact same setup.
-const STYLE_IDS = PIZZA_PRESETS.map((p) => p.id);
-const CONFIG_FIELDS = [
-  { key: 'tempC', param: 'tempC', type: 'num', def: 5, min: 2, max: 35 },
-  { key: 'hours', param: 'hours', type: 'num', def: 24, min: 2, max: 96 },
-  { key: 'protein', param: 'protein', type: 'num', def: 12.5, min: 8, max: 15 },
-  { key: 'plVal', param: 'pl', type: 'num', def: 50, min: 0, max: 100 },
-  { key: 'hydration', param: 'hydration', type: 'num', def: 60, min: 50, max: 85 },
-  { key: 'salt', param: 'salt', type: 'num', def: 2.5, min: 0, max: 4 },
-  { key: 'oilPct', param: 'oil', type: 'num', def: 0, min: 0, max: 6 },
-  { key: 'sugarPct', param: 'sugar', type: 'num', def: 0, min: 0, max: 4 },
-  { key: 'yeastType', param: 'yeast', type: 'enum', def: 'idy', values: ['idy', 'ady', 'fresh'] },
-  { key: 'leavening', param: 'leaven', type: 'enum', def: 'commercial', values: ['commercial', 'sourdough'] },
-  { key: 'starterStr', param: 'starter', type: 'num', def: 50, min: 0, max: 100 },
-  { key: 'preferment', param: 'preferment', type: 'enum', def: 'straight', values: ['straight', 'poolish', 'biga'] },
-  { key: 'ballCount', param: 'balls', type: 'num', def: 4, min: 1, max: 12 },
-  { key: 'ballWeight', param: 'ballWeight', type: 'num', def: 250, min: 100, max: 500 },
-  { key: 'roomTemp', param: 'room', type: 'num', def: 20, min: 12, max: 30 },
-  { key: 'ddt', param: 'ddt', type: 'num', def: 24, min: 20, max: 28 },
-  { key: 'mixMethod', param: 'mix', type: 'enum', def: 'hand', values: ['hand', 'mixer', 'processor'] },
-  { key: 'ovenC', param: 'oven', type: 'num', def: 250, min: 200, max: 500 },
-  { key: 'surface', param: 'surface', type: 'enum', def: 'steel', values: ['steel', 'stone', 'pan', 'rack'] },
-  { key: 'nerdMode', param: 'nerd', type: 'bool', def: false },
-  { key: 'learn', param: 'learn', type: 'bool', def: false },
-  { key: 'simple', param: 'simple', type: 'bool', def: false },
-  { key: 'selectedStyle', param: 'style', type: 'enum', def: null, values: STYLE_IDS },
-];
+// ---- config-in-URL ----------------------------------------------------
+// Three tiny hooks — one per value shape — that behave like useState but
+// keep a single query param in sync with the value. Each field owns just
+// its own param: on read it only looks at that key, and on write it only
+// rewrites that key, leaving whatever the other fields wrote alone. So a
+// reload, or a copied link, reproduces the exact setup, and every control
+// stays a single, self-contained `useConfigX('param', default, ...)` line —
+// nothing else to add when a new control shows up.
+function readParam(param) {
+  try { return new URLSearchParams(window.location.search).get(param); }
+  catch (e) { return null; }
+}
+function writeParam(param, value) {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (value == null) params.delete(param); else params.set(param, value);
+    const qs = params.toString();
+    const url = window.location.pathname + (qs ? '?' + qs : '') + window.location.hash;
+    window.history.replaceState(null, '', url); // not pushState — edits one entry, doesn't pile up
+  } catch (e) { /* e.g. sandboxed iframe */ }
+}
 
-function readConfigFromURL() {
-  const out = {};
-  let params;
-  try { params = new URLSearchParams(window.location.search); } catch (e) { return out; }
-  CONFIG_FIELDS.forEach((f) => {
-    if (!params.has(f.param)) return;
-    const raw = params.get(f.param);
-    if (f.type === 'num') {
-      const n = Number(raw);
-      if (!Number.isFinite(n)) return;
-      out[f.key] = clamp(n, f.min, f.max);
-    } else if (f.type === 'bool') {
-      out[f.key] = raw === '1' || raw === 'true';
-    } else {
-      if (!f.values.includes(raw)) return;
-      out[f.key] = raw;
-    }
+function useConfigNumber(param, def, min, max) {
+  const [value, setValue] = useState(() => {
+    const raw = readParam(param);
+    if (raw == null) return def;
+    const n = Number(raw);
+    return Number.isFinite(n) ? clamp(n, min, max) : def;
   });
-  return out;
+  useEffect(() => { writeParam(param, value === def ? null : String(value)); }, [param, value, def]);
+  return [value, setValue];
+}
+function useConfigEnum(param, def, allowed) {
+  const [value, setValue] = useState(() => {
+    const raw = readParam(param);
+    return raw != null && allowed.includes(raw) ? raw : def;
+  });
+  useEffect(() => { writeParam(param, value === def ? null : value); }, [param, value, def]);
+  return [value, setValue];
+}
+function useConfigBool(param, def) {
+  const [value, setValue] = useState(() => {
+    const raw = readParam(param);
+    return raw == null ? def : (raw === '1' || raw === 'true');
+  });
+  useEffect(() => { writeParam(param, value === def ? null : (value ? '1' : null)); }, [param, value, def]);
+  return [value, setValue];
 }
 
-// Parsed once at load — the URL wins over the built-in defaults.
-const URL_CONFIG = readConfigFromURL();
-function fromURL(key, fallback) {
-  return Object.prototype.hasOwnProperty.call(URL_CONFIG, key) ? URL_CONFIG[key] : fallback;
-}
+const STYLE_IDS = PIZZA_PRESETS.map((p) => p.id);
 
 // ---- UI atoms --------------------------------------------------------
 const LearnCtx = React.createContext(false);
@@ -778,30 +773,30 @@ function Pizza({ colour, leopard, protein, proofQuality }) {
 }
 
 function FermentCalculator() {
-  const [tempC, setTempC] = useState(() => fromURL('tempC', 5));
-  const [hours, setHours] = useState(() => fromURL('hours', 24));
-  const [protein, setProtein] = useState(() => fromURL('protein', 12.5));
-  const [plVal, setPlVal] = useState(() => fromURL('plVal', 50));
-  const [hydration, setHydration] = useState(() => fromURL('hydration', 60));
-  const [salt, setSalt] = useState(() => fromURL('salt', 2.5));
-  const [oilPct, setOilPct] = useState(() => fromURL('oilPct', 0));
-  const [sugarPct, setSugarPct] = useState(() => fromURL('sugarPct', 0));
-  const [yeastType, setYeastType] = useState(() => fromURL('yeastType', "idy"));
-  const [leavening, setLeavening] = useState(() => fromURL('leavening', "commercial"));
-  const [starterStr, setStarterStr] = useState(() => fromURL('starterStr', 50));
-  const [preferment, setPreferment] = useState(() => fromURL('preferment', "straight"));
-  const [ballCount, setBallCount] = useState(() => fromURL('ballCount', 4));
-  const [ballWeight, setBallWeight] = useState(() => fromURL('ballWeight', 250));
+  const [tempC, setTempC] = useConfigNumber('tempC', 5, 2, 35);
+  const [hours, setHours] = useConfigNumber('hours', 24, 2, 96);
+  const [protein, setProtein] = useConfigNumber('protein', 12.5, 8, 15);
+  const [plVal, setPlVal] = useConfigNumber('pl', 50, 0, 100);
+  const [hydration, setHydration] = useConfigNumber('hydration', 60, 50, 85);
+  const [salt, setSalt] = useConfigNumber('salt', 2.5, 0, 4);
+  const [oilPct, setOilPct] = useConfigNumber('oil', 0, 0, 6);
+  const [sugarPct, setSugarPct] = useConfigNumber('sugar', 0, 0, 4);
+  const [yeastType, setYeastType] = useConfigEnum('yeast', "idy", ['idy', 'ady', 'fresh']);
+  const [leavening, setLeavening] = useConfigEnum('leaven', "commercial", ['commercial', 'sourdough']);
+  const [starterStr, setStarterStr] = useConfigNumber('starter', 50, 0, 100);
+  const [preferment, setPreferment] = useConfigEnum('preferment', "straight", ['straight', 'poolish', 'biga']);
+  const [ballCount, setBallCount] = useConfigNumber('balls', 4, 1, 12);
+  const [ballWeight, setBallWeight] = useConfigNumber('ballWeight', 250, 100, 500);
   const doughWeight = ballCount * ballWeight;
-  const [roomTemp, setRoomTemp] = useState(() => fromURL('roomTemp', 20));
-  const [ddt, setDdt] = useState(() => fromURL('ddt', 24));
-  const [mixMethod, setMixMethod] = useState(() => fromURL('mixMethod', "hand"));
-  const [ovenC, setOvenC] = useState(() => fromURL('ovenC', 250));
-  const [surface, setSurface] = useState(() => fromURL('surface', "steel"));
-  const [nerdMode, setNerdMode] = useState(() => fromURL('nerdMode', false));
-  const [learn, setLearn] = useState(() => fromURL('learn', false));
-  const [simple, setSimple] = useState(() => fromURL('simple', false));
-  const [selectedStyle, setSelectedStyle] = useState(() => fromURL('selectedStyle', null));
+  const [roomTemp, setRoomTemp] = useConfigNumber('room', 20, 12, 30);
+  const [ddt, setDdt] = useConfigNumber('ddt', 24, 20, 28);
+  const [mixMethod, setMixMethod] = useConfigEnum('mix', "hand", ['hand', 'mixer', 'processor']);
+  const [ovenC, setOvenC] = useConfigNumber('oven', 250, 200, 500);
+  const [surface, setSurface] = useConfigEnum('surface', "steel", ['steel', 'stone', 'pan', 'rack']);
+  const [nerdMode, setNerdMode] = useConfigBool('nerd', false);
+  const [learn, setLearn] = useConfigBool('learn', false);
+  const [simple, setSimple] = useConfigBool('simple', false);
+  const [selectedStyle, setSelectedStyle] = useConfigEnum('style', null, STYLE_IDS);
   const [lang, setLang] = useState(initialLang);
   const t = useMemo(() => makeTFn(lang, TRANSLATIONS), [lang]);
   useEffect(() => {
@@ -809,28 +804,6 @@ function FermentCalculator() {
     document.title = t('doc.title');
     try { localStorage.setItem(LANG_KEY, lang); } catch (e) { /* private mode, etc. */ }
   }, [lang, t]);
-
-  // Keep the URL's query string in sync with the current config, so a reload
-  // (or a copied/shared link) reproduces this exact setup. replaceState, not
-  // pushState — every tweak edits the same history entry rather than piling up.
-  useEffect(() => {
-    const values = {
-      tempC, hours, protein, plVal, hydration, salt, oilPct, sugarPct, yeastType, leavening,
-      starterStr, preferment, ballCount, ballWeight, roomTemp, ddt, mixMethod, ovenC, surface,
-      nerdMode, learn, simple, selectedStyle,
-    };
-    const params = new URLSearchParams();
-    CONFIG_FIELDS.forEach((f) => {
-      const val = values[f.key];
-      if (val === f.def || val == null) return;
-      params.set(f.param, f.type === 'bool' ? '1' : String(val));
-    });
-    const qs = params.toString();
-    const url = window.location.pathname + (qs ? '?' + qs : '') + window.location.hash;
-    try { window.history.replaceState(null, '', url); } catch (e) { /* e.g. sandboxed iframe */ }
-  }, [tempC, hours, protein, plVal, hydration, salt, oilPct, sugarPct, yeastType, leavening,
-      starterStr, preferment, ballCount, ballWeight, roomTemp, ddt, mixMethod, ovenC, surface,
-      nerdMode, learn, simple, selectedStyle]);
 
   const accent = tempColor(tempC);
   const inputs = { tempC, hours, protein, plVal, hydration, salt, oilPct, sugarPct, leavening, yeastType, starterStr, preferment, roomTemp, ddt, mixMethod, doughWeight, ballCount, ovenC, surface };
