@@ -293,6 +293,18 @@ describe('batchFn', () => {
       near(balls * ballW, w, balls, `${w}g`);
     }
   });
+
+  test('explicit ballCount overrides the ~250g auto split', () => {
+    const b = batchFn(1000, 6);
+    assert.equal(b.balls, 6);
+    assert.equal(b.ballW, Math.round(1000 / 6));
+  });
+
+  test('ballCount is rounded and floored at 1', () => {
+    assert.equal(batchFn(1000, 2.6).balls, 3);
+    assert.equal(batchFn(1000, 0).balls, 4); // falsy → falls back to auto split
+    assert.equal(batchFn(1000, -2).balls, 1);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
