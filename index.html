@@ -40,7 +40,7 @@
   <script src="shareLink.js"></script>
 
   <script type="text/babel">
-const { useState, useMemo, useEffect, useContext, createContext } = React;
+const { useState, useMemo, useEffect, useRef, useContext, createContext } = React;
 
 const LangCtx = createContext(null);
 function useT() { return useContext(LangCtx); }
@@ -528,6 +528,15 @@ function useConfigNumber(param, def, min, max) {
   useEffect(() => { writeParam(param, value === def ? null : String(value)); }, [param, value, def]);
   return [value, setValue];
 }
+
+// Moves to the next value on a stepper's step grid, in the given direction.
+// If a value was typed by hand off-grid (e.g. 280 with a 25 step), this snaps
+// to the nearest grid line past it (300) rather than offsetting from the
+// off-grid value itself (305) — same intent as a slider snapping to its step.
+function stepAlong(value, step, dir, min, max) {
+  const n = dir > 0 ? (Math.floor(value / step) + 1) * step : (Math.ceil(value / step) - 1) * step;
+  return clamp(n, min, max);
+}
 function useConfigEnum(param, def, allowed) {
   const [value, setValue] = useState(() => {
     const raw = readParam(param);
@@ -554,15 +563,78 @@ function Help({ children }) {
   return on ? <p className="fc-help">{children}</p> : null;
 }
 
+// Click (or Enter/Space when focused) turns the value into a typeable input,
+// clamped to [min, max] on commit — same validation `useConfigNumber` applies
+// to slider drags and stepper clicks, so typed entry stays consistent with them.
+function EditableValue({ value, unit, min, max, onChange, className, style }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  function startEdit() {
+    setDraft(String(value));
+    setEditing(true);
+  }
+
+  function commit() {
+    const n = parseFloat(draft);
+    if (Number.isFinite(n)) onChange(clamp(n, min, max));
+    setEditing(false);
+  }
+
+  if (editing) {
+    // Same wrapping element/class as the view-mode span below (not just the
+    // bare <input>) so font-size, weight and min-width stay identical —
+    // otherwise the value box resizes and the row jumps when you click in.
+    return (
+      <span className={className} style={style}>
+        <input
+          ref={inputRef}
+          className="fc-val-input"
+          style={{ width: `${Math.max(draft.length, 1) + 1}ch` }}
+          type="text"
+          inputMode="decimal"
+          value={draft}
+          onChange={(e) => {
+            const v = e.target.value;
+            if (v === '' || /^-?\d*\.?\d*$/.test(v)) setDraft(v);
+          }}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { e.preventDefault(); commit(); }
+            else if (e.key === 'Escape') { e.preventDefault(); setEditing(false); }
+          }}
+        />
+        {unit && <span className="fc-unit">{unit}</span>}
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className={className} style={style} tabIndex={0} role="button"
+      onClick={startEdit}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startEdit(); } }}
+    >
+      {value}{unit && <span className="fc-unit">{unit}</span>}
+    </span>
+  );
+}
+
 function Slider({ label, value, unit, min, max, step, onChange, accent, note, noteColor }) {
   const pctPos = ((value - min) / (max - min)) * 100;
   return (
     <div className="fc-field">
       <div className="fc-field-head">
         <span className="fc-label">{label}</span>
-        <span className="fc-val" style={{ color: accent }}>
-          {value}<span className="fc-unit">{unit}</span>
-        </span>
+        <EditableValue className="fc-val" style={{ color: accent }} value={value} unit={unit} min={min} max={max} onChange={onChange} />
       </div>
       <input
         type="range" min={min} max={max} step={step} value={value}
@@ -979,6 +1051,15 @@ function FermentCalculator() {
         .fc-label{ font-size:13.5px; font-weight:500; color:var(--ink); }
         .fc-val{ font-family:'JetBrains Mono',monospace; font-size:15px; font-weight:500; transition:color .5s cubic-bezier(.4,0,.2,1); }
         .fc-unit{ font-size:11px; margin-left:2px; opacity:.7; }
+        /* [role=button] scopes the click-to-edit affordance to the view-mode span only —
+           the edit-mode span reuses the same class (for identical sizing) but isn't clickable. */
+        .fc-val[role=button], .fc-step-val[role=button]{ cursor:pointer; border-bottom:1px dashed transparent;
+          transition:border-color .2s cubic-bezier(.4,0,.2,1), opacity .2s; }
+        .fc-val[role=button]:hover, .fc-step-val[role=button]:hover,
+        .fc-val[role=button]:focus-visible, .fc-step-val[role=button]:focus-visible{
+          border-color:currentColor; opacity:.85; outline:none; }
+        .fc-val-input{ font:inherit; line-height:inherit; color:inherit; cursor:text;
+          background:transparent; border:none; border-bottom:1px solid currentColor; outline:none; padding:0; }
         .fc-note-line{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-soft);
           margin:8px 0 0; letter-spacing:.02em; transition:color .4s cubic-bezier(.4,0,.2,1); }
 
@@ -1208,18 +1289,18 @@ function FermentCalculator() {
             <div className="fc-field">
               <div className="fc-field-head"><span className="fc-label">{t('label.ballCount')}</span></div>
               <div className="fc-stepper">
-                <button onClick={() => setBallCount((n) => Math.max(1, n - 1))}>−</button>
-                <span className="fc-step-val">{ballCount}</span>
-                <button onClick={() => setBallCount((n) => Math.min(12, n + 1))}>+</button>
+                <button onClick={() => setBallCount((n) => stepAlong(n, 1, -1, 1, 12))}>−</button>
+                <EditableValue className="fc-step-val" value={ballCount} min={1} max={12} onChange={setBallCount} />
+                <button onClick={() => setBallCount((n) => stepAlong(n, 1, 1, 1, 12))}>+</button>
               </div>
             </div>
             <Help>{t('help.ballCount')}</Help>
             <div className="fc-field">
               <div className="fc-field-head"><span className="fc-label">{t('label.ballWeight')}</span></div>
               <div className="fc-stepper">
-                <button onClick={() => setBallWeight((w) => Math.max(100, w - 25))}>−</button>
-                <span className="fc-step-val">{ballWeight} g</span>
-                <button onClick={() => setBallWeight((w) => Math.min(500, w + 25))}>+</button>
+                <button onClick={() => setBallWeight((w) => stepAlong(w, 25, -1, 100, 500))}>−</button>
+                <EditableValue className="fc-step-val" value={ballWeight} unit="g" min={100} max={500} onChange={setBallWeight} />
+                <button onClick={() => setBallWeight((w) => stepAlong(w, 25, 1, 100, 500))}>+</button>
               </div>
             </div>
             <Help>{t('help.ballWeight')}</Help>
