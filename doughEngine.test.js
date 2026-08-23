@@ -8,6 +8,8 @@ const assert = require('node:assert/strict');
 const {
   clamp,
   flourProfile,
+  FLOUR_PRESETS,
+  FLOUR_REGIONS,
   hydrationVerdict,
   fermentVerdict,
   overProofRecommendations,
@@ -859,5 +861,37 @@ describe('overProofRecommendations', () => {
   test('hydration lever absent when hydration <= 68', () => {
     const op = overProofRecommendations({ ...baseInp, hours: 26, hydration: 65 }, fp12);
     assert.ok(!op.levers.some(l => l.kCode === 'overproof.lever.hydrationKey'));
+  });
+});
+
+describe('FLOUR_PRESETS', () => {
+  test('ids are unique', () => {
+    const ids = FLOUR_PRESETS.map(f => f.id);
+    assert.equal(new Set(ids).size, ids.length);
+  });
+
+  test('every flour sits inside the protein and P/L slider ranges', () => {
+    for (const f of FLOUR_PRESETS) {
+      assert.ok(f.protein >= 8 && f.protein <= 15, `${f.id} protein ${f.protein} out of slider range`);
+      assert.ok(f.plVal >= 0 && f.plVal <= 100, `${f.id} plVal ${f.plVal} out of slider range`);
+      assert.equal(f.plVal, Math.round(f.plVal), `${f.id} plVal must be a whole slider step`);
+    }
+  });
+
+  test('every flour declares a known region, and every region has flours', () => {
+    for (const f of FLOUR_PRESETS) assert.ok(FLOUR_REGIONS.includes(f.region), `${f.id} region ${f.region}`);
+    for (const r of FLOUR_REGIONS) assert.ok(FLOUR_PRESETS.some(f => f.region === r), `region ${r} is empty`);
+  });
+
+  test('label and spec are non-empty strings', () => {
+    for (const f of FLOUR_PRESETS) {
+      assert.ok(f.label && typeof f.label === 'string', `${f.id} label`);
+      assert.ok(f.spec && typeof f.spec === 'string', `${f.id} spec`);
+    }
+  });
+
+  test('the catalogue spans soft to very strong', () => {
+    const cats = new Set(FLOUR_PRESETS.map(f => flourProfile(f.protein, (f.plVal - 50) / 50).categoryKey));
+    assert.deepEqual([...cats].sort(), ['flour.medium', 'flour.soft', 'flour.strong', 'flour.veryStrong']);
   });
 });

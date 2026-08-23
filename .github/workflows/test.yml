@@ -1,4 +1,4 @@
-name: Engine tests
+name: Tests
 
 on:
   push:
@@ -12,5 +12,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Run dough engine tests
-        run: node --test doughEngine.test.js
+      - name: Run tests
+        run: node --test doughEngine.test.js shareLink.test.js recipeStore.test.js

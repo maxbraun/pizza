@@ -38,6 +38,7 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="doughEngine.js"></script>
   <script src="shareLink.js"></script>
+  <script src="recipeStore.js"></script>
 
   <script type="text/babel">
 const { useState, useMemo, useEffect, useContext, createContext } = React;
@@ -75,6 +76,40 @@ if (SHARE_EXPANSION.present) {
   catch (e) { /* sandboxed iframe, etc. */ }
 }
 const SHARE_BAD_LINK = SHARE_EXPANSION.badLink;
+// What arrived over the link, kept aside so the app can offer to save it —
+// once the token is folded into the query string, nothing downstream can
+// tell a shared dough from one the user built themselves.
+const SHARED_DOUGH = SHARE_EXPANSION.dough || null;
+const SHARED_NAME = SHARE_EXPANSION.name || '';
+
+// ---- the recipe box ---------------------------------------------------
+// Everything the app remembers about you lives in localStorage, read
+// through recipeStore.js. Created up here because a cold start needs it
+// before the first render: with nothing in the address bar, the app opens
+// on your default recipe (or, failing that, your saved kitchen) instead of
+// the generic 60% / 24 h dough.
+const STORE = window.RecipeStore.createStore();
+const { KITCHEN_FIELDS, canonicalKey, MAX_RECIPES, MAX_FLOURS } = window.RecipeStore;
+const PARAM_OF = window.ShareLink.PARAM_NAMES;
+
+// Only a *completely* cold URL gets your own defaults. If any dough param
+// is present the link is describing a specific dough — someone copied it
+// out of their address bar — and quietly filling the rest from your
+// cupboard would hand you a dough neither of you meant to make.
+function buildColdStart() {
+  let params;
+  try { params = new URLSearchParams(window.location.search); } catch (e) { return {}; }
+  if (Object.values(PARAM_OF).some((param) => params.has(param))) return {};
+  let box;
+  try { box = STORE.read(); } catch (e) { return {}; }
+  const start = {};
+  const put = (field, value) => { if (value !== undefined && PARAM_OF[field]) start[PARAM_OF[field]] = value; };
+  const fallback = box.recipes.find((r) => r.id === box.defaultRecipeId);
+  if (fallback) Object.entries(fallback.inputs).forEach(([field, value]) => put(field, value));
+  else if (box.kitchen) KITCHEN_FIELDS.forEach((field) => put(field, box.kitchen[field]));
+  return start;
+}
+const COLD_START = buildColdStart();
 
 function makeTFn(lang, dict) {
   return function t(key, params) {
@@ -92,6 +127,52 @@ const TRANSLATIONS = {
     'toggle.simple': 'Simple', 'toggle.learn': 'Learn', 'toggle.nerd': 'Nerd mode', 'toggle.lang': 'DE',
     'share.button': 'Share', 'share.copied': 'Link copied ✓',
     'share.badLink': "This share link couldn't be read — showing the default dough instead.",
+    'box.button': 'My box', 'box.head': 'My recipe box',
+    'box.tab.recipes': 'Recipes', 'box.tab.flours': 'Flours', 'box.tab.kitchen': 'Kitchen',
+    'box.saveCurrent': 'Save this dough', 'box.save': 'Save', 'box.cancel': 'Cancel',
+    'box.update': 'Update “{name}”', 'box.updated': 'Updated ✓',
+    'box.doughWord': 'Dough', 'box.suggestedName': '{style} · {hydration}% · {hours} h',
+    'box.err.missing': 'That one is no longer in your box.',
+    'box.nameLabel': 'Name this dough',
+    'box.empty': 'Nothing saved yet. Build a dough, then save it here — it stays in this browser.',
+    'box.count': '{n} of {max} saved',
+    'box.load': 'Load', 'box.share': 'Share', 'box.rename': 'Rename', 'box.delete': 'Delete',
+    'box.confirmDelete': 'Delete?', 'box.makeDefault': 'Open with this', 'box.isDefault': 'Opens on start',
+    'box.sharedBadge': 'shared with you',
+    'box.meta': '{hydration}% · {hours} h at {tempC}°C · {balls}×{ballWeight} g · {ovenC}°C',
+    'box.loaded': 'Loaded ✓', 'box.saved': 'Saved ✓', 'box.renamed': 'Renamed ✓', 'box.deleted': 'Deleted',
+    'box.err.duplicate': 'You already have this dough, saved as “{name}”.',
+    'box.err.full': 'The box is full ({max} recipes) — delete one to make room.',
+    'box.err.invalid': 'That needs a name before it can be saved.',
+    'box.err.quota': "Your browser's storage is full, so this wasn't saved.",
+    'box.err.unavailable': "This browser won't let the page store anything, so nothing was saved.",
+    'box.notPersistent': 'Private browsing: the box works, but it empties when you close the tab.',
+    'box.storageNote': 'Everything here is stored in this browser only — never uploaded. Clearing site data deletes it, so keep a backup.',
+    'box.export': 'Back up to a file', 'box.import': 'Restore from a file',
+    'box.imported': 'Added {added} recipe(s), {skipped} already here.',
+    'box.err.unreadable': "That file couldn't be read as a recipe backup.",
+    'box.err.empty': 'That file held no recipes.',
+    'shared.head': 'Someone shared this dough with you.',
+    'shared.save': 'Save it to my box', 'shared.dismiss': 'No thanks',
+    'shared.have': 'It’s already in your box as “{name}”.',
+    'shared.defaultName': 'Shared dough',
+    'flour.picker': 'Your flour', 'flour.custom': 'Custom / by hand',
+    'flour.mine': 'My flours', 'flour.saveCurrent': 'Save this flour',
+    'flour.nameLabel': 'What is on the bag?',
+    'flour.saved': 'On your shelf ✓', 'flour.replaced': 'Updated ✓',
+    'flour.err.full': 'Your shelf is full ({max} flours).',
+    'flour.err.invalid': 'That flour needs a name.',
+    'flour.empty': 'No flours of your own yet. Set protein and P/L, then save the bag by name.',
+    'flour.note': 'Label figures — every bag differs, so nudge the sliders if yours behaves otherwise.',
+    'flourRegion.it': 'Italy', 'flourRegion.us': 'North America',
+    'flourRegion.de': 'Germany / Austria', 'flourRegion.generic': 'By description',
+    'kitchen.head': 'My kitchen',
+    'kitchen.blurb': 'Your oven, surface, room temperature, dough temperature and mixing method belong to where you bake, not to any one recipe. Save them once and the app opens with them.',
+    'kitchen.save': 'Save the current setup', 'kitchen.apply': 'Apply to this dough', 'kitchen.forget': 'Forget',
+    'kitchen.none': 'No kitchen saved yet.',
+    'kitchen.summary': '{ovenC}°C on {surface} · room {roomTemp}°C · dough {ddt}°C · {mixMethod}',
+    'kitchen.saved': 'Kitchen saved ✓', 'kitchen.applied': 'Applied ✓',
+    'kitchen.overridden': 'A default recipe is set, so it wins on start-up.',
     'eyebrow': 'Ferment · flour · bake',
     'title.main': 'From yeast to crust,', 'title.em': 'one dough modelled',
     'lede': 'Three stages of pizza science in one place: how much yeast for your time and temperature, whether the flour can hold that ferment and hydration, and what the oven does to the crust. Colour tracks the driving variable at each step.',
@@ -227,6 +308,7 @@ const TRANSLATIONS = {
     'guideline.note.sourdough.proveTime': 'long cold ferment', 'guideline.note.sourdough.oven': 'steel helps at lower temps',
     'help.fermTemp': 'The biggest lever. Warmer makes the yeast work faster (so you need less of it); colder slows it right down and builds more flavour.',
     'help.targetTime': 'How long the dough rises before baking. Longer time means less yeast and a tastier, more digestible crust.',
+    'help.flourPicker': 'Pick the bag you actually own and the next two sliders fill themselves in. Saving a flour puts it at the top of this list for next time.',
     'help.flourProtein': 'Protein becomes gluten — the web that traps gas. More of it = a stronger dough that holds bigger bubbles and more water, but resists stretching. ~12–13% suits pizza. (W is the bakery measure of the same thing.)',
     'help.pl': 'Two flours can have the same protein but behave differently: extensible dough stretches and stays put; elastic dough pings back. It shifts how easily the base opens and how tall the rim sits.',
     'help.hydration': "Water as a percentage of flour. More water = a lighter, more open crumb — but a wetter, stickier dough that's harder to handle and needs a stronger flour.",
@@ -290,6 +372,52 @@ const TRANSLATIONS = {
     'toggle.simple': 'Einfach', 'toggle.learn': 'Lernen', 'toggle.nerd': 'Nerd-Modus', 'toggle.lang': 'EN',
     'share.button': 'Teilen', 'share.copied': 'Link kopiert ✓',
     'share.badLink': 'Dieser Link konnte nicht gelesen werden — Standardteig wird angezeigt.',
+    'box.button': 'Meine Box', 'box.head': 'Meine Rezeptbox',
+    'box.tab.recipes': 'Rezepte', 'box.tab.flours': 'Mehle', 'box.tab.kitchen': 'Küche',
+    'box.saveCurrent': 'Diesen Teig speichern', 'box.save': 'Speichern', 'box.cancel': 'Abbrechen',
+    'box.update': '„{name}“ aktualisieren', 'box.updated': 'Aktualisiert ✓',
+    'box.doughWord': 'Teig', 'box.suggestedName': '{style} · {hydration}% · {hours} h',
+    'box.err.missing': 'Das liegt nicht mehr in deiner Box.',
+    'box.nameLabel': 'Name für diesen Teig',
+    'box.empty': 'Noch nichts gespeichert. Teig einstellen und hier sichern — er bleibt in diesem Browser.',
+    'box.count': '{n} von {max} gespeichert',
+    'box.load': 'Laden', 'box.share': 'Teilen', 'box.rename': 'Umbenennen', 'box.delete': 'Löschen',
+    'box.confirmDelete': 'Löschen?', 'box.makeDefault': 'Damit starten', 'box.isDefault': 'Startet damit',
+    'box.sharedBadge': 'geteilt',
+    'box.meta': '{hydration}% · {hours} h bei {tempC}°C · {balls}×{ballWeight} g · {ovenC}°C',
+    'box.loaded': 'Geladen ✓', 'box.saved': 'Gespeichert ✓', 'box.renamed': 'Umbenannt ✓', 'box.deleted': 'Gelöscht',
+    'box.err.duplicate': 'Diesen Teig hast du schon — gespeichert als „{name}“.',
+    'box.err.full': 'Die Box ist voll ({max} Rezepte) — lösche eins, um Platz zu schaffen.',
+    'box.err.invalid': 'Dafür braucht es erst einen Namen.',
+    'box.err.quota': 'Der Speicher deines Browsers ist voll, deshalb wurde nichts gesichert.',
+    'box.err.unavailable': 'Dieser Browser lässt die Seite nichts speichern, deshalb wurde nichts gesichert.',
+    'box.notPersistent': 'Privates Fenster: die Box funktioniert, ist aber beim Schließen des Tabs wieder leer.',
+    'box.storageNote': 'Alles hier liegt nur in diesem Browser — nichts wird hochgeladen. Website-Daten löschen heißt: weg. Also lieber sichern.',
+    'box.export': 'In eine Datei sichern', 'box.import': 'Aus einer Datei laden',
+    'box.imported': '{added} Rezept(e) übernommen, {skipped} waren schon da.',
+    'box.err.unreadable': 'Diese Datei ließ sich nicht als Rezept-Sicherung lesen.',
+    'box.err.empty': 'In dieser Datei waren keine Rezepte.',
+    'shared.head': 'Jemand hat dir diesen Teig geschickt.',
+    'shared.save': 'In meine Box legen', 'shared.dismiss': 'Nein danke',
+    'shared.have': 'Liegt schon als „{name}“ in deiner Box.',
+    'shared.defaultName': 'Geteilter Teig',
+    'flour.picker': 'Dein Mehl', 'flour.custom': 'Eigene Werte',
+    'flour.mine': 'Meine Mehle', 'flour.saveCurrent': 'Dieses Mehl merken',
+    'flour.nameLabel': 'Was steht auf der Tüte?',
+    'flour.saved': 'Im Regal ✓', 'flour.replaced': 'Aktualisiert ✓',
+    'flour.err.full': 'Dein Regal ist voll ({max} Mehle).',
+    'flour.err.invalid': 'Dieses Mehl braucht einen Namen.',
+    'flour.empty': 'Noch keine eigenen Mehle. Protein und P/L einstellen, dann die Tüte unter ihrem Namen sichern.',
+    'flour.note': 'Angaben laut Tüte — jede Charge ist anders, also ruhig nachjustieren.',
+    'flourRegion.it': 'Italien', 'flourRegion.us': 'Nordamerika',
+    'flourRegion.de': 'Deutschland / Österreich', 'flourRegion.generic': 'Nach Beschreibung',
+    'kitchen.head': 'Meine Küche',
+    'kitchen.blurb': 'Ofen, Backfläche, Raumtemperatur, Teigtemperatur und Knetmethode gehören zu deiner Küche, nicht zu einem einzelnen Rezept. Einmal sichern, und die App startet damit.',
+    'kitchen.save': 'Aktuelle Einstellung sichern', 'kitchen.apply': 'Auf diesen Teig anwenden', 'kitchen.forget': 'Verwerfen',
+    'kitchen.none': 'Noch keine Küche gesichert.',
+    'kitchen.summary': '{ovenC}°C auf {surface} · Raum {roomTemp}°C · Teig {ddt}°C · {mixMethod}',
+    'kitchen.saved': 'Küche gesichert ✓', 'kitchen.applied': 'Angewendet ✓',
+    'kitchen.overridden': 'Ein Standardrezept ist gesetzt — das gewinnt beim Start.',
     'eyebrow': 'Gärung · Mehl · Backen',
     'title.main': 'Von der Hefe zur Kruste,', 'title.em': 'ein Teig modelliert',
     'lede': 'Pizzawissenschaft in drei Stufen: wie viel Hefe für Zeit und Temperatur, ob das Mehl diese Gärung und Hydration hält, und was der Ofen mit der Kruste macht. Die Farbe zeigt die entscheidende Variable jedes Schritts.',
@@ -425,6 +553,7 @@ const TRANSLATIONS = {
     'guideline.note.sourdough.proveTime': 'lange Kaltgärung', 'guideline.note.sourdough.oven': 'Stahlplatte hilft bei niedrigeren Temps',
     'help.fermTemp': 'Der wichtigste Regler. Wärmer lässt die Hefe schneller arbeiten (weniger Hefe nötig); kälter verlangsamt sie stark und entwickelt mehr Aroma.',
     'help.targetTime': 'Wie lange der Teig vor dem Backen aufgeht. Längere Zeit bedeutet weniger Hefe und eine schmackhaftere, verträglichere Kruste.',
+    'help.flourPicker': 'Wähle die Tüte, die du tatsächlich hast — die nächsten beiden Regler füllen sich selbst. Gemerkte Mehle stehen beim nächsten Mal ganz oben.',
     'help.flourProtein': 'Protein wird zu Gluten — das Netz, das Gas einfängt. Mehr davon = stärkerer Teig mit größeren Blasen und mehr Wasser, aber schwerer dehnbar. ~12–13% eignet sich für Pizza. (W ist das Bäckermaß für dasselbe.)',
     'help.pl': 'Zwei Mehle können denselben Proteingehalt haben, sich aber unterschiedlich verhalten: dehnbarer Teig lässt sich strecken und bleibt so; elastischer Teig springt zurück. Das beeinflusst, wie leicht sich die Basis öffnet und wie hoch der Rand wird.',
     'help.hydration': 'Wasser als Prozent vom Mehl. Mehr Wasser = leichtere, offenere Krume — aber nasser, klebriger Teig, der schwerer zu handhaben ist und ein stärkeres Mehl erfordert.',
@@ -491,7 +620,8 @@ const {
   overProofRecommendations, bakeProfile, digestScore, digestVerdict, bakeVerdict, fmtBake,
   crustLabelKey, compute, riseModel, proofQualityFn, waterTempFn, batchFn,
   geometryFn, computeAll, buildRisePaths, REF, K, Q10, SALT_REF, TYPE, SURF, FRICTION, V_AXIS,
-  EMBER, CONF, GRAPH, DG, PIZZA_PRESETS, OVEN_PRESETS, STYLE_GUIDELINES, TONE, CRUMB_PTS,
+  EMBER, CONF, GRAPH, DG, PIZZA_PRESETS, OVEN_PRESETS, FLOUR_PRESETS, FLOUR_REGIONS,
+  STYLE_GUIDELINES, TONE, CRUMB_PTS,
   TOPPINGS, LEOPARD, CRUST_STOPS, SOURCES
 } = window.DoughEngine;
 const { encodeShareToken } = window.ShareLink;
@@ -518,11 +648,19 @@ function writeParam(param, value) {
   } catch (e) { /* e.g. sandboxed iframe */ }
 }
 
+// The app's own default for a field, unless a cold start says this user
+// has a different one. Only the *initial* value moves — `def` still decides
+// whether the param is worth writing to the URL, so a personal default
+// lands in the address bar explicitly and a copied link means the same
+// dough in someone else's browser as it does in yours.
+function startValue(param, def) {
+  return Object.prototype.hasOwnProperty.call(COLD_START, param) ? COLD_START[param] : def;
+}
+
 function useConfigNumber(param, def, min, max) {
   const [value, setValue] = useState(() => {
     const raw = readParam(param);
-    if (raw == null) return def;
-    const n = Number(raw);
+    const n = Number(raw == null ? startValue(param, def) : raw);
     return Number.isFinite(n) ? clamp(n, min, max) : def;
   });
   useEffect(() => { writeParam(param, value === def ? null : String(value)); }, [param, value, def]);
@@ -530,8 +668,9 @@ function useConfigNumber(param, def, min, max) {
 }
 function useConfigEnum(param, def, allowed) {
   const [value, setValue] = useState(() => {
-    const raw = readParam(param);
-    return raw != null && allowed.includes(raw) ? raw : def;
+    const stored = readParam(param);
+    const raw = stored == null ? startValue(param, def) : stored;
+    return allowed.includes(raw) ? raw : def;
   });
   useEffect(() => { writeParam(param, value === def ? null : value); }, [param, value, def]);
   return [value, setValue];
@@ -794,6 +933,232 @@ function Pizza({ colour, leopard, protein, proofQuality }) {
   );
 }
 
+// ---- the recipe box UI ------------------------------------------------
+// Presentation only: every one of these takes an `api` of already-bound
+// callbacks from FermentCalculator, which is the one place that knows how
+// to move a dough into the sliders or out to the store.
+
+// Inline "give it a name" form, shared by recipes, renames and flours.
+function NameForm({ label, initial, submitLabel, onSubmit, onCancel, inRow }) {
+  const t = useT();
+  const [value, setValue] = useState(initial || '');
+  const ref = React.useRef(null);
+  useEffect(() => { if (ref.current) ref.current.focus(); }, []);
+  return (
+    <form className={inRow ? 'fc-box-form row' : 'fc-box-form'}
+      onSubmit={(e) => { e.preventDefault(); onSubmit(value); }}>
+      <input ref={ref} className="fc-input" type="text" value={value} maxLength={64}
+        aria-label={label} placeholder={label} onChange={(e) => setValue(e.target.value)} />
+      <button type="submit" className="fc-nerd-toggle" data-on={true}>{submitLabel || t('box.save')}</button>
+      <button type="button" className="fc-nerd-toggle" onClick={onCancel}>{t('box.cancel')}</button>
+    </form>
+  );
+}
+
+// Protein and P/L are the two numbers nobody knows off the top of their
+// head, and they're a property of the bag rather than of the recipe — so
+// they get picked, not guessed. The catalogue ships with the engine; the
+// "My flours" group is whatever the user has saved.
+function FlourPicker({ flours, protein, plVal, onPick, onSave }) {
+  const t = useT();
+  const [naming, setNaming] = useState(false);
+  const matches = (f) => f.protein === protein && f.plVal === plVal;
+  const mine = flours.find(matches);
+  const preset = !mine && FLOUR_PRESETS.find(matches);
+  const value = mine ? 'mine:' + mine.id : preset ? 'preset:' + preset.id : '';
+  const pick = (raw) => {
+    if (!raw) return;
+    const kind = raw.slice(0, raw.indexOf(':'));
+    const id = raw.slice(raw.indexOf(':') + 1);
+    const flour = kind === 'mine' ? flours.find((f) => f.id === id) : FLOUR_PRESETS.find((f) => f.id === id);
+    if (flour) onPick(flour);
+  };
+  return (
+    <div className="fc-field">
+      <div className="fc-field-head"><span className="fc-label">{t('flour.picker')}</span></div>
+      <select className="fc-select" value={value} onChange={(e) => pick(e.target.value)}>
+        <option value="">{t('flour.custom')}</option>
+        {flours.length > 0 && (
+          <optgroup label={t('flour.mine')}>
+            {flours.map((f) => (
+              <option key={f.id} value={'mine:' + f.id}>{f.name} — {f.protein}% · {f.plVal}</option>
+            ))}
+          </optgroup>
+        )}
+        {FLOUR_REGIONS.map((region) => (
+          <optgroup key={region} label={t('flourRegion.' + region)}>
+            {FLOUR_PRESETS.filter((f) => f.region === region).map((f) => (
+              <option key={f.id} value={'preset:' + f.id}>{f.label} — {f.protein}%</option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+      <p className="fc-note-line">{preset ? preset.spec : t('flour.note')}</p>
+      {naming ? (
+        <NameForm label={t('flour.nameLabel')} initial={mine ? mine.name : ''}
+          onCancel={() => setNaming(false)}
+          onSubmit={(name) => { onSave(name); setNaming(false); }} />
+      ) : (
+        <button className="fc-nerd-toggle" onClick={() => setNaming(true)}>{t('flour.saveCurrent')}</button>
+      )}
+    </div>
+  );
+}
+
+function RecipeRow({ recipe, isDefault, api }) {
+  const t = useT();
+  const [mode, setMode] = useState(null); // 'rename' | 'confirm' | null
+  const i = recipe.inputs;
+  return (
+    <div className="fc-box-row" data-default={isDefault}>
+      <div className="fc-box-main">
+        <div className="fc-box-name">
+          {recipe.name}
+          {recipe.source === 'shared' && <span className="fc-box-badge">{t('box.sharedBadge')}</span>}
+          {isDefault && <span className="fc-box-badge">{t('box.isDefault')}</span>}
+        </div>
+        <p className="fc-box-meta">{t('box.meta', {
+          hydration: i.hydration, hours: i.hours, tempC: i.tempC,
+          balls: i.ballCount, ballWeight: i.ballWeight, ovenC: i.ovenC,
+        })}</p>
+      </div>
+      <div className="fc-box-actions">
+        <button className="fc-nerd-toggle" onClick={() => api.load(recipe)}>{t('box.load')}</button>
+        <button className="fc-nerd-toggle" onClick={() => api.share(recipe)}>{t('box.share')}</button>
+        <button className="fc-nerd-toggle" onClick={() => setMode(mode === 'rename' ? null : 'rename')}>{t('box.rename')}</button>
+        {!isDefault && (
+          <button className="fc-nerd-toggle" onClick={() => api.makeDefault(recipe.id)}>{t('box.makeDefault')}</button>
+        )}
+        {/* two taps to delete — the box is the only copy of this dough */}
+        <button className="fc-nerd-toggle" data-on={mode === 'confirm'}
+          onClick={() => (mode === 'confirm' ? api.remove(recipe.id) : setMode('confirm'))}>
+          {mode === 'confirm' ? t('box.confirmDelete') : t('box.delete')}
+        </button>
+      </div>
+      {mode === 'rename' && (
+        <NameForm inRow label={t('box.nameLabel')} initial={recipe.name}
+          onCancel={() => setMode(null)}
+          onSubmit={(name) => { api.rename(recipe.id, name); setMode(null); }} />
+      )}
+    </div>
+  );
+}
+
+function RecipesTab({ box, api, already, suggested, loaded }) {
+  const t = useT();
+  const [naming, setNaming] = useState(false);
+  // A loaded recipe that has since been nudged can be written back over,
+  // rather than piling up near-identical rows.
+  const edited = loaded && !already && box.recipes.find((r) => r.id === loaded);
+  return (
+    <>
+      {naming ? (
+        <NameForm label={t('box.nameLabel')} initial={suggested}
+          onCancel={() => setNaming(false)}
+          onSubmit={(name) => { if (api.save(name).ok !== false) setNaming(false); }} />
+      ) : (
+        <div className="fc-box-form">
+          {already
+            ? <p className="fc-box-empty">{t('box.err.duplicate', { name: already.name })}</p>
+            : <button className="fc-nerd-toggle" data-on={true} onClick={() => setNaming(true)}>{t('box.saveCurrent')}</button>}
+          {edited && (
+            <button className="fc-nerd-toggle" onClick={() => api.update(edited.id)}>
+              {t('box.update', { name: edited.name })}
+            </button>
+          )}
+        </div>
+      )}
+      {box.recipes.length === 0 ? (
+        <p className="fc-box-empty">{t('box.empty')}</p>
+      ) : (
+        <>
+          <div className="fc-box-list">
+            {box.recipes.map((r) => (
+              <RecipeRow key={r.id} recipe={r} isDefault={r.id === box.defaultRecipeId} api={api} />
+            ))}
+          </div>
+          <p className="fc-box-meta">{t('box.count', { n: box.recipes.length, max: MAX_RECIPES })}</p>
+        </>
+      )}
+    </>
+  );
+}
+
+function FloursTab({ box, api }) {
+  const t = useT();
+  if (box.flours.length === 0) return <p className="fc-box-empty">{t('flour.empty')}</p>;
+  return (
+    <div className="fc-box-list">
+      {box.flours.map((f) => (
+        <div key={f.id} className="fc-box-row">
+          <div className="fc-box-main">
+            <div className="fc-box-name">{f.name}</div>
+            <p className="fc-box-meta">{f.protein}% · P/L {f.plVal}</p>
+          </div>
+          <div className="fc-box-actions">
+            <button className="fc-nerd-toggle" onClick={() => api.pickFlour(f)}>{t('box.load')}</button>
+            <button className="fc-nerd-toggle" onClick={() => api.removeFlour(f.id)}>{t('box.delete')}</button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function KitchenTab({ box, api }) {
+  const t = useT();
+  const k = box.kitchen;
+  return (
+    <>
+      <p className="fc-box-empty">{t('kitchen.blurb')}</p>
+      {k && (
+        <p className="fc-box-meta" style={{ margin: '10px 0 0' }}>{t('kitchen.summary', {
+          ovenC: k.ovenC, surface: t('surface.' + k.surface), roomTemp: k.roomTemp,
+          ddt: k.ddt, mixMethod: t('friction.' + k.mixMethod),
+        })}</p>
+      )}
+      {!k && <p className="fc-box-meta" style={{ margin: '10px 0 0' }}>{t('kitchen.none')}</p>}
+      <div className="fc-box-form" style={{ margin: '12px 0 0' }}>
+        <button className="fc-nerd-toggle" data-on={true} onClick={api.saveKitchen}>{t('kitchen.save')}</button>
+        {k && <button className="fc-nerd-toggle" onClick={api.applyKitchen}>{t('kitchen.apply')}</button>}
+        {k && <button className="fc-nerd-toggle" onClick={api.forgetKitchen}>{t('kitchen.forget')}</button>}
+      </div>
+      {k && box.defaultRecipeId && <p className="fc-box-note">{t('kitchen.overridden')}</p>}
+    </>
+  );
+}
+
+function RecipeBox({ box, api, already, suggested, loaded, status, persistent }) {
+  const t = useT();
+  const [tab, setTab] = useState('recipes');
+  const fileRef = React.useRef(null);
+  return (
+    <div className="fc-box">
+      <div className="fc-box-head">
+        <p className="fc-box-title">{t('box.head')}</p>
+        <div className="fc-box-tabs">
+          {['recipes', 'flours', 'kitchen'].map((id) => (
+            <button key={id} className="fc-nerd-toggle" data-on={tab === id}
+              onClick={() => setTab(id)}>{t('box.tab.' + id)}</button>
+          ))}
+        </div>
+      </div>
+      {!persistent && <p className="fc-box-status">{t('box.notPersistent')}</p>}
+      {status && <p className="fc-box-status">{status}</p>}
+      {tab === 'recipes' && <RecipesTab box={box} api={api} already={already} suggested={suggested} loaded={loaded} />}
+      {tab === 'flours' && <FloursTab box={box} api={api} />}
+      {tab === 'kitchen' && <KitchenTab box={box} api={api} />}
+      <div className="fc-box-form" style={{ margin: '14px 0 0' }}>
+        <button className="fc-nerd-toggle" onClick={api.exportBox}>{t('box.export')}</button>
+        <button className="fc-nerd-toggle" onClick={() => fileRef.current && fileRef.current.click()}>{t('box.import')}</button>
+        <input ref={fileRef} type="file" accept="application/json,.json" style={{ display: 'none' }}
+          onChange={(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) api.importBox(f); }} />
+      </div>
+      <p className="fc-box-note">{t('box.storageNote')}</p>
+    </div>
+  );
+}
+
 function FermentCalculator() {
   const [tempC, setTempC] = useConfigNumber('tempC', 5, 2, 35);
   const [hours, setHours] = useConfigNumber('hours', 24, 2, 96);
@@ -822,6 +1187,11 @@ function FermentCalculator() {
   const [lang, setLang] = useState(initialLang);
   const [shareCopied, setShareCopied] = useState(false);
   const [shareBadNotice, setShareBadNotice] = useState(SHARE_BAD_LINK);
+  const [box, setBox] = useState(() => STORE.read());
+  const [boxOpen, setBoxOpen] = useState(false);
+  const [boxStatus, setBoxStatus] = useState(null);
+  const [loadedId, setLoadedId] = useState(null);
+  const [sharedOffer, setSharedOffer] = useState(!!SHARED_DOUGH);
   const t = useMemo(() => makeTFn(lang, TRANSLATIONS), [lang]);
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -829,8 +1199,16 @@ function FermentCalculator() {
     try { localStorage.setItem(LANG_KEY, lang); } catch (e) { /* private mode, etc. */ }
   }, [lang, t]);
 
-  const handleShare = async () => {
-    const token = encodeShareToken(inputs);
+  // Another tab shares this localStorage, so take its word for what the box
+  // holds rather than writing a stale snapshot back over it.
+  useEffect(() => {
+    const onStorage = (e) => { if (!e.key || e.key === STORE.STORAGE_KEY) setBox(STORE.read()); };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
+  const shareDough = async (dough, name) => {
+    const token = encodeShareToken(dough, name);
     const url = window.location.origin + window.location.pathname + '#d=' + token;
     if (navigator.share) {
       try { await navigator.share({ title: t('doc.title'), url }); } catch (e) { /* cancelled */ }
@@ -842,9 +1220,12 @@ function FermentCalculator() {
       setTimeout(() => setShareCopied(false), 2000);
     } catch (e) { /* clipboard unavailable */ }
   };
+  // Sharing the dough on screen carries its name only if it's one the user
+  // has actually named and saved.
+  const handleShare = () => shareDough(inputs, savedAs ? savedAs.name : '');
 
   const accent = tempColor(tempC);
-  const inputs = { tempC, hours, protein, plVal, hydration, salt, oilPct, sugarPct, leavening, yeastType, starterStr, preferment, roomTemp, ddt, mixMethod, doughWeight, ballCount, ovenC, surface };
+  const inputs = { tempC, hours, protein, plVal, hydration, salt, oilPct, sugarPct, leavening, yeastType, starterStr, preferment, roomTemp, ddt, mixMethod, doughWeight, ballCount, ballWeight, ovenC, surface };
   // single pure entry point — all numbers come from the engine
   const M = useMemo(() => computeAll(inputs),
     [tempC, hours, protein, plVal, hydration, salt, oilPct, sugarPct, leavening, yeastType, starterStr, preferment, roomTemp, ddt, mixMethod, doughWeight, ballCount, ovenC, surface]);
@@ -878,6 +1259,109 @@ function FermentCalculator() {
   };
   const applyPreset = (obj) => Object.entries(obj).forEach(([k, v]) => setters[k] && setters[k](v));
   const presetMatches = (obj) => Object.entries(obj).every(([k, v]) => inputs[k] === v);
+
+  // ---- the recipe box (view-side wiring) ----
+  // The store owns the data; this component only moves doughs between it
+  // and the sliders, and turns each result into one line of feedback.
+  const errText = (ns, res) => {
+    const key = ns + '.err.' + res.reason;
+    const known = Object.prototype.hasOwnProperty.call(TRANSLATIONS.en, key);
+    return t(known ? key : 'box.err.' + res.reason, {
+      max: ns === 'flour' ? MAX_FLOURS : MAX_RECIPES,
+      name: res.recipe ? res.recipe.name : '',
+    });
+  };
+  const report = (res, okKey, ns) => {
+    setBox(STORE.read());
+    setBoxStatus(res && res.ok === false ? errText(ns || 'box', res) : t(okKey));
+    return res;
+  };
+
+  const matchedPreset = PIZZA_PRESETS.find((p) => presetMatches(p.set));
+  const suggestedName = t('box.suggestedName', {
+    style: matchedPreset ? t('preset.' + matchedPreset.id) : t('box.doughWord'),
+    hydration, hours,
+  });
+  const savedAs = box.recipes.find((r) => canonicalKey(r.inputs) === canonicalKey(inputs));
+  const sharedAlready = SHARED_DOUGH
+    && box.recipes.find((r) => canonicalKey(r.inputs) === canonicalKey(SHARED_DOUGH));
+
+  const api = {
+    save(name) {
+      const res = STORE.saveRecipe({ name: name || suggestedName, inputs, source: 'mine' });
+      if (res.ok) setLoadedId(res.recipe.id);
+      return report(res, 'box.saved');
+    },
+    update(id) { return report(STORE.updateRecipeInputs(id, inputs), 'box.updated'); },
+    rename(id, name) { return report(STORE.renameRecipe(id, name), 'box.renamed'); },
+    remove(id) {
+      if (loadedId === id) setLoadedId(null);
+      return report(STORE.deleteRecipe(id), 'box.deleted');
+    },
+    makeDefault(id) { return report(STORE.setDefaultRecipe(id), 'box.saved'); },
+    load(recipe) {
+      applyPreset(recipe.inputs);
+      setSelectedStyle(null);
+      setLoadedId(recipe.id);
+      setBoxStatus(t('box.loaded'));
+      return { ok: true };
+    },
+    share(recipe) { shareDough(recipe.inputs, recipe.name); return { ok: true }; },
+    saveShared() {
+      const res = STORE.saveRecipe({ name: SHARED_NAME || t('shared.defaultName'), inputs: SHARED_DOUGH, source: 'shared' });
+      setSharedOffer(false);
+      if (res.ok) { setLoadedId(res.recipe.id); setBoxOpen(true); }
+      return report(res, 'box.saved');
+    },
+    pickFlour(flour) {
+      setProtein(flour.protein);
+      setPlVal(flour.plVal);
+      setBoxStatus(null);
+      return { ok: true };
+    },
+    saveFlour(name) {
+      const res = STORE.saveFlour({ name, protein, plVal });
+      return report(res, res.replaced ? 'flour.replaced' : 'flour.saved', 'flour');
+    },
+    removeFlour(id) { return report(STORE.deleteFlour(id), 'box.deleted', 'flour'); },
+    saveKitchen() { return report(STORE.saveKitchen(inputs), 'kitchen.saved'); },
+    applyKitchen() {
+      const kitchen = STORE.getKitchen();
+      if (!kitchen) return { ok: false };
+      applyPreset(Object.fromEntries(KITCHEN_FIELDS.map((f) => [f, kitchen[f]])));
+      setBoxStatus(t('kitchen.applied'));
+      return { ok: true };
+    },
+    forgetKitchen() { return report(STORE.clearKitchen(), 'box.deleted'); },
+    // The box lives in one browser and site data is one menu click away, so
+    // it has to be able to leave: a plain JSON file, no account, no upload.
+    exportBox() {
+      try {
+        const stamp = new Date().toISOString().slice(0, 10);
+        const blob = new Blob([STORE.exportJSON()], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'forno-recipes-' + stamp + '.json';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      } catch (e) { setBoxStatus(t('box.err.unavailable')); }
+      return { ok: true };
+    },
+    async importBox(file) {
+      let text;
+      try { text = await file.text(); }
+      catch (e) { setBoxStatus(t('box.err.unreadable')); return { ok: false }; }
+      const res = STORE.importJSON(text);
+      setBox(STORE.read());
+      setBoxStatus(res.ok === false
+        ? errText('box', res)
+        : t('box.imported', { added: res.added, skipped: res.skipped }));
+      return res;
+    },
+  };
 
   // ---- view-only: turn the pure rise model into SVG paths ----
   const W = 600, H = 300;
@@ -1130,6 +1614,50 @@ function FermentCalculator() {
         .fc-guide-range{ font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--ink);
           min-width:72px; flex:none; }
         .fc-guide-note{ font-size:12px; color:var(--ink-soft); }
+
+        /* ---- the recipe box ---- */
+        .fc-box{ margin:16px 0 4px; background:var(--paper-2); border:1px solid var(--edge);
+          border-radius:20px; padding:20px; box-shadow:0 6px 18px rgba(58,40,26,0.10); }
+        .fc-box-head{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:0 0 14px; }
+        .fc-box-title{ font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:.12em;
+          text-transform:uppercase; color:var(--ink-soft); margin:0; }
+        .fc-box-tabs{ display:flex; gap:6px; margin-left:auto; flex-wrap:wrap; }
+        .fc-box-status{ font-family:'JetBrains Mono',monospace; font-size:11px; line-height:1.6;
+          color:var(--ink); background:var(--paper); border:1px solid var(--edge);
+          border-radius:12px; padding:8px 12px; margin:0 0 12px; }
+        .fc-box-note{ font-size:12px; color:var(--ink-soft); margin:12px 0 0; line-height:1.55; }
+        .fc-box-empty{ font-size:13px; color:var(--ink-soft); margin:0; line-height:1.6; }
+        .fc-box-list{ display:flex; flex-direction:column; gap:8px; margin:0 0 12px; }
+        .fc-box-row{ background:var(--paper); border:1px solid var(--line); border-radius:14px;
+          padding:11px 13px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+        .fc-box-row[data-default=true]{ border-color:var(--edge); box-shadow:inset 3px 0 0 var(--ink); }
+        .fc-box-main{ flex:1 1 190px; min-width:0; }
+        .fc-box-name{ font-size:14px; font-weight:600; color:var(--ink); display:flex;
+          align-items:baseline; gap:8px; flex-wrap:wrap; }
+        .fc-box-badge{ font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.1em;
+          text-transform:uppercase; color:var(--ink-soft); border:1px solid var(--edge);
+          border-radius:99px; padding:2px 7px; font-weight:400; }
+        .fc-box-meta{ font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--ink-soft);
+          margin:3px 0 0; overflow-wrap:anywhere; }
+        .fc-box-actions{ display:flex; gap:6px; flex-wrap:wrap; }
+        .fc-box-actions .fc-nerd-toggle{ padding:5px 10px; font-size:9.5px; }
+        .fc-box-form{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:0 0 12px; }
+        .fc-box-form.row{ margin:0; flex:1 1 100%; }
+        .fc-input{ flex:1 1 180px; min-width:0; font-family:'Hanken Grotesk',sans-serif; font-size:13.5px;
+          color:var(--ink); background:var(--paper); border:1px solid var(--edge); border-radius:12px;
+          padding:9px 12px; }
+        .fc-input:focus{ outline:none; border-color:var(--ink); }
+        .fc-select{ width:100%; font-family:'Hanken Grotesk',sans-serif; font-size:13.5px; font-weight:500;
+          color:var(--ink); background:var(--paper); border:1px solid var(--edge); border-radius:12px;
+          padding:9px 12px; cursor:pointer; appearance:none;
+          background-image:linear-gradient(45deg,transparent 50%,var(--ink-soft) 50%),linear-gradient(135deg,var(--ink-soft) 50%,transparent 50%);
+          background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%;
+          background-size:5px 5px,5px 5px; background-repeat:no-repeat; }
+        .fc-select:focus{ outline:none; border-color:var(--ink); }
+        .fc-shared{ display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+          background:var(--paper-2); border:1px solid var(--edge); border-radius:16px;
+          padding:12px 16px; margin:16px 0 0; }
+        .fc-shared p{ margin:0; font-size:13.5px; color:var(--ink); flex:1 1 200px; }
       `}</style>
 
       <div className="fc-wrap">
@@ -1153,6 +1681,7 @@ function FermentCalculator() {
             <button className="fc-nerd-toggle" data-on={learn} onClick={() => setLearn((v) => !v)}>{t('toggle.learn')}</button>
             <button className="fc-nerd-toggle" data-on={nerdMode} onClick={() => setNerdMode((v) => !v)}>{t('toggle.nerd')}</button>
             <button className="fc-nerd-toggle" data-on={shareCopied} onClick={handleShare}>{shareCopied ? t('share.copied') : t('share.button')}</button>
+            <button className="fc-nerd-toggle" data-on={boxOpen} onClick={() => setBoxOpen((v) => !v)}>{t('box.button')}</button>
           </div>
         </div>
         {shareBadNotice && (
@@ -1160,6 +1689,26 @@ function FermentCalculator() {
             <span>{t('share.badLink')}</span>
             <button className="fc-nerd-toggle" onClick={() => setShareBadNotice(false)}>×</button>
           </p>
+        )}
+        {/* A dough that arrived over a link is already loaded; keeping it is
+            the user's call, not something that happens to their box behind
+            their back. */}
+        {sharedOffer && SHARED_DOUGH && (
+          <div className="fc-shared">
+            <p>
+              {t('shared.head')}
+              {SHARED_NAME ? ' “' + SHARED_NAME + '”' : ''}
+              {sharedAlready ? ' ' + t('shared.have', { name: sharedAlready.name }) : ''}
+            </p>
+            {!sharedAlready && (
+              <button className="fc-nerd-toggle" data-on={true} onClick={api.saveShared}>{t('shared.save')}</button>
+            )}
+            <button className="fc-nerd-toggle" onClick={() => setSharedOffer(false)}>{t('shared.dismiss')}</button>
+          </div>
+        )}
+        {boxOpen && (
+          <RecipeBox box={box} api={api} already={savedAs} suggested={suggestedName}
+            loaded={loadedId} status={boxStatus} persistent={STORE.persistent} />
         )}
         <h1 className="fc-title">{t('title.main')} <em>{t('title.em')}</em></h1>
         <p className="fc-lede">
@@ -1234,6 +1783,9 @@ function FermentCalculator() {
             <Help>{t('help.targetTime')}</Help>
 
             <p className="fc-subhead">{t('subhead.flour')}</p>
+            <FlourPicker flours={box.flours} protein={protein} plVal={plVal}
+              onPick={api.pickFlour} onSave={api.saveFlour} />
+            <Help>{t('help.flourPicker')}</Help>
             <Slider label={t('label.flourProtein')} value={protein} unit="%"
               min={8} max={15} step={0.5} onChange={setProtein} accent={accent}
               note={t('note.protein', { W: fp.W, category: t(fp.categoryKey) })} />
