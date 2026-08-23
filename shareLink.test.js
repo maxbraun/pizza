@@ -5,7 +5,7 @@
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 
-const { encodeShareToken, decodeShareToken, TOKEN_LEN, SCALAR_RANGES, ENUMS } = require('./shareLink.js');
+const { encodeShareToken, decodeShareToken, expandShareToken, TOKEN_LEN, SCALAR_RANGES, ENUMS, PARAM_NAMES } = require('./shareLink.js');
 
 // A representative dough — one value per field, all mid-range.
 const BASE = {
@@ -99,5 +99,61 @@ describe('encodeShareToken / decodeShareToken', () => {
     assert.equal(TOKEN_LEN, 23, 'sanity check: token layout assumed by this test');
     const zeros = 'A'.repeat(31);
     assert.equal(decodeShareToken(zeros), null);
+  });
+});
+
+describe('expandShareToken', () => {
+  test('no hash: search passes through untouched, nothing flagged', () => {
+    const result = expandShareToken('', '?foo=bar');
+    assert.deepEqual(result, { search: '?foo=bar', badLink: false, present: false });
+  });
+
+  test('valid token: every field lands under its config-in-URL param name', () => {
+    const token = encodeShareToken(BASE);
+    const { search, badLink, present } = expandShareToken('#d=' + token, '');
+    assert.equal(badLink, false);
+    assert.equal(present, true);
+    const params = new URLSearchParams(search);
+    for (const [key, param] of Object.entries(PARAM_NAMES)) {
+      assert.equal(params.get(param), String(BASE[key]), `${key} -> ?${param}`);
+    }
+  });
+
+  test('valid token overlays dough fields but keeps unrelated existing params', () => {
+    const token = encodeShareToken(BASE);
+    const { search } = expandShareToken('#d=' + token, '?nerd=1&learn=1');
+    const params = new URLSearchParams(search);
+    assert.equal(params.get('nerd'), '1');
+    assert.equal(params.get('learn'), '1');
+    assert.equal(params.get('tempC'), String(BASE.tempC));
+  });
+
+  test('valid token overrides a same-named existing dough param', () => {
+    const token = encodeShareToken(BASE);
+    const { search } = expandShareToken('#d=' + token, '?tempC=99');
+    assert.equal(new URLSearchParams(search).get('tempC'), String(BASE.tempC));
+  });
+
+  test('token embedded alongside other hash content is still found', () => {
+    const token = encodeShareToken(BASE);
+    const { search, present } = expandShareToken('#foo=1&d=' + token + '&bar=2', '');
+    assert.equal(present, true);
+    assert.equal(new URLSearchParams(search).get('tempC'), String(BASE.tempC));
+  });
+
+  test('corrupt token: flagged bad, search left untouched', () => {
+    const result = expandShareToken('#d=not-a-real-token', '?keep=me');
+    assert.deepEqual(result, { search: '?keep=me', badLink: true, present: true });
+  });
+
+  test('round-trips every enum through its query param', () => {
+    for (const [key, values] of Object.entries(ENUMS)) {
+      for (const val of values) {
+        const dough = { ...BASE, [key]: val };
+        const token = encodeShareToken(dough);
+        const { search } = expandShareToken('#d=' + token, '');
+        assert.equal(new URLSearchParams(search).get(PARAM_NAMES[key]), val);
+      }
+    }
   });
 });

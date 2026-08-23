@@ -208,9 +208,46 @@ function decodeShareToken(token) {
   }
 }
 
+// ---- folding a share token into the app's config-in-URL query string ----
+//
+// index.html (from a separate change) already persists the calculator's
+// state as query params via small useConfigNumber/useConfigEnum/useConfigBool
+// hooks, so a reload or a copied plain link reproduces the same setup. A
+// share token doesn't need a second, parallel way of getting state into the
+// app — it just needs to expand into those same params before the page's
+// hooks read them. This keeps `#d=...` links compact and opaque to *send*,
+// while everything downstream (state restore, refresh-safety) goes through
+// the one mechanism. Field -> query-param names mirror index.html's hook
+// calls exactly; keep the two in sync if either changes.
+const PARAM_NAMES = {
+  tempC: 'tempC', hours: 'hours', protein: 'protein', plVal: 'pl',
+  hydration: 'hydration', salt: 'salt', oilPct: 'oil', sugarPct: 'sugar',
+  yeastType: 'yeast', leavening: 'leaven', starterStr: 'starter',
+  preferment: 'preferment', ballCount: 'balls', ballWeight: 'ballWeight',
+  roomTemp: 'room', ddt: 'ddt', mixMethod: 'mix', ovenC: 'oven', surface: 'surface',
+};
+
+// Pure string transform, no DOM access, so it's testable without a browser:
+// given the page's current hash and search strings, returns the search
+// string to use instead (existing params kept, dough params from the token
+// overlaid) and whether a `d=` token was present but failed to decode.
+// index.html does the one DOM side effect (history.replaceState) with this.
+function expandShareToken(hash, search) {
+  const m = /(?:^#|[&])d=([^&]+)/.exec(hash || '');
+  if (!m) return { search: search || '', badLink: false, present: false };
+  let token;
+  try { token = decodeURIComponent(m[1]); } catch (e) { return { search: search || '', badLink: true, present: true }; }
+  const dough = decodeShareToken(token);
+  if (!dough) return { search: search || '', badLink: true, present: true };
+  const params = new URLSearchParams(search || '');
+  Object.entries(PARAM_NAMES).forEach(([key, param]) => params.set(param, String(dough[key])));
+  const qs = params.toString();
+  return { search: qs ? '?' + qs : '', badLink: false, present: true };
+}
+
 const __SHARE__ = {
-  encodeShareToken, decodeShareToken,
-  VERSION, TOKEN_LEN, SCALAR_FIELDS, SCALAR_RANGES, ENUMS,
+  encodeShareToken, decodeShareToken, expandShareToken,
+  VERSION, TOKEN_LEN, SCALAR_FIELDS, SCALAR_RANGES, ENUMS, PARAM_NAMES,
 };
 
 if (typeof module !== 'undefined' && module.exports) module.exports = __SHARE__;
