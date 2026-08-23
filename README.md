@@ -5,7 +5,9 @@ and baking together, rather than treating baker's percentages as a static
 table. Give it a proof temperature/time, a flour's protein and P/L, and an
 oven setup, and it works out yeast (or levain) quantity, a hydration range,
 a rise curve, a bake time and crust colour, and plain-language verdicts on
-whether the recipe is under-, well-, or over-fermented.
+whether the recipe is under-, well-, or over-fermented. A flour analyser
+takes the numbers off a bag or spec sheet and reads the flour back: what
+it has going for it, where it's weak, and which styles it actually suits.
 
 It's a single static page — open `index.html` and it runs, no build step,
 no server.
@@ -23,6 +25,17 @@ The app is built in three stages that feed one another:
 3. **Bake** — oven temperature and surface (steel/stone/pan/rack) drive
    bake time (inverse-exponential) and a crust-colour gauge, including a
    leoparding flag at the high-temp / short-time corner.
+
+Alongside those, the **flour analyser** (the "Flour check" toggle) runs the
+same models the other way round. You type in what the bag or spec sheet
+prints — protein, and optionally W, P/L, water absorption, ash and falling
+number — and it returns a profile, a per-finding list of strengths and
+weaknesses, and a fit score against each built-in style naming
+whichever dimension holds it back. Only protein is required: the rest is
+estimated from what you give it and labelled as an estimate, and a printed
+W or absorption overrides the estimate it would otherwise derive. One
+button pushes the analysed flour's protein, P/L and hydration into the
+calculator's own sliders.
 
 Verdict-producing functions return `{ tone, code, params }` rather than
 finished sentences, so the UI can translate them (English and German are

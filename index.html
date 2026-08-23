@@ -283,6 +283,55 @@ const TRANSLATIONS = {
     'nrow.ovenSpringFrac': 'oven-spring frac', 'nrow.rimSpringIndex': 'rim spring index',
     'nerd.val.yes': 'yes', 'nerd.val.no': 'no', 'nerd.val.high': 'high', 'nerd.val.ok': 'ok',
     'nerd.val.sourdough': 'sourdough', 'nerd.val.commercial': 'commercial',
+    'toggle.analyser': 'Flour check',
+    'panel.analyser': 'Flour analyser', 'analyser.awaiting': 'awaiting protein',
+    'analyser.lede': 'Type in what the bag or spec sheet prints and this reads the flour back to you — what it has going for it, where it falls down, and which styles it actually suits. Protein is the only figure it needs; anything you leave blank is estimated from the rest and marked as such.',
+    'analyser.empty': 'Enter the protein % — every bag prints it — and the read appears here.',
+    'analyser.field.protein': 'Protein', 'analyser.hint.protein': '% · on every bag',
+    'analyser.field.w': 'W strength', 'analyser.hint.w': 'alveograph · Italian bags',
+    'analyser.field.pl': 'P/L', 'analyser.hint.pl': 'tenacity ÷ extensibility',
+    'analyser.field.absorption': 'Water absorption', 'analyser.hint.absorption': '% · farinograph',
+    'analyser.field.ash': 'Ash', 'analyser.hint.ash': '% dry · 00 ≈ 0.55',
+    'analyser.field.fallingNumber': 'Falling number', 'analyser.hint.fallingNumber': 'seconds · amylase',
+    'analyser.profile': 'Profile', 'analyser.fit': 'Style fit · score /100',
+    'analyser.strengths': 'Working in its favour', 'analyser.weaknesses': "Where it's weak",
+    'analyser.row.strength': 'Strength', 'analyser.row.pl': 'P/L', 'analyser.row.absorption': 'Absorption',
+    'analyser.row.hydration': 'Hydration window', 'analyser.row.capacity': 'Ferment capacity',
+    'analyser.val.strength': 'W {W} · {category}', 'analyser.val.hydration': '{lo}–{hi}%',
+    'analyser.val.capacity': '~{maxH} h', 'analyser.val.absorption': '{abs}%',
+    'analyser.val.plUnknown': 'assumed balanced',
+    'analyser.measured': 'from the bag', 'analyser.estimated': 'estimated',
+    'analyser.apply': 'Use this flour above', 'analyser.applied': 'Applied ✓', 'analyser.clear': 'Clear',
+    'analyser.note': 'Same heuristics as the calculator: W from protein, hydration and ferment capacity from strength. A read on the bag, not a lab report — and the flour is only one of the levers.',
+    'flourSummary.good': 'A good pizza flour — it suits {styles}.',
+    'flourSummary.mixed': "Usable, but there's no style it's really made for. The closest fits are below, with what holds each one back.",
+    'flourSummary.weak': "Weak for pizza on its own. Blend it with a stronger flour, or keep the prove short and bake it in a pan.",
+    'flourFind.strength.weak': 'W {W} — a weak flour. It ferments out in about {maxH} h and can’t carry much water: fine for a quick same-day pan dough, not for a long prove.',
+    'flourFind.strength.medium': 'W {W} — medium strength. Comfortable for same-day and overnight doughs, up to about {maxH} h.',
+    'flourFind.strength.strong': 'W {W} — proper pizza strength. It holds a prove of about {maxH} h and takes water well.',
+    'flourFind.strength.veryStrong': 'W {W} — very strong. It wants a long, cool prove (up to ~{maxH} h) to relax; on a same-day dough it fights back and snaps shut.',
+    'flourFind.quality.high': 'W {W} beats what {protein}% protein predicts (~{expW}) — good gluten quality, this flour punches above its protein.',
+    'flourFind.quality.low': 'W {W} falls short of what {protein}% protein predicts (~{expW}) — quantity without quality. Treat it as a W {W} flour, not a {protein}% one.',
+    'flourFind.pl.veryElastic': 'P/L {pl} — very tenacious. The base fights back and shrinks on the peel; rest the balls longer, or cut it with a softer flour.',
+    'flourFind.pl.elastic': 'P/L {pl} — springy. A tall, well-inflated rim, but give the balls a full rest before you open them.',
+    'flourFind.pl.balanced': 'P/L {pl} — balanced. It opens without fighting and still holds a rim.',
+    'flourFind.pl.extensible': 'P/L {pl} — very extensible. It stretches easily but won’t hold a rim: good in a tray or pan, weak hand-tossed.',
+    'flourFind.absorption.high': 'Absorption {abs}% — a thirsty flour. It carries the {lo}–{hi}% window comfortably, and more at a push.',
+    'flourFind.absorption.typical': 'Absorption {abs}% — about what this protein suggests. Aim for {lo}–{hi}% hydration.',
+    'flourFind.absorption.low': 'Absorption {abs}% — lower than this protein suggests. Stay near {lo}–{hi}% or the dough goes slack.',
+    'flourFind.ash.fine': 'Ash {ash}% — a fine 00-type white flour: clean crumb, slow to colour, the Neapolitan default.',
+    'flourFind.ash.mid': 'Ash {ash}% — lightly extracted. A little more flavour and colour than a 00, with the gluten network intact.',
+    'flourFind.ash.high': 'Ash {ash}% — noticeably more bran and minerals: it ferments faster and the gluten holds less well. Capacity is already cut to ~{maxH} h above.',
+    'flourFind.ash.wholemeal': 'Ash {ash}% — wholemeal territory. Bran cuts the gluten network and soaks up water: blend at 30% or less, add water, and stop at ~{maxH} h.',
+    'flourFind.falling.low': 'Falling number {fn} s — high amylase. Sugars release fast, so the crumb turns sticky and the crust darkens early. Shorten the prove and drop the oven a notch.',
+    'flourFind.falling.ok': 'Falling number {fn} s — healthy enzyme activity: steady fermentation and even browning.',
+    'flourFind.falling.high': 'Falling number {fn} s — low enzyme activity. Fermentation drags and the crust stays pale; a little diastatic malt or sugar helps.',
+    'flourFit.reason.suits': 'protein, hydration and ferment all line up',
+    'flourFit.reason.protein': 'protein {val}% vs the {lo}–{hi}% this style wants',
+    'flourFit.reason.ferment': 'holds ~{maxH} h, the style proves {lo}–{hi} h',
+    'flourFit.reason.hydration': 'window {wLo}–{wHi}% vs the {lo}–{hi}% this style wants',
+    'flourFit.reason.pl': 'P/L {val} vs the {lo}–{hi} this style wants',
+    'help.analyser': 'A flour bag or spec sheet in, a read out. Protein is the one figure every bag prints; W, P/L, absorption, ash and falling number turn up on Italian and professional sheets. Whatever you leave out is estimated from what you give it, so the more you type the sharper the answer.',
     'doc.title': 'Forno — Pizza Dough Calculator',
   },
   de: {
@@ -481,6 +530,55 @@ const TRANSLATIONS = {
     'nrow.ovenSpringFrac': 'Ofentrieb-Anteil', 'nrow.rimSpringIndex': 'Randtrieb-Index',
     'nerd.val.yes': 'ja', 'nerd.val.no': 'nein', 'nerd.val.high': 'hoch', 'nerd.val.ok': 'ok',
     'nerd.val.sourdough': 'Sauerteig', 'nerd.val.commercial': 'Hefe',
+    'toggle.analyser': 'Mehlcheck',
+    'panel.analyser': 'Mehl-Analyse', 'analyser.awaiting': 'warte auf Protein',
+    'analyser.lede': 'Gib ein, was auf der Tüte oder im Datenblatt steht — hier steht dann, was das Mehl kann, wo es schwach ist und zu welchen Stilen es wirklich passt. Nötig ist nur das Protein; alles Leergelassene wird aus dem Rest geschätzt und als Schätzung markiert.',
+    'analyser.empty': 'Protein % eintragen — das steht auf jeder Tüte — und die Auswertung erscheint hier.',
+    'analyser.field.protein': 'Protein', 'analyser.hint.protein': '% · auf jeder Tüte',
+    'analyser.field.w': 'W-Wert', 'analyser.hint.w': 'Alveograph · ital. Mehle',
+    'analyser.field.pl': 'P/L', 'analyser.hint.pl': 'Zähigkeit ÷ Dehnbarkeit',
+    'analyser.field.absorption': 'Wasseraufnahme', 'analyser.hint.absorption': '% · Farinograph',
+    'analyser.field.ash': 'Asche', 'analyser.hint.ash': '% TS · 00 ≈ 0.55',
+    'analyser.field.fallingNumber': 'Fallzahl', 'analyser.hint.fallingNumber': 'Sekunden · Amylase',
+    'analyser.profile': 'Profil', 'analyser.fit': 'Passt zu · Wert /100',
+    'analyser.strengths': 'Spricht dafür', 'analyser.weaknesses': 'Wo es schwach ist',
+    'analyser.row.strength': 'Stärke', 'analyser.row.pl': 'P/L', 'analyser.row.absorption': 'Wasseraufnahme',
+    'analyser.row.hydration': 'Hydrationsfenster', 'analyser.row.capacity': 'Gärkapazität',
+    'analyser.val.strength': 'W {W} · {category}', 'analyser.val.hydration': '{lo}–{hi}%',
+    'analyser.val.capacity': '~{maxH} h', 'analyser.val.absorption': '{abs}%',
+    'analyser.val.plUnknown': 'als ausgewogen angenommen',
+    'analyser.measured': 'von der Tüte', 'analyser.estimated': 'geschätzt',
+    'analyser.apply': 'Mehl oben übernehmen', 'analyser.applied': 'Übernommen ✓', 'analyser.clear': 'Leeren',
+    'analyser.note': 'Dieselben Heuristiken wie im Rechner: W aus dem Protein, Hydration und Gärkapazität aus der Stärke. Eine Einschätzung der Tüte, kein Laborbericht — und das Mehl ist nur einer der Hebel.',
+    'flourSummary.good': 'Ein gutes Pizzamehl — es passt zu {styles}.',
+    'flourSummary.mixed': 'Brauchbar, aber für keinen Stil wirklich gemacht. Unten stehen die nächstbesten Treffer und was jeweils fehlt.',
+    'flourSummary.weak': 'Für Pizza allein zu schwach. Mit einem stärkeren Mehl mischen, oder kurz führen und im Blech backen.',
+    'flourFind.strength.weak': 'W {W} — ein schwaches Mehl. Es ist nach etwa {maxH} h ausgegärt und trägt wenig Wasser: gut für einen schnellen Blechteig am selben Tag, nicht für lange Gare.',
+    'flourFind.strength.medium': 'W {W} — mittlere Stärke. Passt für Teige am selben Tag und über Nacht, bis etwa {maxH} h.',
+    'flourFind.strength.strong': 'W {W} — echte Pizzastärke. Hält rund {maxH} h Gare aus und nimmt gut Wasser auf.',
+    'flourFind.strength.veryStrong': 'W {W} — sehr stark. Es braucht eine lange, kühle Gare (bis ~{maxH} h), um sich zu entspannen; am selben Tag wehrt es sich und zieht sich zusammen.',
+    'flourFind.quality.high': 'W {W} liegt über dem, was {protein}% Protein erwarten lassen (~{expW}) — gute Glutenqualität, dieses Mehl kann mehr als sein Proteinwert.',
+    'flourFind.quality.low': 'W {W} bleibt hinter {protein}% Protein zurück (~{expW}) — Menge ohne Qualität. Behandle es als W-{W}-Mehl, nicht als {protein}%-Mehl.',
+    'flourFind.pl.veryElastic': 'P/L {pl} — sehr zäh. Der Teigling zieht sich beim Ausbreiten zusammen; länger entspannen lassen oder mit einem weicheren Mehl verschneiden.',
+    'flourFind.pl.elastic': 'P/L {pl} — elastisch. Hoher, gut aufgeblasener Rand, aber die Kugeln vorher richtig ruhen lassen.',
+    'flourFind.pl.balanced': 'P/L {pl} — ausgewogen. Lässt sich ohne Widerstand öffnen und hält trotzdem einen Rand.',
+    'flourFind.pl.extensible': 'P/L {pl} — sehr dehnbar. Zieht sich leicht aus, hält aber keinen Rand: gut im Blech, schwach von Hand geworfen.',
+    'flourFind.absorption.high': 'Wasseraufnahme {abs}% — ein durstiges Mehl. Es trägt das Fenster {lo}–{hi}% locker, zur Not auch mehr.',
+    'flourFind.absorption.typical': 'Wasseraufnahme {abs}% — etwa das, was dieses Protein erwarten lässt. Ziel: {lo}–{hi}% Hydration.',
+    'flourFind.absorption.low': 'Wasseraufnahme {abs}% — weniger, als dieses Protein erwarten lässt. Bleib bei {lo}–{hi}%, sonst wird der Teig schlaff.',
+    'flourFind.ash.fine': 'Asche {ash}% — ein feines weißes 00-Mehl: sauberer Krumen, bräunt langsam, der neapolitanische Standard.',
+    'flourFind.ash.mid': 'Asche {ash}% — leicht höher ausgemahlen. Etwas mehr Geschmack und Farbe als ein 00, das Klebergerüst bleibt intakt.',
+    'flourFind.ash.high': 'Asche {ash}% — deutlich mehr Kleie und Mineralstoffe: gärt schneller, der Kleber hält schlechter. Die Kapazität oben ist dafür schon auf ~{maxH} h gekürzt.',
+    'flourFind.ash.wholemeal': 'Asche {ash}% — Vollkornbereich. Kleie zerschneidet das Klebergeflecht und saugt Wasser: höchstens 30% zumischen, Wasser erhöhen und bei ~{maxH} h Schluss machen.',
+    'flourFind.falling.low': 'Fallzahl {fn} s — hohe Amylase-Aktivität. Zucker wird schnell frei, die Krume wird klitschig und die Kruste dunkelt früh. Kürzer führen und den Ofen eine Stufe runter.',
+    'flourFind.falling.ok': 'Fallzahl {fn} s — gesunde Enzymaktivität: gleichmäßige Gärung und Bräunung.',
+    'flourFind.falling.high': 'Fallzahl {fn} s — wenig Enzymaktivität. Die Gärung schleppt sich, die Kruste bleibt blass; etwas Backmalz oder Zucker hilft.',
+    'flourFit.reason.suits': 'Protein, Hydration und Gärung passen zusammen',
+    'flourFit.reason.protein': 'Protein {val}% statt der gewünschten {lo}–{hi}%',
+    'flourFit.reason.ferment': 'hält ~{maxH} h, der Stil gart {lo}–{hi} h',
+    'flourFit.reason.hydration': 'Fenster {wLo}–{wHi}% statt der gewünschten {lo}–{hi}%',
+    'flourFit.reason.pl': 'P/L {val} statt der gewünschten {lo}–{hi}',
+    'help.analyser': 'Mehltüte oder Datenblatt rein, Einschätzung raus. Das Protein steht auf jeder Tüte; W, P/L, Wasseraufnahme, Asche und Fallzahl findest du auf italienischen und professionellen Datenblättern. Was fehlt, wird aus dem Rest geschätzt — je mehr du einträgst, desto schärfer die Antwort.',
     'doc.title': 'Forno — Pizzateig-Rechner',
   },
 };
@@ -492,7 +590,7 @@ const {
   crustLabelKey, compute, riseModel, proofQualityFn, waterTempFn, batchFn,
   geometryFn, computeAll, buildRisePaths, REF, K, Q10, SALT_REF, TYPE, SURF, FRICTION, V_AXIS,
   EMBER, CONF, GRAPH, DG, PIZZA_PRESETS, OVEN_PRESETS, STYLE_GUIDELINES, TONE, CRUMB_PTS,
-  TOPPINGS, LEOPARD, CRUST_STOPS, SOURCES
+  TOPPINGS, LEOPARD, CRUST_STOPS, SOURCES, analyseFlour, FLOUR_FIELDS
 } = window.DoughEngine;
 const { encodeShareToken } = window.ShareLink;
 
@@ -543,6 +641,31 @@ function useConfigBool(param, def) {
   });
   useEffect(() => { writeParam(param, value === def ? null : (value ? '1' : null)); }, [param, value, def]);
   return [value, setValue];
+}
+
+// The flour analyser's fields follow the same URL-backed contract, with one
+// difference: blank is a real answer there ("the bag doesn't say"), not a
+// missing value falling back to a default — so an empty field drops its
+// param rather than writing one. Values stay strings so a half-typed "12."
+// survives the keystroke it's in the middle of.
+const FLOUR_PARAMS = {};
+FLOUR_FIELDS.forEach((f) => { FLOUR_PARAMS[f.key] = 'f' + f.key[0].toUpperCase() + f.key.slice(1); });
+const EMPTY_FLOUR = {};
+FLOUR_FIELDS.forEach((f) => { EMPTY_FLOUR[f.key] = ''; });
+
+function useFlourFields() {
+  const [vals, setVals] = useState(() => {
+    const out = { ...EMPTY_FLOUR };
+    FLOUR_FIELDS.forEach((f) => {
+      const raw = readParam(FLOUR_PARAMS[f.key]);
+      if (raw != null && raw !== '' && Number.isFinite(Number(raw))) out[f.key] = raw;
+    });
+    return out;
+  });
+  useEffect(() => {
+    FLOUR_FIELDS.forEach((f) => writeParam(FLOUR_PARAMS[f.key], vals[f.key] === '' ? null : vals[f.key]));
+  }, [vals]);
+  return [vals, setVals];
 }
 
 const STYLE_IDS = PIZZA_PRESETS.map((p) => p.id);
@@ -794,6 +917,134 @@ function Pizza({ colour, leopard, protein, proofQuality }) {
   );
 }
 
+// Flour analyser — a bag or spec sheet in, a read on the flour out.
+// Everything here is presentation: analyseFlour does the judging and hands
+// back the same { tone, code, params } verdicts the rest of the app already
+// knows how to colour and translate.
+function FlourAnalyser({ onApply }) {
+  const t = useT();
+  const [vals, setVals] = useFlourFields();
+  const [applied, setApplied] = useState(false);
+  const analysis = useMemo(() => analyseFlour(vals), [vals]);
+  const edit = (key, v) => { setVals((prev) => ({ ...prev, [key]: v })); setApplied(false); };
+  const a = analysis;
+
+  const rows = a ? [
+    { k: 'analyser.row.strength',   v: t('analyser.val.strength', { W: a.W, category: t(a.categoryKey) }), measured: !a.wEstimated },
+    { k: 'analyser.row.pl',         v: a.pl != null ? a.pl.toFixed(2) : t('analyser.val.plUnknown'),       measured: !a.plEstimated },
+    { k: 'analyser.row.absorption', v: t('analyser.val.absorption', { abs: a.absorption }),                measured: !a.absorptionEstimated },
+    { k: 'analyser.row.hydration',  v: t('analyser.val.hydration', { lo: a.hydrLo, hi: a.hydrHi }) },
+    { k: 'analyser.row.capacity',   v: t('analyser.val.capacity', { maxH: Math.round(a.maxHours) }) },
+  ] : [];
+  const strengths = a ? a.findings.filter((f) => f.tone === 'good') : [];
+  const weaknesses = a ? a.findings.filter((f) => f.tone !== 'good') : [];
+
+  const findingList = (items) => (
+    <ul className="fc-fl-list">
+      {items.map((f, i) => (
+        <li key={i}>
+          <span className="fc-dot" style={{ background: TONE[f.tone] }} />
+          <span>{t(f.code, f.params)}</span>
+        </li>
+      ))}
+    </ul>
+  );
+
+  return (
+    <div className="fc-panel fc-analyser">
+      <p className="fc-panel-head">
+        <span>{t('panel.analyser')}</span>
+        <span>{a ? t('analyser.val.strength', { W: a.W, category: t(a.categoryKey) }) : t('analyser.awaiting')}</span>
+      </p>
+      <p className="fc-analyser-lede">{t('analyser.lede')}</p>
+
+      <div className="fc-num-grid">
+        {FLOUR_FIELDS.map((f) => (
+          <label className="fc-num" key={f.key}>
+            <span className="fc-num-label">
+              {t('analyser.field.' + f.key)}{f.required && <b aria-hidden="true">*</b>}
+            </span>
+            <input type="number" inputMode="decimal" min={f.min} max={f.max} step={f.step}
+              value={vals[f.key]} placeholder="—" required={!!f.required}
+              onChange={(e) => edit(f.key, e.target.value)} />
+            <span className="fc-num-hint">{t('analyser.hint.' + f.key)}</span>
+          </label>
+        ))}
+      </div>
+      <Help>{t('help.analyser')}</Help>
+
+      {!a && <p className="fc-analyser-empty">{t('analyser.empty')}</p>}
+
+      {a && (
+        <div className="fc-analyser-out">
+          <p className="fc-analyser-summary">
+            <span className="fc-dot" style={{ background: TONE[a.summary.tone] }} />
+            <span>{t(a.summary.code, { styles: a.bestStyles.map((id) => t('preset.' + id)).join(', ') })}</span>
+          </p>
+
+          <div className="fc-fl-grid">
+            <div>
+              <p className="fc-subhead first">{t('analyser.profile')}</p>
+              <div className="fc-fl-rows">
+                {rows.map((row) => (
+                  <div className="fc-fl-row" key={row.k}>
+                    <span className="fc-fl-k">{t(row.k)}</span>
+                    <span className="fc-fl-v">{row.v}</span>
+                    {row.measured != null && (
+                      <span className="fc-tag" data-measured={row.measured}>
+                        {t(row.measured ? 'analyser.measured' : 'analyser.estimated')}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="fc-subhead first">{t('analyser.fit')}</p>
+              <div className="fc-fl-rows">
+                {a.styleFit.map((f) => (
+                  <div className="fc-fl-fit" key={f.id}>
+                    <span className="fc-dot" style={{ background: TONE[f.tone] }} />
+                    <span className="fc-fl-name">{t('preset.' + f.id)}</span>
+                    <span className="fc-fl-why">{t(f.reasonCode, f.reasonParams)}</span>
+                    <span className="fc-fl-score">{Math.round(f.score * 100)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className={'fc-fl-grid' + (strengths.length && weaknesses.length ? '' : ' one')} style={{ marginTop: '20px' }}>
+            {strengths.length > 0 && (
+              <div>
+                <p className="fc-subhead first">{t('analyser.strengths')}</p>
+                {findingList(strengths)}
+              </div>
+            )}
+            {weaknesses.length > 0 && (
+              <div>
+                <p className="fc-subhead first">{t('analyser.weaknesses')}</p>
+                {findingList(weaknesses)}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="fc-analyser-actions">
+        <button className="fc-chip" data-on={applied} disabled={!a}
+          onClick={() => { if (!a) return; onApply(a.suggest); setApplied(true); }}>
+          {applied ? t('analyser.applied') : t('analyser.apply')}
+        </button>
+        <button className="fc-chip" onClick={() => { setVals({ ...EMPTY_FLOUR }); setApplied(false); }}>
+          {t('analyser.clear')}
+        </button>
+      </div>
+      <p className="fc-analyser-note">{t('analyser.note')}</p>
+    </div>
+  );
+}
+
 function FermentCalculator() {
   const [tempC, setTempC] = useConfigNumber('tempC', 5, 2, 35);
   const [hours, setHours] = useConfigNumber('hours', 24, 2, 96);
@@ -818,6 +1069,7 @@ function FermentCalculator() {
   const [nerdMode, setNerdMode] = useConfigBool('nerd', false);
   const [learn, setLearn] = useConfigBool('learn', false);
   const [simple, setSimple] = useConfigBool('simple', false);
+  const [analyser, setAnalyser] = useConfigBool('analyser', false);
   const [selectedStyle, setSelectedStyle] = useConfigEnum('style', null, STYLE_IDS);
   const [lang, setLang] = useState(initialLang);
   const [shareCopied, setShareCopied] = useState(false);
@@ -877,6 +1129,8 @@ function FermentCalculator() {
     mixMethod: setMixMethod, ballCount: setBallCount, ballWeight: setBallWeight, roomTemp: setRoomTemp,
   };
   const applyPreset = (obj) => Object.entries(obj).forEach(([k, v]) => setters[k] && setters[k](v));
+  // The analyser hands back protein/P/L/hydration already in slider units.
+  const applyFlour = (suggest) => { setProtein(suggest.protein); setPlVal(suggest.plVal); setHydration(suggest.hydration); };
   const presetMatches = (obj) => Object.entries(obj).every(([k, v]) => inputs[k] === v);
 
   // ---- view-only: turn the pure rise model into SVG paths ----
@@ -899,8 +1153,8 @@ function FermentCalculator() {
           min-height:100%; padding:24px 20px 48px; box-sizing:border-box; -webkit-font-smoothing:antialiased;
         }
         .fc-wrap{ max-width:980px; margin:0 auto; }
-        .fc-top{ display:flex; justify-content:space-between; align-items:center; gap:12px; }
-        .fc-toggles{ display:flex; gap:8px; }
+        .fc-top{ display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+        .fc-toggles{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
         .fc-help{ font-size:12px; line-height:1.5; color:var(--ink-soft); margin:-2px 0 18px;
           padding:9px 11px; background:rgba(155,138,163,.10); border-left:2px solid #9b8aa3; border-radius:0 7px 7px 0; }
         .fc-nerd-toggle{ font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.14em;
@@ -1130,6 +1384,55 @@ function FermentCalculator() {
         .fc-guide-range{ font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--ink);
           min-width:72px; flex:none; }
         .fc-guide-note{ font-size:12px; color:var(--ink-soft); }
+
+        /* ── flour analyser ── */
+        .fc-analyser{ margin-top:24px; }
+        .fc-analyser-lede{ font-size:13px; line-height:1.55; color:var(--ink-soft); margin:0 0 20px; max-width:74ch; }
+        .fc-num-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px 18px; }
+        @media (max-width:760px){ .fc-num-grid{ grid-template-columns:repeat(2,1fr); } }
+        @media (max-width:420px){ .fc-num-grid{ grid-template-columns:1fr; } }
+        .fc-num{ display:flex; flex-direction:column; gap:6px; }
+        .fc-num-label{ font-size:13.5px; font-weight:500; color:var(--ink); }
+        .fc-num-label b{ color:#C2641F; font-weight:500; margin-left:2px; }
+        .fc-num input{ font-family:'JetBrains Mono',monospace; font-size:15px; color:var(--ink);
+          background:var(--paper); border:1px solid var(--edge); border-radius:12px;
+          padding:10px 12px; width:100%; outline:none;
+          transition:border-color .2s cubic-bezier(.4,0,.2,1); }
+        .fc-num input:hover{ border-color:var(--ink-soft); }
+        .fc-num input::placeholder{ color:#bfb29a; }
+        .fc-num-hint{ font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--ink-soft); }
+        .fc-analyser-empty{ font-size:13px; color:var(--ink-soft); margin:22px 0 0; padding-top:16px;
+          border-top:1px solid var(--line); }
+        .fc-analyser-out{ margin-top:22px; padding-top:18px; border-top:1px solid var(--line); }
+        .fc-analyser-summary{ display:flex; gap:10px; align-items:baseline; font-size:14.5px;
+          line-height:1.5; color:var(--ink); margin:0 0 20px; }
+        .fc-fl-grid{ display:grid; grid-template-columns:1fr 1.15fr; gap:10px 32px; align-items:start; }
+        @media (max-width:680px){ .fc-fl-grid{ grid-template-columns:1fr; gap:18px; } }
+        .fc-fl-grid.one{ grid-template-columns:1fr; }
+        .fc-fl-rows{ margin-top:-4px; }
+        .fc-fl-row, .fc-fl-fit{ display:flex; align-items:baseline; gap:9px;
+          padding:7px 0; border-bottom:1px solid var(--line); }
+        .fc-fl-row:last-child, .fc-fl-fit:last-child{ border-bottom:none; }
+        .fc-fl-k{ font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.1em;
+          text-transform:uppercase; color:var(--ink-soft); flex:1; }
+        .fc-fl-v{ font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--ink); text-align:right; }
+        .fc-tag{ font-family:'JetBrains Mono',monospace; font-size:8.5px; letter-spacing:.1em;
+          text-transform:uppercase; padding:2px 6px; border-radius:99px; border:1px solid var(--edge);
+          color:var(--ink-soft); flex:none; white-space:nowrap; }
+        .fc-tag[data-measured=true]{ border-color:#4F6E37; color:#4F6E37; }
+        .fc-fl-name{ font-size:13px; font-weight:500; color:var(--ink); min-width:96px; flex:none; }
+        .fc-fl-why{ font-size:12px; line-height:1.4; color:var(--ink-soft); flex:1; }
+        .fc-fl-score{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-soft);
+          flex:none; font-variant-numeric:tabular-nums; }
+        .fc-fl-list{ list-style:none; margin:-4px 0 0; padding:0; }
+        .fc-fl-list li{ display:flex; gap:9px; align-items:baseline; font-size:13px; line-height:1.5;
+          color:var(--ink); padding:7px 0; border-bottom:1px solid var(--line); }
+        .fc-fl-list li:last-child{ border-bottom:none; }
+        .fc-analyser-actions{ display:flex; gap:8px; flex-wrap:wrap; margin-top:20px;
+          padding-top:16px; border-top:1px solid var(--line); }
+        .fc-analyser-actions .fc-chip:disabled{ opacity:.4; cursor:not-allowed; }
+        .fc-analyser-actions .fc-chip:disabled:hover{ border-color:var(--edge); }
+        .fc-analyser-note{ font-size:11.5px; line-height:1.5; color:var(--ink-soft); margin:14px 0 0; max-width:66ch; }
       `}</style>
 
       <div className="fc-wrap">
@@ -1151,6 +1454,7 @@ function FermentCalculator() {
           <div className="fc-toggles">
             <button className="fc-nerd-toggle" data-on={simple} onClick={() => setSimple((v) => !v)}>{t('toggle.simple')}</button>
             <button className="fc-nerd-toggle" data-on={learn} onClick={() => setLearn((v) => !v)}>{t('toggle.learn')}</button>
+            <button className="fc-nerd-toggle" data-on={analyser} onClick={() => setAnalyser((v) => !v)}>{t('toggle.analyser')}</button>
             <button className="fc-nerd-toggle" data-on={nerdMode} onClick={() => setNerdMode((v) => !v)}>{t('toggle.nerd')}</button>
             <button className="fc-nerd-toggle" data-on={shareCopied} onClick={handleShare}>{shareCopied ? t('share.copied') : t('share.button')}</button>
           </div>
@@ -1495,6 +1799,8 @@ function FermentCalculator() {
             </div>
           </div>
         </div>
+
+        {analyser && <FlourAnalyser onApply={applyFlour} />}
 
         {nerdMode && (
           <div className="fc-panel fc-nerd">

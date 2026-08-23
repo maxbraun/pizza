@@ -22,6 +22,10 @@
  *     weak flour over-fermented visibly collapses
  *  3. Bake: oven temp -> bake time (exponential), crust-colour gauge,
  *     leoparding flag at the high-temp / short-time corner
+ *
+ *  Plus one side tool that runs stage 2 the other way round: analyseFlour
+ *  takes what a flour bag or spec sheet prints and returns a profile,
+ *  strengths and weaknesses, and a fit score per pizza style.
  * ------------------------------------------------------------------ */
 
 const REF = { yeastPct: 0.3, hours: 8, tempC: 21 }; // IDY anchor
@@ -270,6 +274,218 @@ function flourProfile(protein, pl) {
   return { W, categoryKey, hydrLo, hydrHi, maxHours };
 }
 
+// ---- flour analyser --------------------------------------------------
+//
+// The bag or spec sheet in, a read on the flour out. Only protein is
+// required: whatever the bag doesn't print is estimated from what it does
+// and flagged `*Estimated`, so a supermarket bag that prints one number
+// still gets an answer while an Italian 00 spec sheet gets a sharper one.
+// Where a value *is* printed it wins over the estimate — W is a direct
+// rheological measurement, protein is only a proxy for one.
+//
+// Same verdict shape as the rest of the engine ({ tone, code, params }),
+// so findings render through the UI's existing StatusRow and translate
+// like everything else.
+
+const W_PER_PROTEIN = 40;   // W ≈ (protein − 6) × 40, as flourProfile has it
+const W_PROTEIN_FLOOR = 6;
+const PL_NEUTRAL = 0.55;    // a printed P/L around here is the balanced middle
+const PL_SPAN = 0.45;       // ±this covers extensible .. elastic
+
+// The style ranges above are written in protein/hydration/hours; P/L is the
+// one dimension they don't cover, so its preference per style lives here.
+const STYLE_PL_RANGE = {
+  neapolitan: [0.50, 0.80],  // hand-stretched, wants a rim that springs
+  ny:         [0.45, 0.75],
+  detroit:    [0.40, 0.65],  // pressed into a pan, no need to fight back
+  roman:      [0.35, 0.60],  // very wet and stretched long — extensible
+  sourdough:  [0.45, 0.70],
+};
+
+// Field bounds for the analyser's inputs; the UI builds its number fields
+// from these so the two can't drift apart.
+const FLOUR_FIELDS = [
+  { key: "protein",       min: 5,   max: 20,  step: 0.1,  required: true },
+  { key: "w",             min: 50,  max: 500, step: 5 },
+  { key: "pl",            min: 0.1, max: 3,   step: 0.05 },
+  { key: "absorption",    min: 40,  max: 90,  step: 0.5 },
+  { key: "ash",           min: 0.2, max: 2.5, step: 0.01 },
+  { key: "fallingNumber", min: 100, max: 600, step: 5 },
+];
+
+function wFromProtein(protein) {
+  return clamp(Math.round((protein - W_PROTEIN_FLOOR) * W_PER_PROTEIN), 60, 400);
+}
+function proteinFromW(W) { return W / W_PER_PROTEIN + W_PROTEIN_FLOOR; }
+
+// A printed P/L (a ratio, typically 0.4–1.0) onto the app's 0–100
+// extensible↔elastic slider, so an analysed flour drops straight into the
+// calculator.
+function plToSlider(pl) {
+  return clamp(Math.round(50 + ((pl - PL_NEUTRAL) / PL_SPAN) * 50), 0, 100);
+}
+
+// Farinograph-style water absorption when the sheet doesn't print it: more
+// protein binds more water, and bran binds a lot more again.
+function absorptionFromFlour(protein, ash) {
+  const bran = ash == null ? 0 : Math.max(0, ash - 0.6) * 6;
+  return clamp(50 + (protein - 8) * 3 + bran, 45, 85);
+}
+
+// 1 inside the range, 0.5 within half its width either side, else 0 — the
+// same near/in/out banding the style-guideline rows use.
+function bandScore(v, lo, hi) {
+  if (v >= lo && v <= hi) return 1;
+  const m = (hi - lo) * 0.5;
+  return v >= lo - m && v <= hi + m ? 0.5 : 0;
+}
+
+// A blank field means "the bag doesn't print this", which is a real answer
+// and not zero — so empty strings read as absent rather than as 0.
+function num(v, lo, hi) {
+  if (v == null || (typeof v === "string" && v.trim() === "")) return null;
+  const n = typeof v === "string" ? Number(v.trim()) : v;
+  return typeof n === "number" && Number.isFinite(n) ? clamp(n, lo, hi) : null;
+}
+
+// Returns null when there's no protein figure to work from — everything
+// else is optional.
+function analyseFlour(input) {
+  const src = input || {};
+  const protein = num(src.protein, 5, 20);
+  if (protein == null) return null;
+  const wGiven = num(src.w, 50, 500);
+  const plGiven = num(src.pl, 0.1, 3);
+  const ash = num(src.ash, 0.2, 2.5);
+  const absGiven = num(src.absorption, 40, 90);
+  const fnGiven = num(src.fallingNumber, 100, 600);
+
+  const W = wGiven != null ? Math.round(wGiven) : wFromProtein(protein);
+  // Strength follows W when the bag prints one; protein only stands in for it.
+  const strengthP = wGiven != null ? proteinFromW(W) : protein;
+  const plSlider = plGiven != null ? plToSlider(plGiven) : 50;
+  const base = flourProfile(strengthP, (plSlider - 50) / 50);
+
+  const absorption = absGiven != null ? absGiven : absorptionFromFlour(protein, ash);
+  // A printed absorption anchors the hydration window; otherwise it comes
+  // off the same protein→hydration curve the calculator uses.
+  const center = absGiven != null ? absGiven : (base.hydrLo + base.hydrHi) / 2;
+  const hydrLo = Math.round(center - 4);
+  const hydrHi = Math.round(center + 4);
+
+  // Strength sets the ferment capacity; bran and amylase both cut it short —
+  // more for the yeast to eat, and a weaker network to hold what it makes.
+  let capacityMult = 1;
+  if (fnGiven != null) capacityMult *= fnGiven < 250 ? 0.8 : fnGiven > 350 ? 1.1 : 1;
+  if (ash != null) capacityMult *= ash > 1.1 ? 0.75 : ash > 0.8 ? 0.88 : 1;
+  const maxHours = clamp(base.maxHours * capacityMult, 4, 120);
+
+  const maxH = Math.round(maxHours);
+  const findings = [];
+  findings.push(
+    W < 170  ? { tone: "warn", code: "flourFind.strength.weak",       params: { W, maxH } }
+  : W < 250  ? { tone: "good", code: "flourFind.strength.medium",     params: { W, maxH } }
+  : W <= 330 ? { tone: "good", code: "flourFind.strength.strong",     params: { W, maxH } }
+  :            { tone: "warn", code: "flourFind.strength.veryStrong", params: { W, maxH } });
+
+  // Both printed and disagreeing: protein quantity and gluten quality are
+  // not the same thing, and W is the one that bakes.
+  if (wGiven != null) {
+    const ratio = W / wFromProtein(protein);
+    if (ratio >= 1.2) findings.push({ tone: "good", code: "flourFind.quality.high", params: { W, protein, expW: wFromProtein(protein) } });
+    else if (ratio <= 0.8) findings.push({ tone: "warn", code: "flourFind.quality.low", params: { W, protein, expW: wFromProtein(protein) } });
+  }
+
+  if (plGiven != null) {
+    const pl = plGiven.toFixed(2);
+    findings.push(
+      plGiven > 0.85  ? { tone: "warn", code: "flourFind.pl.veryElastic", params: { pl } }
+    : plGiven >= 0.65 ? { tone: "good", code: "flourFind.pl.elastic",     params: { pl } }
+    : plGiven >= 0.45 ? { tone: "good", code: "flourFind.pl.balanced",    params: { pl } }
+    :                   { tone: "warn", code: "flourFind.pl.extensible",  params: { pl } });
+  }
+
+  if (absGiven != null) {
+    const predicted = absorptionFromFlour(protein, ash);
+    const p = { abs: Math.round(absGiven), lo: hydrLo, hi: hydrHi };
+    findings.push(
+      absGiven >= predicted + 3 ? { tone: "good", code: "flourFind.absorption.high",    params: p }
+    : absGiven <= predicted - 3 ? { tone: "warn", code: "flourFind.absorption.low",     params: p }
+    :                             { tone: "good", code: "flourFind.absorption.typical", params: p });
+  }
+
+  if (ash != null) {
+    const a = ash.toFixed(2);
+    findings.push(
+      ash <= 0.55 ? { tone: "good", code: "flourFind.ash.fine",      params: { ash: a } }
+    : ash <= 0.80 ? { tone: "good", code: "flourFind.ash.mid",       params: { ash: a } }
+    : ash <= 1.10 ? { tone: "warn", code: "flourFind.ash.high",      params: { ash: a, maxH } }
+    :               { tone: "warn", code: "flourFind.ash.wholemeal", params: { ash: a, maxH } });
+  }
+
+  if (fnGiven != null) {
+    const fn = Math.round(fnGiven);
+    findings.push(
+      fnGiven < 250 ? { tone: "warn", code: "flourFind.falling.low",  params: { fn } }
+    : fnGiven > 350 ? { tone: "warn", code: "flourFind.falling.high", params: { fn } }
+    :                 { tone: "good", code: "flourFind.falling.ok",   params: { fn } });
+  }
+
+  // How well the flour suits each built-in style: protein and P/L against
+  // the style's own ranges, hydration as window overlap, ferment as whether
+  // the flour survives the prove the style asks for.
+  const styleFit = Object.keys(STYLE_GUIDELINES).map((id) => {
+    const rules = {};
+    STYLE_GUIDELINES[id].forEach((rule) => { rules[rule.key] = rule; });
+    const pr = rules.protein, hy = rules.hydration, hr = rules.hours;
+    const overlap = Math.max(0, Math.min(hydrHi, hy.hi) - Math.max(hydrLo, hy.lo));
+    const [plLo, plHi] = STYLE_PL_RANGE[id];
+    const parts = [
+      { key: "protein",   weight: 0.3, score: bandScore(protein, pr.lo, pr.hi),
+        params: { val: protein, lo: pr.lo, hi: pr.hi } },
+      { key: "ferment",   weight: 0.3, score: maxHours >= hr.hi ? 1 : maxHours >= hr.lo ? 0.5 : 0,
+        params: { maxH, lo: hr.lo, hi: hr.hi } },
+      { key: "hydration", weight: 0.2, score: overlap >= (hy.hi - hy.lo) * 0.5 ? 1 : overlap > 0 ? 0.5 : 0,
+        params: { wLo: hydrLo, wHi: hydrHi, lo: hy.lo, hi: hy.hi } },
+    ];
+    if (plGiven != null) parts.push({ key: "pl", weight: 0.2, score: bandScore(plGiven, plLo, plHi),
+      params: { val: plGiven.toFixed(2), lo: plLo.toFixed(2), hi: plHi.toFixed(2) } });
+    const wSum = parts.reduce((a, p) => a + p.weight, 0);
+    const score = parts.reduce((a, p) => a + p.score * p.weight, 0) / wSum;
+    const tone = score >= 0.8 ? "good" : score >= 0.5 ? "warn" : "bad";
+    const weakest = parts.reduce((a, p) => (p.score < a.score ? p : a), parts[0]);
+    const strong = score >= 0.8;
+    return {
+      id, score, tone,
+      reasonCode: strong ? "flourFit.reason.suits" : "flourFit.reason." + weakest.key,
+      reasonParams: strong ? {} : weakest.params,
+    };
+  }).sort((a, b) => b.score - a.score);
+
+  const bestStyles = styleFit.filter((s) => s.tone === "good").map((s) => s.id);
+  const summary = bestStyles.length
+    ? { tone: "good", code: "flourSummary.good" }
+    : styleFit[0].score >= 0.5
+      ? { tone: "warn", code: "flourSummary.mixed" }
+      : { tone: "bad", code: "flourSummary.weak" };
+
+  return {
+    protein, W, wEstimated: wGiven == null,
+    pl: plGiven, plSlider, plEstimated: plGiven == null,
+    absorption: Math.round(absorption), absorptionEstimated: absGiven == null,
+    ash, fallingNumber: fnGiven,
+    categoryKey: base.categoryKey,
+    hydrLo, hydrHi, maxHours,
+    findings, styleFit, bestStyles, summary,
+    // What to push into the calculator's own sliders, in their units/steps.
+    suggest: {
+      protein: clamp(Math.round(protein * 2) / 2, 8, 15),
+      plVal: plSlider,
+      hydration: clamp(Math.round(center), 50, 85),
+    },
+  };
+}
+
 function hydrationVerdict(hydration, fp) {
   if (hydration > fp.hydrHi + 2) return { tone: "bad", code: "verdict.hydration.high", params: {} };
   if (hydration > fp.hydrHi) return { tone: "warn", code: "verdict.hydration.wet", params: {} };
@@ -454,6 +670,11 @@ const __ENGINE__ = {
   mulberry32,
   lerpStops,
   flourProfile,
+  analyseFlour,
+  wFromProtein,
+  plToSlider,
+  absorptionFromFlour,
+  bandScore,
   hydrationVerdict,
   fermentVerdict,
   overProofRecommendations,
@@ -486,6 +707,8 @@ const __ENGINE__ = {
   PIZZA_PRESETS,
   OVEN_PRESETS,
   STYLE_GUIDELINES,
+  STYLE_PL_RANGE,
+  FLOUR_FIELDS,
   TONE,
   CRUMB_PTS,
   TOPPINGS,
