@@ -7,6 +7,8 @@ const assert = require('node:assert/strict');
 
 const {
   clamp,
+  fermentStages,
+  fermentProfile,
   flourProfile,
   hydrationVerdict,
   fermentVerdict,
@@ -25,7 +27,7 @@ const {
   geometryFn,
   computeAll,
   buildRisePaths,
-  REF, K, Q10, SALT_REF, TYPE, SURF, FRICTION,
+  REF, K, Q10, Q10_MATURE, TRANSITION_H, SALT_REF, TYPE, SURF, FRICTION,
 } = require('./doughEngine.js');
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -38,12 +40,20 @@ function near(actual, expected, delta = 0.01, msg) {
   assert.ok(diff <= delta, `${msg ?? ''} expected ${actual} ≈ ${expected} (±${delta}), diff=${diff.toFixed(4)}`);
 }
 
-// Default inputs that match the Q10 anchor (21 °C, 8 h, IDY, 2.5% salt)
+// Single-zone profile at a steady temperature (dough starts at that temp,
+// so no equilibration segment — both clocks run linearly)
+const constProf = (hours, tempC = 21) => fermentProfile([{ tempC, hours }], tempC);
+// Profile exactly as computeAll builds it from calculator inputs
+const profFor = (inp) => fermentProfile(fermentStages(inp), inp.ddt);
+
+// Default inputs that match the Q10 anchor (21 °C, 8 h, IDY, 2.5% salt).
+// ddt equals tempC so no mix→ferment equilibration segment kicks in and
+// the anchor arithmetic stays exact.
 const BASE = {
   tempC: 21, hours: 8, protein: 12, plVal: 50,
   hydration: 60, salt: 2.5, oilPct: 0, sugarPct: 0,
   leavening: 'commercial', yeastType: 'idy', starterStr: 50,
-  preferment: 'straight', roomTemp: 20, ddt: 24,
+  preferment: 'straight', roomTemp: 20, ddt: 21,
   mixMethod: 'hand', doughWeight: 1000,
   ovenC: 250, surface: 'steel',
 };
@@ -139,15 +149,105 @@ describe('fermentVerdict', () => {
   const fp = flourProfile(12, 0); // maxHours = 24
 
   test('well inside capacity → good', () => {
-    assert.equal(fermentVerdict(12, fp).tone, 'good');
+    assert.equal(fermentVerdict(constProf(12), fp).tone, 'good');
   });
 
   test('slightly over → warn', () => {
-    assert.equal(fermentVerdict(fp.maxHours + 1, fp).tone, 'warn');
+    assert.equal(fermentVerdict(constProf(fp.maxHours + 1), fp).tone, 'warn');
   });
 
   test('more than 25% over → bad', () => {
-    assert.equal(fermentVerdict(Math.ceil(fp.maxHours * 1.26), fp).tone, 'bad');
+    assert.equal(fermentVerdict(constProf(Math.ceil(fp.maxHours * 1.26)), fp).tone, 'bad');
+  });
+
+  test('at 21 °C the reported capacity is maxHours itself', () => {
+    assert.equal(fermentVerdict(constProf(12), fp).params.m, Math.round(fp.maxHours));
+  });
+
+  test('cold schedule spends capacity slowly → same wall-clock hours stay good', () => {
+    // 30 h would exceed maxHours=24 at room temp, but at 4 °C the maturation
+    // clock runs at ~0.4×, so the same wall-clock time reads comfortable
+    assert.equal(fermentVerdict(constProf(30, 21), fp).tone, 'warn');
+    assert.equal(fermentVerdict(constProf(30, 4), fp).tone, 'good');
+  });
+
+  test('reported wall-clock capacity stretches in the fridge', () => {
+    const warm = fermentVerdict(constProf(12, 21), fp).params.m;
+    const cold = fermentVerdict(constProf(12, 4), fp).params.m;
+    assert.ok(cold > warm, `cold capacity ${cold}h should exceed warm ${warm}h`);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// fermentProfile — two-zone schedules and the two clocks
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('fermentProfile', () => {
+  test('steady 21 °C: both clocks equal wall-clock time', () => {
+    const p = constProf(8, 21);
+    near(p.gasUnits, 8, 1e-9);
+    near(p.matureUnits, 8, 1e-9);
+    near(p.gasAt(3), 3, 1e-9);
+    near(p.matureAt(3), 3, 1e-9);
+  });
+
+  test('splitting a steady-temperature schedule changes nothing', () => {
+    const whole = fermentProfile([{ tempC: 21, hours: 8 }], 21);
+    const split = fermentProfile([{ tempC: 21, hours: 6 }, { tempC: 21, hours: 2 }], 21);
+    near(split.gasUnits, whole.gasUnits, 1e-9);
+    near(split.matureUnits, whole.matureUnits, 1e-9);
+  });
+
+  test('gas clock follows Q10 at a steady temperature', () => {
+    const p = constProf(10, 11); // 10° below anchor
+    near(p.gasUnits, 10 / Q10, 1e-9, 'Q10 slowdown');
+    near(constProf(10, 31).gasUnits, 10 * Q10, 1e-9, 'Q10 speedup');
+  });
+
+  test('maturation clock runs on the flatter Q10_MATURE', () => {
+    const p = constProf(10, 11);
+    near(p.matureUnits, 10 / Q10_MATURE, 1e-9);
+  });
+
+  test('in the cold the maturation clock outpaces the gas clock', () => {
+    const p = constProf(48, 4);
+    assert.ok(p.matureUnits > p.gasUnits, 'enzymes slow less than yeast in the fridge');
+    assert.ok(p.matureUnits < 48, 'but still slower than the wall clock');
+  });
+
+  test('warm dough entering the fridge earns a cool-down credit', () => {
+    const equilibrated = fermentProfile([{ tempC: 4, hours: 24 }], 4);
+    const offTheMixer  = fermentProfile([{ tempC: 4, hours: 24 }], 24);
+    assert.ok(offTheMixer.gasUnits > equilibrated.gasUnits,
+      'first hours ferment above fridge temperature while the core cools');
+  });
+
+  test('a ball proof entered cold contributes less than its face value', () => {
+    const bulkOnly = fermentProfile([{ tempC: 4, hours: 46 }], 24);
+    const twoStage = fermentProfile([{ tempC: 4, hours: 46 }, { tempC: 21, hours: 2 }], 24);
+    const stage2 = twoStage.gasUnits - bulkOnly.gasUnits;
+    assert.ok(stage2 > 0, 'warm stage adds budget');
+    assert.ok(stage2 < 2, `2 h at nominal 21 °C after the fridge is worth <2 h at 21 °C (got ${stage2.toFixed(2)})`);
+  });
+
+  test('wallAtMature inverts matureAt, including past the schedule end', () => {
+    const p = fermentProfile([{ tempC: 4, hours: 46 }, { tempC: 21, hours: 2 }], 24);
+    for (const x of [1, 10, 30, 47, 60]) near(p.wallAtMature(p.matureAt(x)), x, 1e-6, `t=${x}`);
+  });
+
+  test('interior stage boundaries are reported in wall-clock hours', () => {
+    const p = fermentProfile([{ tempC: 4, hours: 46 }, { tempC: 21, hours: 2 }], 24);
+    assert.deepEqual(p.boundaries, [46]);
+    assert.deepEqual(constProf(8).boundaries, []);
+  });
+
+  test('endTemp: a full warm ball stage takes the chill off, a cold-only schedule does not', () => {
+    const twoStage = fermentProfile([{ tempC: 4, hours: 46 }, { tempC: 21, hours: TRANSITION_H }], 24);
+    near(twoStage.endTemp, 21, 0.01);
+    const coldOnly = fermentProfile([{ tempC: 4, hours: 48 }], 24);
+    near(coldOnly.endTemp, 4, 0.01);
+    const briefBalls = fermentProfile([{ tempC: 4, hours: 46 }, { tempC: 21, hours: 1 }], 24);
+    assert.ok(briefBalls.endTemp > 4 && briefBalls.endTemp < 21, 'half the window → mid warm-up');
   });
 });
 
@@ -172,12 +272,31 @@ describe('Q10 yeast model', () => {
   });
 
   test('warmer temperature reduces yeast needed (Q10 > 1)', () => {
-    // Use exactly 10°C apart so the ratio = Q10^1
-    const cold = compute({ ...BASE, tempC: 16 });
-    const warm = compute({ ...BASE, tempC: 26 });
+    // Use exactly 10°C apart, dough mixed to ferment temp so no equilibration
+    const cold = compute({ ...BASE, tempC: 16, ddt: 16 });
+    const warm = compute({ ...BASE, tempC: 26, ddt: 26 });
     assert.ok(warm.idyPct < cold.idyPct, 'warmer needs less yeast');
-    // Q10=2.5 means +10°C → 2.5× faster yeast → 1/2.5 as much yeast
+    // Q10=3 means +10°C → 3× faster yeast → 1/3 as much yeast
     near(warm.idyPct, cold.idyPct / Q10, 0.001, 'exact Q10 ratio');
+  });
+
+  test('two-zone dose divides by the summed budget of both stages', () => {
+    const inp = { ...BASE, tempC: 4, ddt: 4, hours: 46, split: true, temp2C: 21, hours2: 2 };
+    const r = compute(inp);
+    const p = profFor(inp);
+    near(r.idyPct, K / p.gasUnits, 0.0001, 'idy = K / gas budget at 2.5% salt');
+  });
+
+  test('adding a warm ball stage after the fridge lowers the dose', () => {
+    const bulkOnly = compute({ ...BASE, tempC: 4, hours: 46 });
+    const twoStage = compute({ ...BASE, tempC: 4, hours: 46, split: true, temp2C: 21, hours2: 2 });
+    assert.ok(twoStage.idyPct < bulkOnly.idyPct, 'extra warm hours = more budget = less yeast');
+  });
+
+  test('split flag without hours2 falls back to a single stage', () => {
+    const single = compute({ ...BASE });
+    const noBall = compute({ ...BASE, split: true, temp2C: 21, hours2: 0 });
+    near(noBall.idyPct, single.idyPct, 1e-9);
   });
 
   test('more salt slows yeast (exponential suppression)', () => {
@@ -313,29 +432,29 @@ describe('batchFn', () => {
 
 describe('riseModel', () => {
   test('rise at t=0 is close to 100% (not yet started)', () => {
-    const m = riseModel(21, 8, 12);
+    const m = riseModel(constProf(8), 12);
     near(m.vAt(0), 100, 2, 'rise at t=0');
   });
 
   test('rise at target hours > 100%', () => {
-    const m = riseModel(21, 8, 12);
+    const m = riseModel(constProf(8), 12);
     assert.ok(m.vAt(8) > 100, `rise at 8h = ${m.vAt(8).toFixed(1)}%`);
   });
 
   test('peak rise Arise scales with protein', () => {
-    const low  = riseModel(21, 8, 10);
-    const high = riseModel(21, 8, 14);
+    const low  = riseModel(constProf(8), 10);
+    const high = riseModel(constProf(8), 14);
     assert.ok(high.Arise > low.Arise, 'stronger flour → higher peak rise');
   });
 
   test('warmer temperature shortens lag (lagFrac decreases)', () => {
-    const cold = riseModel(4,  24, 12);
-    const warm = riseModel(24, 24, 12);
+    const cold = riseModel(constProf(24, 4),  12);
+    const warm = riseModel(constProf(24, 24), 12);
     assert.ok(warm.lambda < cold.lambda, 'warm → shorter lag');
   });
 
   test('dough collapses after maxHours at t > maxHours', () => {
-    const m = riseModel(21, 8, 9); // protein=9, maxHours≈8 (clamped)
+    const m = riseModel(constProf(8), 9); // protein=9, maxHours≈8 (clamped)
     // At well past maxHours, dough should have decayed
     const atMax  = m.vAt(m.maxHours);
     const atOver = m.vAt(m.maxHours * 2);
@@ -343,9 +462,36 @@ describe('riseModel', () => {
   });
 
   test('collapses flag set when target hours > maxHours', () => {
-    const fp = flourProfile(9, 0); // maxHours=8
-    const m  = riseModel(21, 20, 9); // hours=20 >> maxHours=8
+    const m = riseModel(constProf(20), 9); // hours=20 >> maxHours=8
     assert.ok(m.collapses, 'should flag collapse');
+  });
+
+  test('dose and curve agree: the dough finishes proving at the schedule end', () => {
+    // Whatever the schedule, gasUnits is the budget the yeast dose was sized
+    // for, so the curve should be near its plateau exactly at totalHours
+    for (const p of [constProf(8, 21), fermentProfile([{ tempC: 4, hours: 46 }, { tempC: 21, hours: 2 }], 24)]) {
+      const m = riseModel(p, 13);
+      const frac = (m.vAt(p.totalHours) - 100) / m.Arise;
+      assert.ok(frac > 0.9, `rise at schedule end = ${(frac * 100).toFixed(0)}% of peak`);
+    }
+  });
+
+  test('two-zone curve: the fridge stretches the sigmoid flat, the warm stage steepens it', () => {
+    // Same budget spent all-warm vs cold-bulk-first: halfway through the
+    // wall clock the cold schedule has risen far less
+    const coldSplit = riseModel(fermentProfile([{ tempC: 4, hours: 46 }, { tempC: 21, hours: 2 }], 24), 13);
+    const halfway = (coldSplit.vAt(24) - 100) / (coldSplit.vAt(48) - 100);
+    const warm = riseModel(constProf(8, 21), 13);
+    const warmHalf = (warm.vAt(4) - 100) / (warm.vAt(8) - 100);
+    assert.ok(Number.isFinite(halfway) && halfway > 0 && halfway < 1);
+    assert.ok(Number.isFinite(warmHalf));
+    // and the curve keeps climbing through the warm ball stage
+    assert.ok(coldSplit.vAt(48) > coldSplit.vAt(46), 'ball stage adds rise');
+  });
+
+  test('boundaries pass through for the view', () => {
+    const m = riseModel(fermentProfile([{ tempC: 4, hours: 46 }, { tempC: 21, hours: 2 }], 24), 13);
+    assert.deepEqual(m.boundaries, [46]);
   });
 });
 
@@ -429,38 +575,42 @@ describe('bakeProfile', () => {
 
 describe('digestScore', () => {
   test('output is in [5, 99]', () => {
-    for (const [h, t, l, p] of [
-      [2, 25, 'commercial', 'straight'],
-      [72, 4, 'sourdough', 'poolish'],
-      [8, 21, 'commercial', 'biga'],
+    for (const [u, l, p] of [
+      [2, 'commercial', 'straight'],
+      [72, 'sourdough', 'poolish'],
+      [8, 'commercial', 'biga'],
     ]) {
-      const d = digestScore(h, t, l, p);
-      assert.ok(d >= 5 && d <= 99, `digestScore(${h},${t},${l},${p})=${d}`);
+      const d = digestScore(u, l, p);
+      assert.ok(d >= 5 && d <= 99, `digestScore(${u},${l},${p})=${d}`);
     }
   });
 
   test('sourdough boosts score by 22', () => {
-    const com = digestScore(8, 21, 'commercial', 'straight');
-    const sd  = digestScore(8, 21, 'sourdough',  'straight');
+    const com = digestScore(8, 'commercial', 'straight');
+    const sd  = digestScore(8, 'sourdough',  'straight');
     assert.equal(sd - com, 22);
   });
 
-  test('cold ferment boosts score by 8', () => {
-    const warm = digestScore(8, 21, 'commercial', 'straight');
-    const cold = digestScore(8, 5,  'commercial', 'straight');
-    assert.equal(cold - warm, 8);
-  });
-
   test('preferment boosts score by 8', () => {
-    const straight = digestScore(8, 21, 'commercial', 'straight');
-    const poolish  = digestScore(8, 21, 'commercial', 'poolish');
+    const straight = digestScore(8, 'commercial', 'straight');
+    const poolish  = digestScore(8, 'commercial', 'poolish');
     assert.equal(poolish - straight, 8);
   });
 
-  test('longer fermentation increases score', () => {
-    const short = digestScore(4, 21,  'commercial', 'straight');
-    const long  = digestScore(48, 21, 'commercial', 'straight');
-    assert.ok(long > short, 'longer prove → higher digestibility');
+  test('more maturation-clock time increases score', () => {
+    const short = digestScore(4,  'commercial', 'straight');
+    const long  = digestScore(48, 'commercial', 'straight');
+    assert.ok(long > short, 'longer maturation → higher digestibility');
+  });
+
+  test('for the same rise, cold fermentation digests better (enzyme clock outpaces gas clock)', () => {
+    // 48 h at 4 °C spends about the same gas budget as ~7.4 h at 21 °C, but
+    // banks far more maturation-clock time
+    const cold = constProf(48, 4);
+    const warm = constProf(cold.gasUnits, 21); // equal rise budget
+    assert.ok(digestScore(cold.matureUnits, 'commercial', 'straight')
+            > digestScore(warm.matureUnits, 'commercial', 'straight'),
+      'cold wins per unit of rise');
   });
 });
 
@@ -540,9 +690,54 @@ describe('computeAll — long cold NY slice', () => {
       `48h=${M.r.grams.toFixed(3)}g should be < 24h=${shorter.r.grams.toFixed(3)}g`);
   });
   test('no leoparding at 300 °C', () => assert.ok(!M.bake.leopard));
-  test('digestibility boosted by cold', () => {
-    const warmM = computeAll({ ...inp, tempC: 21 });
-    assert.ok(M.digest > warmM.digest, 'cold ferment → higher digestibility');
+  test('48 h cold digests like its maturation-clock equivalent, and beats a same-rise warm dough', () => {
+    // wall-clock parity no longer favours cold (the linked digestibility study
+    // tracks time at temperature), but at equal rise budget cold still wins
+    const sameRiseWarm = computeAll({ ...inp, tempC: 21, ddt: 21, hours: Math.round(M.profile.gasUnits) });
+    assert.ok(M.digest > sameRiseWarm.digest, 'cold banks more enzyme time per unit of rise');
+  });
+  test('cold single-stage schedule flags the missing warm-up', () => {
+    assert.ok(M.verdicts.warmup, 'dough would hit the bench at fridge temp');
+    assert.equal(M.verdicts.warmup.tone, 'warn');
+  });
+});
+
+describe('computeAll — two-stage NY preset (fridge bulk + room-temp ball proof)', () => {
+  const inp = {
+    tempC: 4, hours: 46, split: true, temp2C: 21, hours2: 2,
+    protein: 13, plVal: 50,
+    hydration: 63, salt: 2, oilPct: 2.5, sugarPct: 1,
+    leavening: 'commercial', yeastType: 'idy', preferment: 'straight',
+    ovenC: 300, surface: 'steel', ddt: 24,
+    roomTemp: 20, mixMethod: 'hand', doughWeight: 1000, starterStr: 50,
+  };
+  const M = computeAll(inp);
+
+  test('ferment verdict is good — the maturation clock, not the wall clock, spends capacity', () => {
+    assert.equal(M.verdicts.ferment.tone, 'good');
+    assert.ok(M.verdicts.ferment.params.m > 48, 'wall-clock capacity exceeds the schedule');
+  });
+  test('no over-proof panel for a standard 48 h NY schedule', () => {
+    assert.equal(M.overProof, null);
+  });
+  test('proof quality is full', () => assert.equal(M.proof, 1));
+  test('warm ball stage clears the warm-up flag', () => {
+    assert.equal(M.verdicts.warmup, null);
+  });
+  test('dose sits in the professional 0.2–0.7% IDY window', () => {
+    assert.ok(M.r.idyPct > 0.2 && M.r.idyPct < 0.7, `idyPct=${M.r.idyPct.toFixed(3)}`);
+  });
+  test('needs less yeast than pricing the whole 48 h at fridge temperature', () => {
+    const allCold = computeAll({ ...inp, split: false, hours: 48 });
+    assert.ok(M.r.idyPct < allCold.r.idyPct, 'the warm stage contributes budget');
+  });
+  test('rise curve exposes the bulk→ball boundary', () => {
+    assert.deepEqual(M.rise.boundaries, [46]);
+  });
+  test('reversed hybrid (warm bulk, cold balls) also computes sanely', () => {
+    const rev = computeAll({ ...inp, tempC: 21, hours: 7, temp2C: 4, hours2: 12 });
+    assert.ok(rev.r.idyPct > 0 && Number.isFinite(rev.r.idyPct));
+    assert.ok(rev.verdicts.warmup, 'ending cold still flags the warm-up');
   });
 });
 
@@ -726,12 +921,23 @@ describe('geometryFn', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('buildRisePaths', () => {
-  const m   = riseModel(21, 8, 12);
+  const m   = riseModel(constProf(8), 12);
   const pad = { l: 40, r: 20, t: 20, b: 30 };
   const P   = buildRisePaths(m, 400, 200, pad, 260);
 
   test('returns required keys: line, area, target, lagX, baselineY', () => {
     assert.ok('line' in P && 'area' in P && 'target' in P && 'lagX' in P && 'baselineY' in P);
+  });
+
+  test('single-stage schedule yields no boundary markers', () => {
+    assert.deepEqual(P.boundaryXs, []);
+  });
+
+  test('two-stage schedule yields one boundary marker inside the plot', () => {
+    const m2 = riseModel(fermentProfile([{ tempC: 4, hours: 46 }, { tempC: 21, hours: 2 }], 24), 13);
+    const P2 = buildRisePaths(m2, 400, 200, pad, 260);
+    assert.equal(P2.boundaryXs.length, 1);
+    assert.ok(P2.boundaryXs[0] > pad.l && P2.boundaryXs[0] < 400 - pad.r);
   });
   test('line SVG path starts with M (moveto)', () => {
     assert.ok(P.line.trim().startsWith('M'), `line starts with: ${P.line.slice(0, 5)}`);
@@ -755,109 +961,120 @@ describe('overProofRecommendations', () => {
   // protein=12, maxHours=24
   const fp12 = flourProfile(12, 0);
 
+  // ddt 21 = tempC 21 → no equilibration segment, so at 21 °C the maturation
+  // clock equals the wall clock and the old threshold arithmetic holds exactly
   const baseInp = { ...BASE, protein: 12, tempC: 21, salt: 2.5, preferment: 'straight', hydration: 60 };
+  const op = (inp, fp) => overProofRecommendations(inp, fp, profFor(inp));
 
   test('returns null when raw < 0.8 (hours well under capacity)', () => {
-    const r = overProofRecommendations({ ...baseInp, hours: 10 }, fp12); // 10/24 ≈ 0.42
-    assert.equal(r, null);
+    assert.equal(op({ ...baseInp, hours: 10 }, fp12), null); // 10/24 ≈ 0.42
   });
 
   test('returns null at exactly 79% of capacity', () => {
-    const r = overProofRecommendations({ ...baseInp, hours: 19 }, fp12); // 19/24 ≈ 0.79
-    assert.equal(r, null);
+    assert.equal(op({ ...baseInp, hours: 19 }, fp12), null); // 19/24 ≈ 0.79
   });
 
   test('caution severity at 80–99% of capacity', () => {
-    const op = overProofRecommendations({ ...baseInp, hours: 20 }, fp12); // 20/24 ≈ 0.83
-    assert.equal(op.severity, 'caution');
-    assert.equal(op.labelCode, 'overproof.caution');
+    const o = op({ ...baseInp, hours: 20 }, fp12); // 20/24 ≈ 0.83
+    assert.equal(o.severity, 'caution');
+    assert.equal(o.labelCode, 'overproof.caution');
   });
 
   test('warn severity at 100–124% of capacity', () => {
-    const op = overProofRecommendations({ ...baseInp, hours: 26 }, fp12); // 26/24 ≈ 1.08
-    assert.equal(op.severity, 'warn');
-    assert.equal(op.labelCode, 'overproof.warn');
+    const o = op({ ...baseInp, hours: 26 }, fp12); // 26/24 ≈ 1.08
+    assert.equal(o.severity, 'warn');
+    assert.equal(o.labelCode, 'overproof.warn');
   });
 
   test('bad severity at ≥125% of capacity', () => {
-    const op = overProofRecommendations({ ...baseInp, hours: 32 }, fp12); // 32/24 ≈ 1.33
-    assert.equal(op.severity, 'bad');
-    assert.equal(op.labelCode, 'overproof.bad');
+    const o = op({ ...baseInp, hours: 32 }, fp12); // 32/24 ≈ 1.33
+    assert.equal(o.severity, 'bad');
+    assert.equal(o.labelCode, 'overproof.bad');
   });
 
-  test('raw field equals hours / maxHours', () => {
-    const op = overProofRecommendations({ ...baseInp, hours: 20 }, fp12);
-    near(op.raw, 20 / 24, 0.001, 'raw = hours / maxHours');
+  test('raw field equals maturation units / maxHours (= hours/maxHours at 21 °C)', () => {
+    const o = op({ ...baseInp, hours: 20 }, fp12);
+    near(o.raw, 20 / 24, 0.001, 'raw = matureUnits / maxHours');
   });
 
   test('why text mentions headroom when below capacity', () => {
-    const op = overProofRecommendations({ ...baseInp, hours: 20 }, fp12);
-    assert.equal(op.whyCode, 'overproof.why.near');
-    assert.ok(op.whyParams.headroom > 0, JSON.stringify(op.whyParams));
+    const o = op({ ...baseInp, hours: 20 }, fp12);
+    assert.equal(o.whyCode, 'overproof.why.near');
+    assert.ok(o.whyParams.headroom > 0, JSON.stringify(o.whyParams));
   });
 
   test('why text mentions collapsing when at/over capacity', () => {
-    const op = overProofRecommendations({ ...baseInp, hours: 26 }, fp12);
-    assert.equal(op.whyCode, 'overproof.why.over');
+    const o = op({ ...baseInp, hours: 26 }, fp12);
+    assert.equal(o.whyCode, 'overproof.why.over');
+  });
+
+  test('moving the same wall-clock hours into the fridge dissolves the warning', () => {
+    // 26 h at 21 °C is over capacity; 26 h at 8 °C spends only ~13 maturation
+    // hours, so the panel disappears entirely
+    assert.notEqual(op({ ...baseInp, hours: 26 }, fp12), null);
+    assert.equal(op({ ...baseInp, hours: 26, tempC: 8, ddt: 8 }, fp12), null);
   });
 
   // ── lever conditions ──
 
   test('protein lever appears when protein < 13', () => {
-    const op = overProofRecommendations({ ...baseInp, hours: 26, protein: 12 }, fp12);
-    assert.ok(op.levers.some(l => l.kCode === 'overproof.lever.proteinKey'));
+    const o = op({ ...baseInp, hours: 26, protein: 12 }, fp12);
+    assert.ok(o.levers.some(l => l.kCode === 'overproof.lever.proteinKey'));
   });
 
   test('protein lever absent when protein >= 13', () => {
     const fp13 = flourProfile(13, 0);
-    const op   = overProofRecommendations({ ...baseInp, hours: 40, protein: 13 }, fp13);
-    assert.ok(!op.levers.some(l => l.kCode === 'overproof.lever.proteinKey'));
+    const o    = op({ ...baseInp, hours: 40, protein: 13 }, fp13);
+    assert.ok(!o.levers.some(l => l.kCode === 'overproof.lever.proteinKey'));
   });
 
-  test('temperature lever appears when tempC > 10', () => {
-    const op = overProofRecommendations({ ...baseInp, hours: 26, tempC: 20 }, fp12);
-    assert.ok(op.levers.some(l => l.kCode === 'overproof.lever.temperatureKey'));
+  test('temperature lever appears when the schedule mean temp > 10', () => {
+    const o = op({ ...baseInp, hours: 26, tempC: 20 }, fp12);
+    assert.ok(o.levers.some(l => l.kCode === 'overproof.lever.temperatureKey'));
   });
 
-  test('temperature lever absent when tempC <= 10', () => {
-    const op = overProofRecommendations({ ...baseInp, hours: 26, tempC: 8 }, fp12);
-    assert.ok(!op.levers.some(l => l.kCode === 'overproof.lever.temperatureKey'));
+  test('temperature lever absent when the schedule mean temp <= 10', () => {
+    // long enough in the cold that the panel still shows, but the dough is
+    // already cold — no point advising a colder ferment
+    const o = op({ ...baseInp, hours: 45, tempC: 8, ddt: 8 }, fp12);
+    assert.notEqual(o, null);
+    assert.ok(!o.levers.some(l => l.kCode === 'overproof.lever.temperatureKey'));
   });
 
   test('salt lever appears when salt < 2.5', () => {
-    const op = overProofRecommendations({ ...baseInp, hours: 26, salt: 2.0 }, fp12);
-    assert.ok(op.levers.some(l => l.kCode === 'overproof.lever.saltKey'));
+    const o = op({ ...baseInp, hours: 26, salt: 2.0 }, fp12);
+    assert.ok(o.levers.some(l => l.kCode === 'overproof.lever.saltKey'));
   });
 
   test('salt lever absent when salt >= 2.5', () => {
-    const op = overProofRecommendations({ ...baseInp, hours: 26, salt: 2.5 }, fp12);
-    assert.ok(!op.levers.some(l => l.kCode === 'overproof.lever.saltKey'));
+    const o = op({ ...baseInp, hours: 26, salt: 2.5 }, fp12);
+    assert.ok(!o.levers.some(l => l.kCode === 'overproof.lever.saltKey'));
   });
 
   test('time lever is always present', () => {
-    const op = overProofRecommendations({ ...baseInp, hours: 26 }, fp12);
-    assert.ok(op.levers.some(l => l.kCode === 'overproof.lever.timeKey'));
+    const o = op({ ...baseInp, hours: 26 }, fp12);
+    assert.ok(o.levers.some(l => l.kCode === 'overproof.lever.timeKey'));
   });
 
   test('preferment lever appears for straight dough', () => {
-    const op = overProofRecommendations({ ...baseInp, hours: 26, preferment: 'straight' }, fp12);
-    assert.ok(op.levers.some(l => l.kCode === 'overproof.lever.prefermentKey'));
+    const o = op({ ...baseInp, hours: 26, preferment: 'straight' }, fp12);
+    assert.ok(o.levers.some(l => l.kCode === 'overproof.lever.prefermentKey'));
   });
 
   test('preferment lever absent for biga or poolish', () => {
-    const opBiga   = overProofRecommendations({ ...baseInp, hours: 26, preferment: 'biga' },   fp12);
-    const opPoolish = overProofRecommendations({ ...baseInp, hours: 26, preferment: 'poolish' }, fp12);
-    assert.ok(!opBiga.levers.some(l => l.kCode === 'overproof.lever.prefermentKey'));
-    assert.ok(!opPoolish.levers.some(l => l.kCode === 'overproof.lever.prefermentKey'));
+    const oBiga    = op({ ...baseInp, hours: 26, preferment: 'biga' },    fp12);
+    const oPoolish = op({ ...baseInp, hours: 26, preferment: 'poolish' }, fp12);
+    assert.ok(!oBiga.levers.some(l => l.kCode === 'overproof.lever.prefermentKey'));
+    assert.ok(!oPoolish.levers.some(l => l.kCode === 'overproof.lever.prefermentKey'));
   });
 
   test('hydration lever appears when hydration > 68', () => {
-    const op = overProofRecommendations({ ...baseInp, hours: 26, hydration: 70 }, fp12);
-    assert.ok(op.levers.some(l => l.kCode === 'overproof.lever.hydrationKey'));
+    const o = op({ ...baseInp, hours: 26, hydration: 70 }, fp12);
+    assert.ok(o.levers.some(l => l.kCode === 'overproof.lever.hydrationKey'));
   });
 
   test('hydration lever absent when hydration <= 68', () => {
-    const op = overProofRecommendations({ ...baseInp, hours: 26, hydration: 65 }, fp12);
-    assert.ok(!op.levers.some(l => l.kCode === 'overproof.lever.hydrationKey'));
+    const o = op({ ...baseInp, hours: 26, hydration: 65 }, fp12);
+    assert.ok(!o.levers.some(l => l.kCode === 'overproof.lever.hydrationKey'));
   });
 });
