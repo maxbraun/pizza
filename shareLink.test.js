@@ -5,82 +5,75 @@
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 
-const { encodeShareToken, decodeShareToken, expandShareToken, TOKEN_LEN, SCALAR_RANGES, ENUMS, PARAM_NAMES } = require('./shareLink.js');
+const { encodeShareToken, decodeShareToken, expandShareToken, MIN_PAYLOAD_LEN, MAX_QUERY_BYTES } = require('./shareLink.js');
 
-// A representative dough — one value per field, all mid-range.
-const BASE = {
-  tempC: 21, hours: 8, protein: 12.5, plVal: 50, hydration: 62,
-  salt: 2.5, oilPct: 1.5, sugarPct: 0.5, starterStr: 50,
-  ballCount: 4, ballWeight: 250, roomTemp: 20, ddt: 24, ovenC: 250,
-  leavening: 'commercial', yeastType: 'idy', preferment: 'straight',
-  mixMethod: 'hand', surface: 'steel',
-};
+// A representative config query string, as the config-in-URL hooks write it.
+const BASE = 'tempC=4&hours=48&protein=13&hydration=68&salt=2.8&leaven=sourdough&balls=6&ballWeight=320&oven=300&surface=stone&style=neapolitan';
 
 describe('encodeShareToken / decodeShareToken', () => {
-  test('round-trips the base dough exactly', () => {
-    const token = encodeShareToken(BASE);
-    const decoded = decodeShareToken(token);
-    assert.deepEqual(decoded, BASE);
+  test('round-trips a typical config query string exactly', () => {
+    assert.equal(decodeShareToken(encodeShareToken(BASE)), BASE);
   });
 
-  test('round-trips every field at its low and high slider bound', () => {
-    for (const [key, [lo, hi]] of Object.entries(SCALAR_RANGES)) {
-      for (const bound of [lo, hi]) {
-        const dough = { ...BASE, [key]: bound };
-        const decoded = decodeShareToken(encodeShareToken(dough));
-        assert.equal(decoded[key], bound, `${key}=${bound} round-trip`);
-      }
-    }
+  test('leading "?" is normalized away', () => {
+    assert.equal(decodeShareToken(encodeShareToken('?' + BASE)), BASE);
   });
 
-  test('round-trips every enum value', () => {
-    for (const [key, values] of Object.entries(ENUMS)) {
-      for (const val of values) {
-        const dough = { ...BASE, [key]: val };
-        const decoded = decodeShareToken(encodeShareToken(dough));
-        assert.equal(decoded[key], val, `${key}=${val} round-trip`);
-      }
-    }
+  test('round-trips typed off-grid values losslessly (the v1 quantizer corrupted these)', () => {
+    const qs = 'ballWeight=313&hydration=62.7&salt=2.83&hours=36.5';
+    assert.equal(decodeShareToken(encodeShareToken(qs)), qs);
   });
 
-  test('two tokens for the same dough are different strings', () => {
+  test('round-trips params it has never heard of (future controls)', () => {
+    const qs = 'someFutureKnob=42&anotherOne=maybe';
+    assert.equal(decodeShareToken(encodeShareToken(qs)), qs);
+  });
+
+  test('round-trips the empty query string (all-defaults dough)', () => {
+    assert.equal(decodeShareToken(encodeShareToken('')), '');
+    assert.equal(decodeShareToken(encodeShareToken(null)), '');
+  });
+
+  test('round-trips percent-encoded and non-ASCII content', () => {
+    const qs = new URLSearchParams({ note: 'Sauerteig — 65 % Hydration!' }).toString();
+    assert.equal(decodeShareToken(encodeShareToken(qs)), qs);
+  });
+
+  test('two tokens for the same config are different strings but decode identically', () => {
     const a = encodeShareToken(BASE);
     const b = encodeShareToken(BASE);
     assert.notEqual(a, b);
-  });
-
-  test('but both decode back to the same dough', () => {
-    const a = decodeShareToken(encodeShareToken(BASE));
-    const b = decodeShareToken(encodeShareToken(BASE));
-    assert.deepEqual(a, b);
+    assert.equal(decodeShareToken(a), decodeShareToken(b));
   });
 
   test('token is URL-safe (no padding, no reserved characters)', () => {
-    const token = encodeShareToken(BASE);
-    assert.match(token, /^[A-Za-z0-9\-_]+$/);
+    assert.match(encodeShareToken(BASE), /^[A-Za-z0-9\-_]+$/);
   });
 
-  test('token stays short', () => {
-    const token = encodeShareToken(BASE);
-    assert.ok(token.length <= 48, `token length ${token.length} should be <= 48`);
+  test('an all-defaults token is padded, not conspicuously tiny', () => {
+    // salt(4) + padded payload(MIN_PAYLOAD_LEN) + checksum(2), base64url'd
+    const minChars = Math.floor(((4 + MIN_PAYLOAD_LEN + 2) * 8) / 6);
+    assert.ok(encodeShareToken('').length >= minChars);
+  });
+
+  test('rejects a query string over the size bound', () => {
+    assert.equal(encodeShareToken('x=' + 'a'.repeat(MAX_QUERY_BYTES)), null);
   });
 
   test('rejects a truncated token', () => {
-    const token = encodeShareToken(BASE);
-    assert.equal(decodeShareToken(token.slice(0, -4)), null);
+    assert.equal(decodeShareToken(encodeShareToken(BASE).slice(0, -4)), null);
   });
 
   test('rejects a token with a flipped character (checksum catches corruption)', () => {
     const token = encodeShareToken(BASE);
     const chars = token.split('');
-    const flipIdx = 5;
     const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
-    const original = chars[flipIdx];
+    const original = chars[5];
     let replacement = original;
     while (replacement === original) {
       replacement = alphabet[Math.floor(Math.random() * alphabet.length)];
     }
-    chars[flipIdx] = replacement;
+    chars[5] = replacement;
     assert.equal(decodeShareToken(chars.join('')), null);
   });
 
@@ -91,69 +84,52 @@ describe('encodeShareToken / decodeShareToken', () => {
     assert.equal(decodeShareToken(undefined), null);
   });
 
-  test('rejects a well-formed but all-zero token (checksum mismatch)', () => {
-    // 31 base64url 'A's decode to exactly TOKEN_LEN (23) zero bytes — right
-    // length, but the stored checksum (0) won't match FNV-1a of the
-    // all-zero scrambled payload, so it must be rejected rather than
-    // silently decoding to some default dough.
-    assert.equal(TOKEN_LEN, 23, 'sanity check: token layout assumed by this test');
-    const zeros = 'A'.repeat(31);
-    assert.equal(decodeShareToken(zeros), null);
+  test('rejects a v1-era token (old fixed-schema format)', () => {
+    // v1 tokens were exactly 23 bytes = 31 base64url chars; whatever their
+    // content, the version byte can no longer be 2 after a valid checksum,
+    // so a representative one must fail cleanly rather than mis-decode.
+    assert.equal(decodeShareToken('6iYSdZyD-TFHbPK9Iq6y7ytt8y3T5TU'), null);
   });
 });
 
 describe('expandShareToken', () => {
   test('no hash: search passes through untouched, nothing flagged', () => {
-    const result = expandShareToken('', '?foo=bar');
-    assert.deepEqual(result, { search: '?foo=bar', badLink: false, present: false });
+    assert.deepEqual(expandShareToken('', '?foo=bar'), { search: '?foo=bar', badLink: false, present: false });
   });
 
-  test('valid token: every field lands under its config-in-URL param name', () => {
-    const token = encodeShareToken(BASE);
-    const { search, badLink, present } = expandShareToken('#d=' + token, '');
+  test('valid token: its params land in the returned search string', () => {
+    const { search, badLink, present } = expandShareToken('#d=' + encodeShareToken(BASE), '');
     assert.equal(badLink, false);
     assert.equal(present, true);
     const params = new URLSearchParams(search);
-    for (const [key, param] of Object.entries(PARAM_NAMES)) {
-      assert.equal(params.get(param), String(BASE[key]), `${key} -> ?${param}`);
+    for (const [key, value] of new URLSearchParams(BASE)) {
+      assert.equal(params.get(key), value, key);
     }
   });
 
-  test('valid token overlays dough fields but keeps unrelated existing params', () => {
-    const token = encodeShareToken(BASE);
-    const { search } = expandShareToken('#d=' + token, '?nerd=1&learn=1');
-    const params = new URLSearchParams(search);
-    assert.equal(params.get('nerd'), '1');
-    assert.equal(params.get('learn'), '1');
-    assert.equal(params.get('tempC'), String(BASE.tempC));
+  test('regression: ballWeight survives a share (v1 reset it to 100)', () => {
+    const { search } = expandShareToken('#d=' + encodeShareToken('ballWeight=320'), '');
+    assert.equal(new URLSearchParams(search).get('ballWeight'), '320');
   });
 
-  test('valid token overrides a same-named existing dough param', () => {
-    const token = encodeShareToken(BASE);
-    const { search } = expandShareToken('#d=' + token, '?tempC=99');
-    assert.equal(new URLSearchParams(search).get('tempC'), String(BASE.tempC));
+  test('token params overlay existing search, unrelated params kept', () => {
+    const { search } = expandShareToken('#d=' + encodeShareToken('tempC=4'), '?keep=me&tempC=99');
+    const params = new URLSearchParams(search);
+    assert.equal(params.get('keep'), 'me');
+    assert.equal(params.get('tempC'), '4');
+  });
+
+  test('all-defaults token: search unchanged, hash still consumed', () => {
+    assert.deepEqual(expandShareToken('#d=' + encodeShareToken(''), ''), { search: '', badLink: false, present: true });
   });
 
   test('token embedded alongside other hash content is still found', () => {
-    const token = encodeShareToken(BASE);
-    const { search, present } = expandShareToken('#foo=1&d=' + token + '&bar=2', '');
+    const { search, present } = expandShareToken('#foo=1&d=' + encodeShareToken('tempC=4') + '&bar=2', '');
     assert.equal(present, true);
-    assert.equal(new URLSearchParams(search).get('tempC'), String(BASE.tempC));
+    assert.equal(new URLSearchParams(search).get('tempC'), '4');
   });
 
   test('corrupt token: flagged bad, search left untouched', () => {
-    const result = expandShareToken('#d=not-a-real-token', '?keep=me');
-    assert.deepEqual(result, { search: '?keep=me', badLink: true, present: true });
-  });
-
-  test('round-trips every enum through its query param', () => {
-    for (const [key, values] of Object.entries(ENUMS)) {
-      for (const val of values) {
-        const dough = { ...BASE, [key]: val };
-        const token = encodeShareToken(dough);
-        const { search } = expandShareToken('#d=' + token, '');
-        assert.equal(new URLSearchParams(search).get(PARAM_NAMES[key]), val);
-      }
-    }
+    assert.deepEqual(expandShareToken('#d=not-a-real-token', '?keep=me'), { search: '?keep=me', badLink: true, present: true });
   });
 });

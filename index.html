@@ -902,7 +902,12 @@ function FermentCalculator() {
   }, [lang, t]);
 
   const handleShare = async () => {
-    const token = encodeShareToken(inputs);
+    // The config-in-URL hooks keep location.search holding the full current
+    // setup (every non-default param), so the token wraps that string as-is —
+    // lossless for typed values and complete for every control, present and
+    // future, with no field list to maintain here.
+    const token = encodeShareToken(window.location.search);
+    if (token == null) return;
     const url = window.location.origin + window.location.pathname + '#d=' + token;
     if (navigator.share) {
       try { await navigator.share({ title: t('doc.title'), url }); } catch (e) { /* cancelled */ }
