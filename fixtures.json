@@ -1,0 +1,812 @@
+[
+  {
+    "name": "base",
+    "input": {
+      "tempC": 21,
+      "hours": 8,
+      "protein": 12,
+      "plVal": 50,
+      "hydration": 60,
+      "salt": 2.5,
+      "oilPct": 0,
+      "sugarPct": 0,
+      "leavening": "commercial",
+      "yeastType": "idy",
+      "starterStr": 50,
+      "preferment": "straight",
+      "roomTemp": 20,
+      "ddt": 24,
+      "mixMethod": "hand",
+      "doughWeight": 1000,
+      "ovenC": 250,
+      "surface": "steel"
+    },
+    "output": {
+      "r": {
+        "flour": 615.3846153846154,
+        "waterG": 369.2307692307692,
+        "saltGrams": 15.384615384615385,
+        "oilGrams": 0,
+        "sugarGrams": 0,
+        "idyPct": 0.3,
+        "pct": 0.3,
+        "grams": 1.846153846153846,
+        "tsp": 0.5860805860805861,
+        "levainPct": 0,
+        "levainGrams": 0
+      },
+      "fp": {
+        "W": 240,
+        "hydrLo": 59,
+        "hydrHi": 67,
+        "maxHours": 24,
+        "category": "Strong (pizza)"
+      },
+      "rise": {
+        "Arise": 122,
+        "lambda": 1.152,
+        "maxHours": 24,
+        "kd": 0.08333333333333333,
+        "mu": 26.01909003168464
+      },
+      "proof": 1,
+      "bake": {
+        "t": 9.209251551212825,
+        "colour": 30.294071603459273,
+        "base": 49.26466444311335,
+        "leopard": false,
+        "acryl": false,
+        "style": "Home oven"
+      },
+      "digest": 42,
+      "water": {
+        "temp": 30
+      },
+      "batch": {
+        "balls": 4,
+        "ballW": 250
+      },
+      "geometry": {
+        "openness": 0.4,
+        "strength": 0.5714285714285714,
+        "springFrac": 0.08333333333333333,
+        "rimIndex": 40.38095238095238
+      },
+      "verdicts": {
+        "hydration": "good",
+        "ferment": "good",
+        "digestion": "warn",
+        "bake": "good"
+      }
+    }
+  },
+  {
+    "name": "neapolitan",
+    "input": {
+      "tempC": 18,
+      "hours": 24,
+      "protein": 13,
+      "plVal": 55,
+      "hydration": 60,
+      "salt": 2.8,
+      "oilPct": 0,
+      "sugarPct": 0,
+      "leavening": "commercial",
+      "yeastType": "idy",
+      "preferment": "biga",
+      "ovenC": 460,
+      "surface": "stone",
+      "ddt": 23,
+      "roomTemp": 20,
+      "mixMethod": "hand",
+      "doughWeight": 1000,
+      "starterStr": 50
+    },
+    "output": {
+      "r": {
+        "flour": 614.2506142506143,
+        "waterG": 368.55036855036855,
+        "saltGrams": 17.1990171990172,
+        "oilGrams": 0,
+        "sugarGrams": 0,
+        "idyPct": 0.1364635308339697,
+        "pct": 0.11599400120887424,
+        "grams": 0.7124938649193748,
+        "tsp": 0.2261885285458333,
+        "levainPct": 0,
+        "levainGrams": 0
+      },
+      "fp": {
+        "W": 280,
+        "hydrLo": 63,
+        "hydrHi": 71,
+        "maxHours": 38.097625247236785,
+        "category": "Strong (pizza)"
+      },
+      "rise": {
+        "Arise": 130,
+        "lambda": 3.888,
+        "maxHours": 38.097625247236785,
+        "kd": 0.05249671041228639,
+        "mu": 9.440263503807746
+      },
+      "proof": 1,
+      "bake": {
+        "t": 1.2221270511331321,
+        "colour": 98.38503433270371,
+        "base": 96.30802746616297,
+        "leopard": true,
+        "acryl": true,
+        "style": "Neapolitan"
+      },
+      "digest": 72,
+      "water": {
+        "temp": 30
+      },
+      "batch": {
+        "balls": 4,
+        "ballW": 250
+      },
+      "geometry": {
+        "openness": 0.4,
+        "strength": 0.7142857142857143,
+        "springFrac": 0.9583333333333334,
+        "rimIndex": 115.1752380952381
+      },
+      "verdicts": {
+        "hydration": "warn",
+        "ferment": "good",
+        "digestion": "good",
+        "bake": "good"
+      }
+    }
+  },
+  {
+    "name": "ny",
+    "input": {
+      "tempC": 4,
+      "hours": 48,
+      "protein": 13,
+      "plVal": 50,
+      "hydration": 63,
+      "salt": 2,
+      "oilPct": 2.5,
+      "sugarPct": 1,
+      "leavening": "commercial",
+      "yeastType": "idy",
+      "preferment": "straight",
+      "ovenC": 300,
+      "surface": "steel",
+      "ddt": 24,
+      "roomTemp": 20,
+      "mixMethod": "hand",
+      "doughWeight": 1000,
+      "starterStr": 50
+    },
+    "output": {
+      "r": {
+        "flour": 593.4718100890208,
+        "waterG": 373.8872403560831,
+        "saltGrams": 11.869436201780415,
+        "oilGrams": 14.83679525222552,
+        "sugarGrams": 5.9347181008902075,
+        "idyPct": 0.2235683647014365,
+        "pct": 0.2235683647014365,
+        "grams": 1.3268152207800388,
+        "tsp": 0.42121118120001233,
+        "levainPct": 0,
+        "levainGrams": 0
+      },
+      "fp": {
+        "W": 280,
+        "hydrLo": 62,
+        "hydrHi": 70,
+        "maxHours": 38.097625247236785,
+        "category": "Strong (pizza)"
+      },
+      "rise": {
+        "Arise": 130,
+        "lambda": 11.808,
+        "maxHours": 38.097625247236785,
+        "kd": 0.05249671041228639,
+        "mu": 5.245981973601387
+      },
+      "proof": 0.8440473700630761,
+      "bake": {
+        "t": 5.709532537808233,
+        "colour": 61.93957672682311,
+        "base": 77.7456190541408,
+        "leopard": false,
+        "acryl": false,
+        "style": "New York"
+      },
+      "digest": 86,
+      "water": {
+        "temp": 30
+      },
+      "batch": {
+        "balls": 4,
+        "ballW": 250
+      },
+      "geometry": {
+        "openness": 0.52,
+        "strength": 0.7142857142857143,
+        "springFrac": 0.2916666666666667,
+        "rimIndex": 51.044769522862225
+      },
+      "verdicts": {
+        "hydration": "good",
+        "ferment": "bad",
+        "digestion": "good",
+        "bake": "good"
+      }
+    }
+  },
+  {
+    "name": "detroit",
+    "input": {
+      "tempC": 20,
+      "hours": 6,
+      "protein": 13,
+      "plVal": 45,
+      "hydration": 70,
+      "salt": 2,
+      "oilPct": 1,
+      "sugarPct": 0,
+      "leavening": "commercial",
+      "yeastType": "idy",
+      "preferment": "straight",
+      "ovenC": 280,
+      "surface": "pan",
+      "ddt": 25,
+      "roomTemp": 22,
+      "mixMethod": "mixer",
+      "doughWeight": 1200,
+      "starterStr": 50
+    },
+    "output": {
+      "r": {
+        "flour": 693.6416184971098,
+        "waterG": 485.54913294797683,
+        "saltGrams": 13.872832369942197,
+        "oilGrams": 6.936416184971098,
+        "sugarGrams": 0,
+        "idyPct": 0.41285383515979784,
+        "pct": 0.41285383515979784,
+        "grams": 2.8637260242298113,
+        "tsp": 0.9091193727713687,
+        "levainPct": 0,
+        "levainGrams": 0
+      },
+      "fp": {
+        "W": 280,
+        "hydrLo": 62,
+        "hydrHi": 70,
+        "maxHours": 38.097625247236785,
+        "category": "Strong (pizza)"
+      },
+      "rise": {
+        "Arise": 130,
+        "lambda": 0.8999999999999999,
+        "maxHours": 38.097625247236785,
+        "kd": 0.05249671041228639,
+        "mu": 37.227956782074784
+      },
+      "proof": 1,
+      "bake": {
+        "t": 7.766428487538176,
+        "colour": 44.31042327317688,
+        "base": 42.0095357093944,
+        "leopard": false,
+        "acryl": false,
+        "style": "New York"
+      },
+      "digest": 36,
+      "water": {
+        "temp": 23
+      },
+      "batch": {
+        "balls": 5,
+        "ballW": 240
+      },
+      "geometry": {
+        "openness": 0.8,
+        "strength": 0.7142857142857143,
+        "springFrac": 0.20833333333333334,
+        "rimIndex": 53.163809523809526
+      },
+      "verdicts": {
+        "hydration": "good",
+        "ferment": "good",
+        "digestion": "warn",
+        "bake": "good"
+      }
+    }
+  },
+  {
+    "name": "roman",
+    "input": {
+      "tempC": 4,
+      "hours": 48,
+      "protein": 12.5,
+      "plVal": 40,
+      "hydration": 80,
+      "salt": 2.2,
+      "oilPct": 2,
+      "sugarPct": 0,
+      "leavening": "commercial",
+      "yeastType": "idy",
+      "preferment": "poolish",
+      "ovenC": 290,
+      "surface": "steel",
+      "ddt": 23,
+      "roomTemp": 20,
+      "mixMethod": "hand",
+      "doughWeight": 1000,
+      "starterStr": 50
+    },
+    "output": {
+      "r": {
+        "flour": 542.8881650380022,
+        "waterG": 434.31053203040176,
+        "saltGrams": 11.94353963083605,
+        "oilGrams": 10.857763300760043,
+        "sugarGrams": 0,
+        "idyPct": 0.22899891135032083,
+        "pct": 0.1946490746477727,
+        "grams": 1.0567267896187442,
+        "tsp": 0.33546882210118867,
+        "levainPct": 0,
+        "levainGrams": 0
+      },
+      "fp": {
+        "W": 260,
+        "hydrLo": 61,
+        "hydrHi": 69,
+        "maxHours": 30.238105197476962,
+        "category": "Strong (pizza)"
+      },
+      "rise": {
+        "Arise": 126,
+        "lambda": 11.808,
+        "maxHours": 30.238105197476962,
+        "kd": 0.06614171049867497,
+        "mu": 5.084567143644421
+      },
+      "proof": 0.6475593688190806,
+      "bake": {
+        "t": 6.720547492425004,
+        "colour": 51.8,
+        "base": 68.62,
+        "leopard": false,
+        "acryl": false,
+        "style": "New York"
+      },
+      "digest": 94,
+      "water": {
+        "temp": 30
+      },
+      "batch": {
+        "balls": 4,
+        "ballW": 250
+      },
+      "geometry": {
+        "openness": 1,
+        "strength": 0.6428571428571429,
+        "springFrac": 0.25,
+        "rimIndex": 35.03185175133714
+      },
+      "verdicts": {
+        "hydration": "bad",
+        "ferment": "bad",
+        "digestion": "good",
+        "bake": "good"
+      }
+    }
+  },
+  {
+    "name": "sourdough",
+    "input": {
+      "tempC": 5,
+      "hours": 24,
+      "protein": 12.5,
+      "plVal": 50,
+      "hydration": 72,
+      "salt": 2.5,
+      "oilPct": 0,
+      "sugarPct": 0,
+      "leavening": "sourdough",
+      "yeastType": "idy",
+      "preferment": "straight",
+      "ovenC": 270,
+      "surface": "steel",
+      "ddt": 24,
+      "roomTemp": 20,
+      "mixMethod": "hand",
+      "doughWeight": 1000,
+      "starterStr": 60
+    },
+    "output": {
+      "r": {
+        "flour": 573.0659025787966,
+        "waterG": 412.6074498567335,
+        "saltGrams": 14.326647564469916,
+        "oilGrams": 0,
+        "sugarGrams": 0,
+        "idyPct": 0,
+        "pct": 0,
+        "grams": 0,
+        "tsp": null,
+        "levainPct": 25.543368335611234,
+        "levainGrams": 146.38033430149704
+      },
+      "fp": {
+        "W": 260,
+        "hydrLo": 61,
+        "hydrHi": 69,
+        "maxHours": 30.238105197476962,
+        "category": "Strong (pizza)"
+      },
+      "rise": {
+        "Arise": 126,
+        "lambda": 5.76,
+        "maxHours": 30.238105197476962,
+        "kd": 0.06614171049867497,
+        "mu": 10.088851648178666
+      },
+      "proof": 1,
+      "bake": {
+        "t": 7.933483084797658,
+        "colour": 39.731466202150834,
+        "base": 57.75831958193575,
+        "leopard": false,
+        "acryl": false,
+        "style": "Home oven"
+      },
+      "digest": 94,
+      "water": {
+        "temp": 30
+      },
+      "batch": {
+        "balls": 4,
+        "ballW": 250
+      },
+      "geometry": {
+        "openness": 0.88,
+        "strength": 0.6428571428571429,
+        "springFrac": 0.16666666666666666,
+        "rimIndex": 48.76190476190476
+      },
+      "verdicts": {
+        "hydration": "bad",
+        "ferment": "good",
+        "digestion": "good",
+        "bake": "good"
+      }
+    }
+  },
+  {
+    "name": "over_prove",
+    "input": {
+      "tempC": 21,
+      "hours": 48,
+      "protein": 10,
+      "plVal": 50,
+      "hydration": 60,
+      "salt": 2.5,
+      "oilPct": 0,
+      "sugarPct": 0,
+      "leavening": "commercial",
+      "yeastType": "idy",
+      "starterStr": 50,
+      "preferment": "straight",
+      "roomTemp": 20,
+      "ddt": 24,
+      "mixMethod": "hand",
+      "doughWeight": 1000,
+      "ovenC": 250,
+      "surface": "steel"
+    },
+    "output": {
+      "r": {
+        "flour": 615.3846153846154,
+        "waterG": 369.2307692307692,
+        "saltGrams": 15.384615384615385,
+        "oilGrams": 0,
+        "sugarGrams": 0,
+        "idyPct": 0.049999999999999996,
+        "pct": 0.049999999999999996,
+        "grams": 0.3076923076923077,
+        "tsp": 0.0976800976800977,
+        "levainPct": 0,
+        "levainGrams": 0
+      },
+      "fp": {
+        "W": 160,
+        "hydrLo": 54,
+        "hydrHi": 62,
+        "maxHours": 9.524406311809196,
+        "category": "Soft / weak"
+      },
+      "rise": {
+        "Arise": 106,
+        "lambda": 6.911999999999999,
+        "maxHours": 9.524406311809196,
+        "kd": 0.2,
+        "mu": 3.7677917258996874
+      },
+      "proof": 0.25,
+      "bake": {
+        "t": 9.209251551212825,
+        "colour": 30.294071603459273,
+        "base": 49.26466444311335,
+        "leopard": false,
+        "acryl": false,
+        "style": "Home oven"
+      },
+      "digest": 78,
+      "water": {
+        "temp": 30
+      },
+      "batch": {
+        "balls": 4,
+        "ballW": 250
+      },
+      "geometry": {
+        "openness": 0.4,
+        "strength": 0.2857142857142857,
+        "springFrac": 0.08333333333333333,
+        "rimIndex": 8.38095238095238
+      },
+      "verdicts": {
+        "hydration": "good",
+        "ferment": "bad",
+        "digestion": "good",
+        "bake": "good"
+      }
+    }
+  },
+  {
+    "name": "ady_yeast",
+    "input": {
+      "tempC": 21,
+      "hours": 8,
+      "protein": 12,
+      "plVal": 50,
+      "hydration": 60,
+      "salt": 2.5,
+      "oilPct": 0,
+      "sugarPct": 0,
+      "leavening": "commercial",
+      "yeastType": "ady",
+      "starterStr": 50,
+      "preferment": "straight",
+      "roomTemp": 20,
+      "ddt": 24,
+      "mixMethod": "hand",
+      "doughWeight": 1000,
+      "ovenC": 250,
+      "surface": "steel"
+    },
+    "output": {
+      "r": {
+        "flour": 615.3846153846154,
+        "waterG": 369.2307692307692,
+        "saltGrams": 15.384615384615385,
+        "oilGrams": 0,
+        "sugarGrams": 0,
+        "idyPct": 0.3,
+        "pct": 0.399,
+        "grams": 2.4553846153846157,
+        "tsp": 0.792059553349876,
+        "levainPct": 0,
+        "levainGrams": 0
+      },
+      "fp": {
+        "W": 240,
+        "hydrLo": 59,
+        "hydrHi": 67,
+        "maxHours": 24,
+        "category": "Strong (pizza)"
+      },
+      "rise": {
+        "Arise": 122,
+        "lambda": 1.152,
+        "maxHours": 24,
+        "kd": 0.08333333333333333,
+        "mu": 26.01909003168464
+      },
+      "proof": 1,
+      "bake": {
+        "t": 9.209251551212825,
+        "colour": 30.294071603459273,
+        "base": 49.26466444311335,
+        "leopard": false,
+        "acryl": false,
+        "style": "Home oven"
+      },
+      "digest": 42,
+      "water": {
+        "temp": 30
+      },
+      "batch": {
+        "balls": 4,
+        "ballW": 250
+      },
+      "geometry": {
+        "openness": 0.4,
+        "strength": 0.5714285714285714,
+        "springFrac": 0.08333333333333333,
+        "rimIndex": 40.38095238095238
+      },
+      "verdicts": {
+        "hydration": "good",
+        "ferment": "good",
+        "digestion": "warn",
+        "bake": "good"
+      }
+    }
+  },
+  {
+    "name": "fresh_yeast",
+    "input": {
+      "tempC": 21,
+      "hours": 8,
+      "protein": 12,
+      "plVal": 50,
+      "hydration": 60,
+      "salt": 2.5,
+      "oilPct": 0,
+      "sugarPct": 0,
+      "leavening": "commercial",
+      "yeastType": "fresh",
+      "starterStr": 50,
+      "preferment": "straight",
+      "roomTemp": 20,
+      "ddt": 24,
+      "mixMethod": "hand",
+      "doughWeight": 1000,
+      "ovenC": 250,
+      "surface": "steel"
+    },
+    "output": {
+      "r": {
+        "flour": 615.3846153846154,
+        "waterG": 369.2307692307692,
+        "saltGrams": 15.384615384615385,
+        "oilGrams": 0,
+        "sugarGrams": 0,
+        "idyPct": 0.3,
+        "pct": 0.8999999999999999,
+        "grams": 5.538461538461537,
+        "tsp": null,
+        "levainPct": 0,
+        "levainGrams": 0
+      },
+      "fp": {
+        "W": 240,
+        "hydrLo": 59,
+        "hydrHi": 67,
+        "maxHours": 24,
+        "category": "Strong (pizza)"
+      },
+      "rise": {
+        "Arise": 122,
+        "lambda": 1.152,
+        "maxHours": 24,
+        "kd": 0.08333333333333333,
+        "mu": 26.01909003168464
+      },
+      "proof": 1,
+      "bake": {
+        "t": 9.209251551212825,
+        "colour": 30.294071603459273,
+        "base": 49.26466444311335,
+        "leopard": false,
+        "acryl": false,
+        "style": "Home oven"
+      },
+      "digest": 42,
+      "water": {
+        "temp": 30
+      },
+      "batch": {
+        "balls": 4,
+        "ballW": 250
+      },
+      "geometry": {
+        "openness": 0.4,
+        "strength": 0.5714285714285714,
+        "springFrac": 0.08333333333333333,
+        "rimIndex": 40.38095238095238
+      },
+      "verdicts": {
+        "hydration": "good",
+        "ferment": "good",
+        "digestion": "warn",
+        "bake": "good"
+      }
+    }
+  },
+  {
+    "name": "processor_mix",
+    "input": {
+      "tempC": 21,
+      "hours": 8,
+      "protein": 12,
+      "plVal": 50,
+      "hydration": 60,
+      "salt": 2.5,
+      "oilPct": 0,
+      "sugarPct": 0,
+      "leavening": "commercial",
+      "yeastType": "idy",
+      "starterStr": 50,
+      "preferment": "straight",
+      "roomTemp": 20,
+      "ddt": 26,
+      "mixMethod": "processor",
+      "doughWeight": 1000,
+      "ovenC": 250,
+      "surface": "steel"
+    },
+    "output": {
+      "r": {
+        "flour": 615.3846153846154,
+        "waterG": 369.2307692307692,
+        "saltGrams": 15.384615384615385,
+        "oilGrams": 0,
+        "sugarGrams": 0,
+        "idyPct": 0.3,
+        "pct": 0.3,
+        "grams": 1.846153846153846,
+        "tsp": 0.5860805860805861,
+        "levainPct": 0,
+        "levainGrams": 0
+      },
+      "fp": {
+        "W": 240,
+        "hydrLo": 59,
+        "hydrHi": 67,
+        "maxHours": 24,
+        "category": "Strong (pizza)"
+      },
+      "rise": {
+        "Arise": 122,
+        "lambda": 1.152,
+        "maxHours": 24,
+        "kd": 0.08333333333333333,
+        "mu": 26.01909003168464
+      },
+      "proof": 1,
+      "bake": {
+        "t": 9.209251551212825,
+        "colour": 30.294071603459273,
+        "base": 49.26466444311335,
+        "leopard": false,
+        "acryl": false,
+        "style": "Home oven"
+      },
+      "digest": 42,
+      "water": {
+        "temp": 24
+      },
+      "batch": {
+        "balls": 4,
+        "ballW": 250
+      },
+      "geometry": {
+        "openness": 0.4,
+        "strength": 0.5714285714285714,
+        "springFrac": 0.08333333333333333,
+        "rimIndex": 40.38095238095238
+      },
+      "verdicts": {
+        "hydration": "good",
+        "ferment": "good",
+        "digestion": "warn",
+        "bake": "good"
+      }
+    }
+  }
+]
