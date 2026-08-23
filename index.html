@@ -39,7 +39,7 @@
   <script src="doughEngine.js"></script>
 
   <script type="text/babel">
-const { useState, useMemo, useEffect, useContext, createContext } = React;
+const { useState, useMemo, useEffect, useRef, useContext, createContext } = React;
 
 const LangCtx = createContext(null);
 function useT() { return useContext(LangCtx); }
@@ -532,15 +532,72 @@ function Help({ children }) {
   return on ? <p className="fc-help">{children}</p> : null;
 }
 
+// Click (or Enter/Space when focused) turns the value into a typeable input,
+// clamped to [min, max] on commit — same validation `useConfigNumber` applies
+// to slider drags and stepper clicks, so typed entry stays consistent with them.
+function EditableValue({ value, unit, min, max, onChange, className, style }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  function startEdit() {
+    setDraft(String(value));
+    setEditing(true);
+  }
+
+  function commit() {
+    const n = parseFloat(draft);
+    if (Number.isFinite(n)) onChange(clamp(n, min, max));
+    setEditing(false);
+  }
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        className="fc-val-input"
+        style={{ ...style, width: `${Math.max(draft.length, 1) + 1}ch` }}
+        type="text"
+        inputMode="decimal"
+        value={draft}
+        onChange={(e) => {
+          const v = e.target.value;
+          if (v === '' || /^-?\d*\.?\d*$/.test(v)) setDraft(v);
+        }}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') { e.preventDefault(); commit(); }
+          else if (e.key === 'Escape') { e.preventDefault(); setEditing(false); }
+        }}
+      />
+    );
+  }
+
+  return (
+    <span
+      className={className} style={style} tabIndex={0} role="button"
+      onClick={startEdit}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startEdit(); } }}
+    >
+      {value}{unit && <span className="fc-unit">{unit}</span>}
+    </span>
+  );
+}
+
 function Slider({ label, value, unit, min, max, step, onChange, accent, note, noteColor }) {
   const pctPos = ((value - min) / (max - min)) * 100;
   return (
     <div className="fc-field">
       <div className="fc-field-head">
         <span className="fc-label">{label}</span>
-        <span className="fc-val" style={{ color: accent }}>
-          {value}<span className="fc-unit">{unit}</span>
-        </span>
+        <EditableValue className="fc-val" style={{ color: accent }} value={value} unit={unit} min={min} max={max} onChange={onChange} />
       </div>
       <input
         type="range" min={min} max={max} step={step} value={value}
@@ -941,6 +998,11 @@ function FermentCalculator() {
         .fc-label{ font-size:13.5px; font-weight:500; color:var(--ink); }
         .fc-val{ font-family:'JetBrains Mono',monospace; font-size:15px; font-weight:500; transition:color .5s cubic-bezier(.4,0,.2,1); }
         .fc-unit{ font-size:11px; margin-left:2px; opacity:.7; }
+        .fc-val, .fc-step-val{ cursor:pointer; border-bottom:1px dashed transparent; transition:border-color .2s cubic-bezier(.4,0,.2,1), opacity .2s; }
+        .fc-val:hover, .fc-step-val:hover, .fc-val:focus-visible, .fc-step-val:focus-visible{
+          border-color:currentColor; opacity:.85; outline:none; }
+        .fc-val-input{ font:inherit; font-family:'JetBrains Mono',monospace; color:inherit;
+          background:transparent; border:none; border-bottom:1px solid currentColor; outline:none; padding:0; }
         .fc-note-line{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-soft);
           margin:8px 0 0; letter-spacing:.02em; transition:color .4s cubic-bezier(.4,0,.2,1); }
 
@@ -1164,7 +1226,7 @@ function FermentCalculator() {
               <div className="fc-field-head"><span className="fc-label">{t('label.ballCount')}</span></div>
               <div className="fc-stepper">
                 <button onClick={() => setBallCount((n) => Math.max(1, n - 1))}>−</button>
-                <span className="fc-step-val">{ballCount}</span>
+                <EditableValue className="fc-step-val" value={ballCount} min={1} max={12} onChange={setBallCount} />
                 <button onClick={() => setBallCount((n) => Math.min(12, n + 1))}>+</button>
               </div>
             </div>
@@ -1173,7 +1235,7 @@ function FermentCalculator() {
               <div className="fc-field-head"><span className="fc-label">{t('label.ballWeight')}</span></div>
               <div className="fc-stepper">
                 <button onClick={() => setBallWeight((w) => Math.max(100, w - 25))}>−</button>
-                <span className="fc-step-val">{ballWeight} g</span>
+                <EditableValue className="fc-step-val" value={ballWeight} unit="g" min={100} max={500} onChange={setBallWeight} />
                 <button onClick={() => setBallWeight((w) => Math.min(500, w + 25))}>+</button>
               </div>
             </div>
