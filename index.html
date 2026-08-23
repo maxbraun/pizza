@@ -37,6 +37,7 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="doughEngine.js"></script>
+  <script src="shareLink.js"></script>
 
   <script type="text/babel">
 const { useState, useMemo, useEffect, useContext, createContext } = React;
@@ -59,6 +60,22 @@ function initialLang() {
   return nav || 'en';
 }
 
+// A share link puts its token in the hash (`#d=...`), never the query
+// string or a server, so it works on a static host and never touches a log.
+// It expands into the same query params the config-in-URL hooks below
+// already read (see useConfigNumber/useConfigEnum/useConfigBool) — a share
+// token is just a compact way to arrive at one of those links, not a
+// second, parallel way of loading state — so the hooks pick the shared
+// dough up with no further wiring. Runs once, before FermentCalculator's
+// first render, and rewrites the address bar immediately so a stale or
+// re-shared hash never lingers.
+const SHARE_EXPANSION = window.ShareLink.expandShareToken(window.location.hash, window.location.search);
+if (SHARE_EXPANSION.present) {
+  try { history.replaceState(null, '', window.location.pathname + SHARE_EXPANSION.search); }
+  catch (e) { /* sandboxed iframe, etc. */ }
+}
+const SHARE_BAD_LINK = SHARE_EXPANSION.badLink;
+
 function makeTFn(lang, dict) {
   return function t(key, params) {
     let str = (dict[lang] && dict[lang][key]) || (dict.en && dict.en[key]) || key;
@@ -73,6 +90,8 @@ const TRANSLATIONS = {
   en: {
     'header.tagline': 'Pizza dough calculator',
     'toggle.simple': 'Simple', 'toggle.learn': 'Learn', 'toggle.nerd': 'Nerd mode', 'toggle.lang': 'DE',
+    'share.button': 'Share', 'share.copied': 'Link copied ✓',
+    'share.badLink': "This share link couldn't be read — showing the default dough instead.",
     'eyebrow': 'Ferment · flour · bake',
     'title.main': 'From yeast to crust,', 'title.em': 'one dough modelled',
     'lede': 'Three stages of pizza science in one place: how much yeast for your time and temperature, whether the flour can hold that ferment and hydration, and what the oven does to the crust. Colour tracks the driving variable at each step.',
@@ -269,6 +288,8 @@ const TRANSLATIONS = {
   de: {
     'header.tagline': 'Pizzateig-Rechner',
     'toggle.simple': 'Einfach', 'toggle.learn': 'Lernen', 'toggle.nerd': 'Nerd-Modus', 'toggle.lang': 'EN',
+    'share.button': 'Teilen', 'share.copied': 'Link kopiert ✓',
+    'share.badLink': 'Dieser Link konnte nicht gelesen werden — Standardteig wird angezeigt.',
     'eyebrow': 'Gärung · Mehl · Backen',
     'title.main': 'Von der Hefe zur Kruste,', 'title.em': 'ein Teig modelliert',
     'lede': 'Pizzawissenschaft in drei Stufen: wie viel Hefe für Zeit und Temperatur, ob das Mehl diese Gärung und Hydration hält, und was der Ofen mit der Kruste macht. Die Farbe zeigt die entscheidende Variable jedes Schritts.',
@@ -473,6 +494,7 @@ const {
   EMBER, CONF, GRAPH, DG, PIZZA_PRESETS, OVEN_PRESETS, STYLE_GUIDELINES, TONE, CRUMB_PTS,
   TOPPINGS, LEOPARD, CRUST_STOPS, SOURCES
 } = window.DoughEngine;
+const { encodeShareToken } = window.ShareLink;
 
 // ---- config-in-URL ----------------------------------------------------
 // Three tiny hooks — one per value shape — that behave like useState but
@@ -798,12 +820,28 @@ function FermentCalculator() {
   const [simple, setSimple] = useConfigBool('simple', false);
   const [selectedStyle, setSelectedStyle] = useConfigEnum('style', null, STYLE_IDS);
   const [lang, setLang] = useState(initialLang);
+  const [shareCopied, setShareCopied] = useState(false);
+  const [shareBadNotice, setShareBadNotice] = useState(SHARE_BAD_LINK);
   const t = useMemo(() => makeTFn(lang, TRANSLATIONS), [lang]);
   useEffect(() => {
     document.documentElement.lang = lang;
     document.title = t('doc.title');
     try { localStorage.setItem(LANG_KEY, lang); } catch (e) { /* private mode, etc. */ }
   }, [lang, t]);
+
+  const handleShare = async () => {
+    const token = encodeShareToken(inputs);
+    const url = window.location.origin + window.location.pathname + '#d=' + token;
+    if (navigator.share) {
+      try { await navigator.share({ title: t('doc.title'), url }); } catch (e) { /* cancelled */ }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    } catch (e) { /* clipboard unavailable */ }
+  };
 
   const accent = tempColor(tempC);
   const inputs = { tempC, hours, protein, plVal, hydration, salt, oilPct, sugarPct, leavening, yeastType, starterStr, preferment, roomTemp, ddt, mixMethod, doughWeight, ballCount, ovenC, surface };
@@ -1114,8 +1152,15 @@ function FermentCalculator() {
             <button className="fc-nerd-toggle" data-on={simple} onClick={() => setSimple((v) => !v)}>{t('toggle.simple')}</button>
             <button className="fc-nerd-toggle" data-on={learn} onClick={() => setLearn((v) => !v)}>{t('toggle.learn')}</button>
             <button className="fc-nerd-toggle" data-on={nerdMode} onClick={() => setNerdMode((v) => !v)}>{t('toggle.nerd')}</button>
+            <button className="fc-nerd-toggle" data-on={shareCopied} onClick={handleShare}>{shareCopied ? t('share.copied') : t('share.button')}</button>
           </div>
         </div>
+        {shareBadNotice && (
+          <p className="fc-help" style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
+            <span>{t('share.badLink')}</span>
+            <button className="fc-nerd-toggle" onClick={() => setShareBadNotice(false)}>×</button>
+          </p>
+        )}
         <h1 className="fc-title">{t('title.main')} <em>{t('title.em')}</em></h1>
         <p className="fc-lede">
           {t('lede')}{" "}
