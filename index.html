@@ -506,6 +506,15 @@ function useConfigNumber(param, def, min, max) {
   useEffect(() => { writeParam(param, value === def ? null : String(value)); }, [param, value, def]);
   return [value, setValue];
 }
+
+// Moves to the next value on a stepper's step grid, in the given direction.
+// If a value was typed by hand off-grid (e.g. 280 with a 25 step), this snaps
+// to the nearest grid line past it (300) rather than offsetting from the
+// off-grid value itself (305) — same intent as a slider snapping to its step.
+function stepAlong(value, step, dir, min, max) {
+  const n = dir > 0 ? (Math.floor(value / step) + 1) * step : (Math.ceil(value / step) - 1) * step;
+  return clamp(n, min, max);
+}
 function useConfigEnum(param, def, allowed) {
   const [value, setValue] = useState(() => {
     const raw = readParam(param);
@@ -1235,18 +1244,18 @@ function FermentCalculator() {
             <div className="fc-field">
               <div className="fc-field-head"><span className="fc-label">{t('label.ballCount')}</span></div>
               <div className="fc-stepper">
-                <button onClick={() => setBallCount((n) => Math.max(1, n - 1))}>−</button>
+                <button onClick={() => setBallCount((n) => stepAlong(n, 1, -1, 1, 12))}>−</button>
                 <EditableValue className="fc-step-val" value={ballCount} min={1} max={12} onChange={setBallCount} />
-                <button onClick={() => setBallCount((n) => Math.min(12, n + 1))}>+</button>
+                <button onClick={() => setBallCount((n) => stepAlong(n, 1, 1, 1, 12))}>+</button>
               </div>
             </div>
             <Help>{t('help.ballCount')}</Help>
             <div className="fc-field">
               <div className="fc-field-head"><span className="fc-label">{t('label.ballWeight')}</span></div>
               <div className="fc-stepper">
-                <button onClick={() => setBallWeight((w) => Math.max(100, w - 25))}>−</button>
+                <button onClick={() => setBallWeight((w) => stepAlong(w, 25, -1, 100, 500))}>−</button>
                 <EditableValue className="fc-step-val" value={ballWeight} unit="g" min={100} max={500} onChange={setBallWeight} />
-                <button onClick={() => setBallWeight((w) => Math.min(500, w + 25))}>+</button>
+                <button onClick={() => setBallWeight((w) => stepAlong(w, 25, 1, 100, 500))}>+</button>
               </div>
             </div>
             <Help>{t('help.ballWeight')}</Help>
