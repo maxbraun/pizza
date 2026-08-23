@@ -474,6 +474,57 @@ const {
   TOPPINGS, LEOPARD, CRUST_STOPS, SOURCES
 } = window.DoughEngine;
 
+// ---- config-in-URL ----------------------------------------------------
+// Three tiny hooks — one per value shape — that behave like useState but
+// keep a single query param in sync with the value. Each field owns just
+// its own param: on read it only looks at that key, and on write it only
+// rewrites that key, leaving whatever the other fields wrote alone. So a
+// reload, or a copied link, reproduces the exact setup, and every control
+// stays a single, self-contained `useConfigX('param', default, ...)` line —
+// nothing else to add when a new control shows up.
+function readParam(param) {
+  try { return new URLSearchParams(window.location.search).get(param); }
+  catch (e) { return null; }
+}
+function writeParam(param, value) {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (value == null) params.delete(param); else params.set(param, value);
+    const qs = params.toString();
+    const url = window.location.pathname + (qs ? '?' + qs : '') + window.location.hash;
+    window.history.replaceState(null, '', url); // not pushState — edits one entry, doesn't pile up
+  } catch (e) { /* e.g. sandboxed iframe */ }
+}
+
+function useConfigNumber(param, def, min, max) {
+  const [value, setValue] = useState(() => {
+    const raw = readParam(param);
+    if (raw == null) return def;
+    const n = Number(raw);
+    return Number.isFinite(n) ? clamp(n, min, max) : def;
+  });
+  useEffect(() => { writeParam(param, value === def ? null : String(value)); }, [param, value, def]);
+  return [value, setValue];
+}
+function useConfigEnum(param, def, allowed) {
+  const [value, setValue] = useState(() => {
+    const raw = readParam(param);
+    return raw != null && allowed.includes(raw) ? raw : def;
+  });
+  useEffect(() => { writeParam(param, value === def ? null : value); }, [param, value, def]);
+  return [value, setValue];
+}
+function useConfigBool(param, def) {
+  const [value, setValue] = useState(() => {
+    const raw = readParam(param);
+    return raw == null ? def : (raw === '1' || raw === 'true');
+  });
+  useEffect(() => { writeParam(param, value === def ? null : (value ? '1' : null)); }, [param, value, def]);
+  return [value, setValue];
+}
+
+const STYLE_IDS = PIZZA_PRESETS.map((p) => p.id);
+
 // ---- UI atoms --------------------------------------------------------
 const LearnCtx = React.createContext(false);
 function Help({ children }) {
@@ -722,30 +773,30 @@ function Pizza({ colour, leopard, protein, proofQuality }) {
 }
 
 function FermentCalculator() {
-  const [tempC, setTempC] = useState(5);
-  const [hours, setHours] = useState(24);
-  const [protein, setProtein] = useState(12.5);
-  const [plVal, setPlVal] = useState(50);
-  const [hydration, setHydration] = useState(60);
-  const [salt, setSalt] = useState(2.5);
-  const [oilPct, setOilPct] = useState(0);
-  const [sugarPct, setSugarPct] = useState(0);
-  const [yeastType, setYeastType] = useState("idy");
-  const [leavening, setLeavening] = useState("commercial");
-  const [starterStr, setStarterStr] = useState(50);
-  const [preferment, setPreferment] = useState("straight");
-  const [ballCount, setBallCount] = useState(4);
-  const [ballWeight, setBallWeight] = useState(250);
+  const [tempC, setTempC] = useConfigNumber('tempC', 5, 2, 35);
+  const [hours, setHours] = useConfigNumber('hours', 24, 2, 96);
+  const [protein, setProtein] = useConfigNumber('protein', 12.5, 8, 15);
+  const [plVal, setPlVal] = useConfigNumber('pl', 50, 0, 100);
+  const [hydration, setHydration] = useConfigNumber('hydration', 60, 50, 85);
+  const [salt, setSalt] = useConfigNumber('salt', 2.5, 0, 4);
+  const [oilPct, setOilPct] = useConfigNumber('oil', 0, 0, 6);
+  const [sugarPct, setSugarPct] = useConfigNumber('sugar', 0, 0, 4);
+  const [yeastType, setYeastType] = useConfigEnum('yeast', "idy", ['idy', 'ady', 'fresh']);
+  const [leavening, setLeavening] = useConfigEnum('leaven', "commercial", ['commercial', 'sourdough']);
+  const [starterStr, setStarterStr] = useConfigNumber('starter', 50, 0, 100);
+  const [preferment, setPreferment] = useConfigEnum('preferment', "straight", ['straight', 'poolish', 'biga']);
+  const [ballCount, setBallCount] = useConfigNumber('balls', 4, 1, 12);
+  const [ballWeight, setBallWeight] = useConfigNumber('ballWeight', 250, 100, 500);
   const doughWeight = ballCount * ballWeight;
-  const [roomTemp, setRoomTemp] = useState(20);
-  const [ddt, setDdt] = useState(24);
-  const [mixMethod, setMixMethod] = useState("hand");
-  const [ovenC, setOvenC] = useState(250);
-  const [surface, setSurface] = useState("steel");
-  const [nerdMode, setNerdMode] = useState(false);
-  const [learn, setLearn] = useState(false);
-  const [simple, setSimple] = useState(false);
-  const [selectedStyle, setSelectedStyle] = useState(null);
+  const [roomTemp, setRoomTemp] = useConfigNumber('room', 20, 12, 30);
+  const [ddt, setDdt] = useConfigNumber('ddt', 24, 20, 28);
+  const [mixMethod, setMixMethod] = useConfigEnum('mix', "hand", ['hand', 'mixer', 'processor']);
+  const [ovenC, setOvenC] = useConfigNumber('oven', 250, 200, 500);
+  const [surface, setSurface] = useConfigEnum('surface', "steel", ['steel', 'stone', 'pan', 'rack']);
+  const [nerdMode, setNerdMode] = useConfigBool('nerd', false);
+  const [learn, setLearn] = useConfigBool('learn', false);
+  const [simple, setSimple] = useConfigBool('simple', false);
+  const [selectedStyle, setSelectedStyle] = useConfigEnum('style', null, STYLE_IDS);
   const [lang, setLang] = useState(initialLang);
   const t = useMemo(() => makeTFn(lang, TRANSLATIONS), [lang]);
   useEffect(() => {
