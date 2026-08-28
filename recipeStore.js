@@ -14,23 +14,37 @@
 // which makes "export everything I own" a one-liner and migrations a single
 // switch on `version` later.
 //
-// A dough is only ever admitted through shareLink's sanitizeInputs, so a
-// hand-edited storage blob, a stale export, or a foreign file is checked
-// exactly as strictly as a share link is.
+// A dough is only ever admitted through the engine's sanitizeInputs, which
+// is the one definition of a legal dough, so a hand-edited storage blob, a
+// stale export or a foreign file is checked as strictly as anything else.
 //
 // Loaded two ways, same as doughEngine.js and shareLink.js:
 //   - Node (tests):   require('./recipeStore.js') — pass your own storage
 //                     object to createStore(), no browser needed
-//   - Browser (app):  <script src="recipeStore.js"> after shareLink.js,
+//   - Browser (app):  <script src="recipeStore.js"> after doughEngine.js,
 //                     then window.RecipeStore.createStore()
 
 (function () {
 'use strict';
 
-const share = (typeof module !== 'undefined' && module.exports)
-  ? require('./shareLink.js')
-  : window.ShareLink;
-const { sanitizeInputs, fitName, SCALAR_RANGES, ENUM_ORDER, ENUMS } = share;
+const engine = (typeof module !== 'undefined' && module.exports)
+  ? require('./doughEngine.js')
+  : window.DoughEngine;
+const { sanitizeInputs, DOUGH_RANGES, DOUGH_ENUMS } = engine;
+const ENUM_FIELDS = Object.keys(DOUGH_ENUMS);
+
+// Names are typed by the user or arrive inside someone's share link, and
+// end up in the DOM, in this blob and in a filename. Control characters go,
+// whitespace collapses, and a bidi override would let a stranger's link
+// render its name as something else entirely, so those go too.
+const NAME_MAX = 64;
+function fitName(name) {
+  return String(name == null ? '' : name)
+    .replace(/[\u0000-\u001f\u007f\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, NAME_MAX);
+}
 
 const STORAGE_KEY = 'forno.box.v1';
 const VERSION = 1;
@@ -43,7 +57,7 @@ const KITCHEN_FIELDS = ['ovenC', 'surface', 'roomTemp', 'ddt', 'mixMethod'];
 
 // Fixed field order, so two objects holding the same dough always produce
 // the same identity string no matter how they were built.
-const CANON_FIELDS = Object.keys(SCALAR_RANGES).sort().concat(ENUM_ORDER.slice().sort());
+const CANON_FIELDS = Object.keys(DOUGH_RANGES).sort().concat(ENUM_FIELDS.slice().sort());
 
 function canonicalKey(inputs) {
   const clean = sanitizeInputs(inputs);
@@ -83,8 +97,8 @@ function validFlour(row, newId, now) {
   const name = fitName(row.name);
   const protein = Number(row.protein);
   const plVal = Number(row.plVal);
-  const [pLo, pHi] = SCALAR_RANGES.protein;
-  const [lLo, lHi] = SCALAR_RANGES.plVal;
+  const [pLo, pHi] = DOUGH_RANGES.protein;
+  const [lLo, lHi] = DOUGH_RANGES.plVal;
   if (!name) return null;
   if (!Number.isFinite(protein) || protein < pLo || protein > pHi) return null;
   if (!Number.isFinite(plVal) || plVal < lLo || plVal > lHi) return null;
@@ -103,8 +117,8 @@ function validFlour(row, newId, now) {
 function validKitchen(row, now) {
   if (!row || typeof row !== 'object') return null;
   const probe = {};
-  for (const [key, [lo]] of Object.entries(SCALAR_RANGES)) probe[key] = lo;
-  for (const key of ENUM_ORDER) probe[key] = ENUMS[key][0];
+  for (const [key, [lo]] of Object.entries(DOUGH_RANGES)) probe[key] = lo;
+  for (const key of ENUM_FIELDS) probe[key] = DOUGH_ENUMS[key][0];
   for (const key of KITCHEN_FIELDS) probe[key] = row[key];
   const clean = sanitizeInputs(probe);
   if (!clean) return null;
@@ -405,7 +419,7 @@ function createStore(storage, opts) {
 
 const __STORE__ = {
   createStore, canonicalKey,
-  STORAGE_KEY, VERSION, MAX_RECIPES, MAX_FLOURS, KITCHEN_FIELDS,
+  STORAGE_KEY, VERSION, MAX_RECIPES, MAX_FLOURS, NAME_MAX, KITCHEN_FIELDS,
 };
 
 if (typeof module !== 'undefined' && module.exports) module.exports = __STORE__;

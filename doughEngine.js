@@ -150,6 +150,62 @@ const FLOUR_PRESETS = [
 ];
 const FLOUR_REGIONS = ["it", "us", "de", "generic"];
 
+// ---- the dough input contract ----------------------------------------
+// What `computeAll` will accept: every field, its legal range, and the
+// query param the UI persists it under. The engine consumes these inputs,
+// so it's the engine that says what a legal dough is — the recipe box
+// checks a stored or imported dough against exactly this, rather than
+// keeping a second opinion of its own.
+//
+// Ranges mirror the slider bounds in index.html; typed entry is clamped to
+// the same bounds, so anything inside a range is a value the UI can hold.
+const DOUGH_RANGES = {
+  tempC: [2, 35], hours: [2, 96], protein: [8, 15], plVal: [0, 100],
+  hydration: [50, 85], salt: [0, 4], oilPct: [0, 6], sugarPct: [0, 4],
+  starterStr: [0, 100], ballCount: [1, 12], ballWeight: [100, 500],
+  roomTemp: [12, 30], ddt: [20, 28], ovenC: [200, 500],
+};
+
+const DOUGH_ENUMS = {
+  leavening:  ["commercial", "sourdough"],
+  yeastType:  ["idy", "ady", "fresh"],
+  preferment: ["straight", "poolish", "biga"],
+  mixMethod:  ["hand", "mixer", "processor"],
+  surface:    ["steel", "stone", "pan", "rack"],
+};
+
+// field -> the query param index.html's useConfigX hooks keep it under.
+const DOUGH_PARAMS = {
+  tempC: "tempC", hours: "hours", protein: "protein", plVal: "pl",
+  hydration: "hydration", salt: "salt", oilPct: "oil", sugarPct: "sugar",
+  yeastType: "yeast", leavening: "leaven", starterStr: "starter",
+  preferment: "preferment", ballCount: "balls", ballWeight: "ballWeight",
+  roomTemp: "room", ddt: "ddt", mixMethod: "mix", ovenC: "oven", surface: "surface",
+};
+
+// Returns a fresh object holding exactly the known fields, or null if any
+// is missing, non-finite, out of range, or not one of the enum's values.
+// Numeric strings are accepted, since that's how values arrive from a query
+// string. Rounding is to 4 decimals — enough to absorb float noise without
+// flattening a hand-typed 62.75%.
+function sanitizeInputs(obj) {
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return null;
+  const out = {};
+  for (const key in DOUGH_RANGES) {
+    const [lo, hi] = DOUGH_RANGES[key];
+    const raw = obj[key];
+    if (raw === "" || raw == null) return null;
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n < lo - 1e-9 || n > hi + 1e-9) return null;
+    out[key] = Math.round(n * 10000) / 10000;
+  }
+  for (const key in DOUGH_ENUMS) {
+    if (!DOUGH_ENUMS[key].includes(obj[key])) return null;
+    out[key] = obj[key];
+  }
+  return out;
+}
+
 const STYLE_GUIDELINES = {
   neapolitan: [
     { key:"protein",   label:"Protein",    lo:12.5, hi:13.5, unit:"%",  note:"00 flour, W 280–320" },
@@ -522,6 +578,10 @@ const __ENGINE__ = {
   OVEN_PRESETS,
   FLOUR_PRESETS,
   FLOUR_REGIONS,
+  DOUGH_RANGES,
+  DOUGH_ENUMS,
+  DOUGH_PARAMS,
+  sanitizeInputs,
   STYLE_GUIDELINES,
   TONE,
   CRUMB_PTS,

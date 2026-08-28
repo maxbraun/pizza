@@ -41,7 +41,7 @@
   <script src="recipeStore.js"></script>
 
   <script type="text/babel">
-const { useState, useMemo, useEffect, useContext, createContext } = React;
+const { useState, useMemo, useEffect, useRef, useContext, createContext } = React;
 
 const LangCtx = createContext(null);
 function useT() { return useContext(LangCtx); }
@@ -70,17 +70,33 @@ function initialLang() {
 // dough up with no further wiring. Runs once, before FermentCalculator's
 // first render, and rewrites the address bar immediately so a stale or
 // re-shared hash never lingers.
+//
+// The token wraps a query string, so a recipe's name travels as one more
+// param inside it (`n=`) rather than as a second mechanism. It isn't app
+// config, so it comes back out before the hooks — or the address bar — ever
+// see it.
+const SHARE_NAME_PARAM = 'n';
 const SHARE_EXPANSION = window.ShareLink.expandShareToken(window.location.hash, window.location.search);
+let SHARED_NAME = '';
 if (SHARE_EXPANSION.present) {
-  try { history.replaceState(null, '', window.location.pathname + SHARE_EXPANSION.search); }
+  let search = SHARE_EXPANSION.search;
+  try {
+    const params = new URLSearchParams(search);
+    SHARED_NAME = params.get(SHARE_NAME_PARAM) || '';
+    if (params.has(SHARE_NAME_PARAM)) {
+      params.delete(SHARE_NAME_PARAM);
+      const qs = params.toString();
+      search = qs ? '?' + qs : '';
+    }
+  } catch (e) { /* leave the search as the expansion produced it */ }
+  try { history.replaceState(null, '', window.location.pathname + search); }
   catch (e) { /* sandboxed iframe, etc. */ }
 }
 const SHARE_BAD_LINK = SHARE_EXPANSION.badLink;
-// What arrived over the link, kept aside so the app can offer to save it —
-// once the token is folded into the query string, nothing downstream can
-// tell a shared dough from one the user built themselves.
-const SHARED_DOUGH = SHARE_EXPANSION.dough || null;
-const SHARED_NAME = SHARE_EXPANSION.name || '';
+// Whether this page load came in on a link someone sent. The dough itself
+// is whatever the hooks read out of the expanded query string, so it gets
+// snapshotted on the first render rather than decoded a second time here.
+const SHARE_ARRIVED = SHARE_EXPANSION.present && !SHARE_EXPANSION.badLink;
 
 // ---- the recipe box ---------------------------------------------------
 // Everything the app remembers about you lives in localStorage, read
@@ -90,7 +106,7 @@ const SHARED_NAME = SHARE_EXPANSION.name || '';
 // the generic 60% / 24 h dough.
 const STORE = window.RecipeStore.createStore();
 const { KITCHEN_FIELDS, canonicalKey, MAX_RECIPES, MAX_FLOURS } = window.RecipeStore;
-const PARAM_OF = window.ShareLink.PARAM_NAMES;
+const { DOUGH_PARAMS, sanitizeInputs } = window.DoughEngine;
 
 // Only a *completely* cold URL gets your own defaults. If any dough param
 // is present the link is describing a specific dough — someone copied it
@@ -99,11 +115,11 @@ const PARAM_OF = window.ShareLink.PARAM_NAMES;
 function buildColdStart() {
   let params;
   try { params = new URLSearchParams(window.location.search); } catch (e) { return {}; }
-  if (Object.values(PARAM_OF).some((param) => params.has(param))) return {};
+  if (Object.values(DOUGH_PARAMS).some((param) => params.has(param))) return {};
   let box;
   try { box = STORE.read(); } catch (e) { return {}; }
   const start = {};
-  const put = (field, value) => { if (value !== undefined && PARAM_OF[field]) start[PARAM_OF[field]] = value; };
+  const put = (field, value) => { if (value !== undefined && DOUGH_PARAMS[field]) start[DOUGH_PARAMS[field]] = value; };
   const fallback = box.recipes.find((r) => r.id === box.defaultRecipeId);
   if (fallback) Object.entries(fallback.inputs).forEach(([field, value]) => put(field, value));
   else if (box.kitchen) KITCHEN_FIELDS.forEach((field) => put(field, box.kitchen[field]));
@@ -666,6 +682,15 @@ function useConfigNumber(param, def, min, max) {
   useEffect(() => { writeParam(param, value === def ? null : String(value)); }, [param, value, def]);
   return [value, setValue];
 }
+
+// Moves to the next value on a stepper's step grid, in the given direction.
+// If a value was typed by hand off-grid (e.g. 280 with a 25 step), this snaps
+// to the nearest grid line past it (300) rather than offsetting from the
+// off-grid value itself (305) — same intent as a slider snapping to its step.
+function stepAlong(value, step, dir, min, max) {
+  const n = dir > 0 ? (Math.floor(value / step) + 1) * step : (Math.ceil(value / step) - 1) * step;
+  return clamp(n, min, max);
+}
 function useConfigEnum(param, def, allowed) {
   const [value, setValue] = useState(() => {
     const stored = readParam(param);
@@ -693,15 +718,78 @@ function Help({ children }) {
   return on ? <p className="fc-help">{children}</p> : null;
 }
 
+// Click (or Enter/Space when focused) turns the value into a typeable input,
+// clamped to [min, max] on commit — same validation `useConfigNumber` applies
+// to slider drags and stepper clicks, so typed entry stays consistent with them.
+function EditableValue({ value, unit, min, max, onChange, className, style }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  function startEdit() {
+    setDraft(String(value));
+    setEditing(true);
+  }
+
+  function commit() {
+    const n = parseFloat(draft);
+    if (Number.isFinite(n)) onChange(clamp(n, min, max));
+    setEditing(false);
+  }
+
+  if (editing) {
+    // Same wrapping element/class as the view-mode span below (not just the
+    // bare <input>) so font-size, weight and min-width stay identical —
+    // otherwise the value box resizes and the row jumps when you click in.
+    return (
+      <span className={className} style={style}>
+        <input
+          ref={inputRef}
+          className="fc-val-input"
+          style={{ width: `${Math.max(draft.length, 1) + 1}ch` }}
+          type="text"
+          inputMode="decimal"
+          value={draft}
+          onChange={(e) => {
+            const v = e.target.value;
+            if (v === '' || /^-?\d*\.?\d*$/.test(v)) setDraft(v);
+          }}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { e.preventDefault(); commit(); }
+            else if (e.key === 'Escape') { e.preventDefault(); setEditing(false); }
+          }}
+        />
+        {unit && <span className="fc-unit">{unit}</span>}
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className={className} style={style} tabIndex={0} role="button"
+      onClick={startEdit}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startEdit(); } }}
+    >
+      {value}{unit && <span className="fc-unit">{unit}</span>}
+    </span>
+  );
+}
+
 function Slider({ label, value, unit, min, max, step, onChange, accent, note, noteColor }) {
   const pctPos = ((value - min) / (max - min)) * 100;
   return (
     <div className="fc-field">
       <div className="fc-field-head">
         <span className="fc-label">{label}</span>
-        <span className="fc-val" style={{ color: accent }}>
-          {value}<span className="fc-unit">{unit}</span>
-        </span>
+        <EditableValue className="fc-val" style={{ color: accent }} value={value} unit={unit} min={min} max={max} onChange={onChange} />
       </div>
       <input
         type="range" min={min} max={max} step={step} value={value}
@@ -942,7 +1030,7 @@ function Pizza({ colour, leopard, protein, proofQuality }) {
 function NameForm({ label, initial, submitLabel, onSubmit, onCancel, inRow }) {
   const t = useT();
   const [value, setValue] = useState(initial || '');
-  const ref = React.useRef(null);
+  const ref = useRef(null);
   useEffect(() => { if (ref.current) ref.current.focus(); }, []);
   return (
     <form className={inRow ? 'fc-box-form row' : 'fc-box-form'}
@@ -1131,7 +1219,7 @@ function KitchenTab({ box, api }) {
 function RecipeBox({ box, api, already, suggested, loaded, status, persistent }) {
   const t = useT();
   const [tab, setTab] = useState('recipes');
-  const fileRef = React.useRef(null);
+  const fileRef = useRef(null);
   return (
     <div className="fc-box">
       <div className="fc-box-head">
@@ -1191,7 +1279,8 @@ function FermentCalculator() {
   const [boxOpen, setBoxOpen] = useState(false);
   const [boxStatus, setBoxStatus] = useState(null);
   const [loadedId, setLoadedId] = useState(null);
-  const [sharedOffer, setSharedOffer] = useState(!!SHARED_DOUGH);
+  const [sharedOffer, setSharedOffer] = useState(SHARE_ARRIVED);
+  const sharedRef = useRef();
   const t = useMemo(() => makeTFn(lang, TRANSLATIONS), [lang]);
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -1207,8 +1296,18 @@ function FermentCalculator() {
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
-  const shareDough = async (dough, name) => {
-    const token = encodeShareToken(dough, name);
+  // `search` is a config-in-URL query string; `name` is optional and rides
+  // along inside the same token, so a shared dough can arrive under the name
+  // its author gave it without any of it showing in the link.
+  const shareDough = async (search, name) => {
+    let qs = String(search == null ? '' : search).replace(/^\?/, '');
+    if (name) {
+      const params = new URLSearchParams(qs);
+      params.set(SHARE_NAME_PARAM, name);
+      qs = params.toString();
+    }
+    const token = encodeShareToken(qs);
+    if (token == null) return;
     const url = window.location.origin + window.location.pathname + '#d=' + token;
     if (navigator.share) {
       try { await navigator.share({ title: t('doc.title'), url }); } catch (e) { /* cancelled */ }
@@ -1220,12 +1319,32 @@ function FermentCalculator() {
       setTimeout(() => setShareCopied(false), 2000);
     } catch (e) { /* clipboard unavailable */ }
   };
-  // Sharing the dough on screen carries its name only if it's one the user
-  // has actually named and saved.
-  const handleShare = () => shareDough(inputs, savedAs ? savedAs.name : '');
+
+  // The hooks keep location.search holding the full current setup (every
+  // non-default param), so sharing what's on screen wraps that string as-is —
+  // lossless for typed values and complete for every control, present and
+  // future, with no field list to maintain here. It carries a name only if
+  // this dough is one the user has actually named and saved.
+  const handleShare = () => shareDough(window.location.search, savedAs ? savedAs.name : '');
+
+  // A saved recipe is a dough, not a view state, so its link is built from
+  // its own fields rather than from whatever the address bar happens to hold.
+  const shareRecipe = (recipe) => {
+    const params = new URLSearchParams();
+    Object.entries(DOUGH_PARAMS).forEach(([field, param]) => params.set(param, String(recipe.inputs[field])));
+    shareDough(params.toString(), recipe.name);
+  };
 
   const accent = tempColor(tempC);
+  // ballWeight is here for the recipe box, which stores a whole dough; the
+  // engine works off doughWeight, which is why the memo below doesn't list it.
   const inputs = { tempC, hours, protein, plVal, hydration, salt, oilPct, sugarPct, leavening, yeastType, starterStr, preferment, roomTemp, ddt, mixMethod, doughWeight, ballCount, ballWeight, ovenC, surface };
+  // A dough that came in on a link is just the query string by the time the
+  // hooks have read it, so it's snapshotted on the first render — before the
+  // user can nudge a slider — and that snapshot is what the offer to save it
+  // refers to. Lazy ref init: assigned once, never again.
+  if (SHARE_ARRIVED && sharedRef.current === undefined) sharedRef.current = sanitizeInputs(inputs);
+  const sharedDough = sharedRef.current || null;
   // single pure entry point — all numbers come from the engine
   const M = useMemo(() => computeAll(inputs),
     [tempC, hours, protein, plVal, hydration, salt, oilPct, sugarPct, leavening, yeastType, starterStr, preferment, roomTemp, ddt, mixMethod, doughWeight, ballCount, ovenC, surface]);
@@ -1283,8 +1402,8 @@ function FermentCalculator() {
     hydration, hours,
   });
   const savedAs = box.recipes.find((r) => canonicalKey(r.inputs) === canonicalKey(inputs));
-  const sharedAlready = SHARED_DOUGH
-    && box.recipes.find((r) => canonicalKey(r.inputs) === canonicalKey(SHARED_DOUGH));
+  const sharedAlready = sharedDough
+    && box.recipes.find((r) => canonicalKey(r.inputs) === canonicalKey(sharedDough));
 
   const api = {
     save(name) {
@@ -1306,9 +1425,9 @@ function FermentCalculator() {
       setBoxStatus(t('box.loaded'));
       return { ok: true };
     },
-    share(recipe) { shareDough(recipe.inputs, recipe.name); return { ok: true }; },
+    share(recipe) { shareRecipe(recipe); return { ok: true }; },
     saveShared() {
-      const res = STORE.saveRecipe({ name: SHARED_NAME || t('shared.defaultName'), inputs: SHARED_DOUGH, source: 'shared' });
+      const res = STORE.saveRecipe({ name: SHARED_NAME || t('shared.defaultName'), inputs: sharedDough, source: 'shared' });
       setSharedOffer(false);
       if (res.ok) { setLoadedId(res.recipe.id); setBoxOpen(true); }
       return report(res, 'box.saved');
@@ -1463,6 +1582,15 @@ function FermentCalculator() {
         .fc-label{ font-size:13.5px; font-weight:500; color:var(--ink); }
         .fc-val{ font-family:'JetBrains Mono',monospace; font-size:15px; font-weight:500; transition:color .5s cubic-bezier(.4,0,.2,1); }
         .fc-unit{ font-size:11px; margin-left:2px; opacity:.7; }
+        /* [role=button] scopes the click-to-edit affordance to the view-mode span only —
+           the edit-mode span reuses the same class (for identical sizing) but isn't clickable. */
+        .fc-val[role=button], .fc-step-val[role=button]{ cursor:pointer; border-bottom:1px dashed transparent;
+          transition:border-color .2s cubic-bezier(.4,0,.2,1), opacity .2s; }
+        .fc-val[role=button]:hover, .fc-step-val[role=button]:hover,
+        .fc-val[role=button]:focus-visible, .fc-step-val[role=button]:focus-visible{
+          border-color:currentColor; opacity:.85; outline:none; }
+        .fc-val-input{ font:inherit; line-height:inherit; color:inherit; cursor:text;
+          background:transparent; border:none; border-bottom:1px solid currentColor; outline:none; padding:0; }
         .fc-note-line{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-soft);
           margin:8px 0 0; letter-spacing:.02em; transition:color .4s cubic-bezier(.4,0,.2,1); }
 
@@ -1693,7 +1821,7 @@ function FermentCalculator() {
         {/* A dough that arrived over a link is already loaded; keeping it is
             the user's call, not something that happens to their box behind
             their back. */}
-        {sharedOffer && SHARED_DOUGH && (
+        {sharedOffer && sharedDough && (
           <div className="fc-shared">
             <p>
               {t('shared.head')}
@@ -1757,18 +1885,18 @@ function FermentCalculator() {
             <div className="fc-field">
               <div className="fc-field-head"><span className="fc-label">{t('label.ballCount')}</span></div>
               <div className="fc-stepper">
-                <button onClick={() => setBallCount((n) => Math.max(1, n - 1))}>−</button>
-                <span className="fc-step-val">{ballCount}</span>
-                <button onClick={() => setBallCount((n) => Math.min(12, n + 1))}>+</button>
+                <button onClick={() => setBallCount((n) => stepAlong(n, 1, -1, 1, 12))}>−</button>
+                <EditableValue className="fc-step-val" value={ballCount} min={1} max={12} onChange={setBallCount} />
+                <button onClick={() => setBallCount((n) => stepAlong(n, 1, 1, 1, 12))}>+</button>
               </div>
             </div>
             <Help>{t('help.ballCount')}</Help>
             <div className="fc-field">
               <div className="fc-field-head"><span className="fc-label">{t('label.ballWeight')}</span></div>
               <div className="fc-stepper">
-                <button onClick={() => setBallWeight((w) => Math.max(100, w - 25))}>−</button>
-                <span className="fc-step-val">{ballWeight} g</span>
-                <button onClick={() => setBallWeight((w) => Math.min(500, w + 25))}>+</button>
+                <button onClick={() => setBallWeight((w) => stepAlong(w, 25, -1, 100, 500))}>−</button>
+                <EditableValue className="fc-step-val" value={ballWeight} unit="g" min={100} max={500} onChange={setBallWeight} />
+                <button onClick={() => setBallWeight((w) => stepAlong(w, 25, 1, 100, 500))}>+</button>
               </div>
             </div>
             <Help>{t('help.ballWeight')}</Help>

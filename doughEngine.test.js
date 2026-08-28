@@ -10,6 +10,10 @@ const {
   flourProfile,
   FLOUR_PRESETS,
   FLOUR_REGIONS,
+  DOUGH_RANGES,
+  DOUGH_ENUMS,
+  DOUGH_PARAMS,
+  sanitizeInputs,
   hydrationVerdict,
   fermentVerdict,
   overProofRecommendations,
@@ -893,5 +897,89 @@ describe('FLOUR_PRESETS', () => {
   test('the catalogue spans soft to very strong', () => {
     const cats = new Set(FLOUR_PRESETS.map(f => flourProfile(f.protein, (f.plVal - 50) / 50).categoryKey));
     assert.deepEqual([...cats].sort(), ['flour.medium', 'flour.soft', 'flour.strong', 'flour.veryStrong']);
+  });
+});
+
+describe('the dough input contract', () => {
+  const BASE = {
+    tempC: 21, hours: 8, protein: 12.5, plVal: 50, hydration: 62,
+    salt: 2.5, oilPct: 1.5, sugarPct: 0.5, starterStr: 50,
+    ballCount: 4, ballWeight: 250, roomTemp: 20, ddt: 24, ovenC: 250,
+    leavening: 'commercial', yeastType: 'idy', preferment: 'straight',
+    mixMethod: 'hand', surface: 'steel',
+  };
+
+  test('every field has both a range (or enum) and a query param', () => {
+    const fields = Object.keys(DOUGH_RANGES).concat(Object.keys(DOUGH_ENUMS)).sort();
+    assert.deepEqual(fields, Object.keys(DOUGH_PARAMS).sort());
+    assert.deepEqual(fields, Object.keys(BASE).sort());
+  });
+
+  test('param names are unique', () => {
+    const params = Object.values(DOUGH_PARAMS);
+    assert.equal(new Set(params).size, params.length);
+  });
+
+  test('accepts a valid dough and returns a copy, not the original', () => {
+    const clean = sanitizeInputs(BASE);
+    assert.deepEqual(clean, BASE);
+    assert.notEqual(clean, BASE);
+  });
+
+  test('drops unknown keys', () => {
+    const clean = sanitizeInputs({ ...BASE, evil: 'payload', doughWeight: 1000 });
+    assert.deepEqual(Object.keys(clean).sort(), Object.keys(BASE).sort());
+  });
+
+  test('keeps hand-typed off-grid values intact', () => {
+    // Number fields accept typed entry, so 313 g and 62.7% are legal doughs
+    // and must not be rounded onto any step grid on the way through.
+    const clean = sanitizeInputs({ ...BASE, ballWeight: 313, hydration: 62.7, salt: 2.35 });
+    assert.equal(clean.ballWeight, 313);
+    assert.equal(clean.hydration, 62.7);
+    assert.equal(clean.salt, 2.35);
+  });
+
+  test('rejects out-of-range scalars', () => {
+    for (const [key, [lo, hi]] of Object.entries(DOUGH_RANGES)) {
+      assert.equal(sanitizeInputs({ ...BASE, [key]: lo - 1 }), null, `${key} below ${lo}`);
+      assert.equal(sanitizeInputs({ ...BASE, [key]: hi + 1 }), null, `${key} above ${hi}`);
+      assert.ok(sanitizeInputs({ ...BASE, [key]: lo }), `${key} at ${lo}`);
+      assert.ok(sanitizeInputs({ ...BASE, [key]: hi }), `${key} at ${hi}`);
+    }
+  });
+
+  test('rejects missing, empty, non-numeric and non-finite scalars', () => {
+    for (const bad of [undefined, null, '', 'sixty', NaN, Infinity, {}]) {
+      assert.equal(sanitizeInputs({ ...BASE, hydration: bad }), null, String(bad));
+    }
+  });
+
+  test('rejects unknown enum values', () => {
+    for (const key of Object.keys(DOUGH_ENUMS)) {
+      assert.equal(sanitizeInputs({ ...BASE, [key]: 'nope' }), null, key);
+      assert.equal(sanitizeInputs({ ...BASE, [key]: undefined }), null, key);
+    }
+  });
+
+  test('accepts every enum value', () => {
+    for (const [key, values] of Object.entries(DOUGH_ENUMS)) {
+      for (const value of values) assert.ok(sanitizeInputs({ ...BASE, [key]: value }), `${key}=${value}`);
+    }
+  });
+
+  test('rejects non-objects', () => {
+    for (const v of [null, undefined, 'dough', 42, []]) assert.equal(sanitizeInputs(v), null);
+  });
+
+  test('accepts numeric strings, as they arrive from a query string', () => {
+    const fromUrl = Object.fromEntries(Object.entries(BASE).map(([k, v]) => [k, String(v)]));
+    assert.deepEqual(sanitizeInputs(fromUrl), BASE);
+  });
+
+  test('every catalogue flour is a legal dough component', () => {
+    for (const f of FLOUR_PRESETS) {
+      assert.ok(sanitizeInputs({ ...BASE, protein: f.protein, plVal: f.plVal }), f.id);
+    }
   });
 });
