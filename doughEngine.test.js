@@ -8,6 +8,11 @@ const assert = require('node:assert/strict');
 const {
   clamp,
   flourProfile,
+  analyseFlour,
+  wFromProtein,
+  plToSlider,
+  absorptionFromFlour,
+  bandScore,
   FLOUR_PRESETS,
   FLOUR_REGIONS,
   DOUGH_RANGES,
@@ -31,7 +36,7 @@ const {
   geometryFn,
   computeAll,
   buildRisePaths,
-  REF, K, Q10, SALT_REF, TYPE, SURF, FRICTION,
+  REF, K, Q10, SALT_REF, TYPE, SURF, FRICTION, FLOUR_FIELDS, STYLE_PL_RANGE, STYLE_GUIDELINES,
 } = require('./doughEngine.js');
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -865,6 +870,366 @@ describe('overProofRecommendations', () => {
   test('hydration lever absent when hydration <= 68', () => {
     const op = overProofRecommendations({ ...baseInp, hours: 26, hydration: 65 }, fp12);
     assert.ok(!op.levers.some(l => l.kCode === 'overproof.lever.hydrationKey'));
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// flour analyser
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('wFromProtein / plToSlider / absorptionFromFlour', () => {
+  test('W mirrors flourProfile — (protein−6)×40, clamped', () => {
+    assert.equal(wFromProtein(12.5), 260);
+    assert.equal(wFromProtein(12.5), flourProfile(12.5, 0).W);
+    assert.equal(wFromProtein(4), 60);
+    assert.equal(wFromProtein(20), 400);
+  });
+
+  test('a printed P/L maps onto the 0–100 extensible↔elastic slider', () => {
+    assert.equal(plToSlider(0.55), 50);   // the balanced middle
+    assert.equal(plToSlider(1.0), 100);   // fully elastic
+    assert.equal(plToSlider(0.1), 0);     // fully extensible
+    assert.ok(plToSlider(0.75) > 50);
+    assert.ok(plToSlider(0.40) < 50);
+  });
+
+  test('plToSlider clamps beyond the slider ends', () => {
+    assert.equal(plToSlider(2.5), 100);
+    assert.equal(plToSlider(0.01), 0);
+  });
+
+  test('estimated absorption rises with protein, and again with bran', () => {
+    assert.ok(absorptionFromFlour(14, null) > absorptionFromFlour(10, null));
+    assert.ok(absorptionFromFlour(13, 1.5) > absorptionFromFlour(13, 0.5));
+    assert.equal(absorptionFromFlour(13, 0.5), absorptionFromFlour(13, null)); // no bran below 0.6% ash
+  });
+});
+
+describe('bandScore', () => {
+  test('inside the range scores 1', () => assert.equal(bandScore(12, 11, 13), 1));
+  test('within half a width either side scores 0.5', () => {
+    assert.equal(bandScore(13.9, 11, 13), 0.5);
+    assert.equal(bandScore(10.1, 11, 13), 0.5);
+  });
+  test('beyond that scores 0', () => {
+    assert.equal(bandScore(15, 11, 13), 0);
+    assert.equal(bandScore(9, 11, 13), 0);
+  });
+});
+
+describe('analyseFlour — inputs', () => {
+  test('no usable protein figure → null', () => {
+    assert.equal(analyseFlour({}), null);
+    assert.equal(analyseFlour(null), null);
+    assert.equal(analyseFlour({ protein: 'not a number' }), null);
+    assert.equal(analyseFlour({ w: 300 }), null); // W alone isn't enough
+  });
+
+  test('numeric strings from text inputs are accepted', () => {
+    const typed = analyseFlour({ protein: ' 12.5 ', w: '300', pl: '0.60' });
+    const numeric = analyseFlour({ protein: 12.5, w: 300, pl: 0.6 });
+    assert.deepEqual(typed.suggest, numeric.suggest);
+    assert.equal(typed.W, 300);
+  });
+
+  test('protein alone still analyses, marking everything else estimated', () => {
+    const a = analyseFlour({ protein: 12.5 });
+    assert.equal(a.wEstimated, true);
+    assert.equal(a.plEstimated, true);
+    assert.equal(a.absorptionEstimated, true);
+    assert.equal(a.W, wFromProtein(12.5));
+  });
+
+  test('a printed W wins over the protein estimate', () => {
+    const a = analyseFlour({ protein: 11, w: 320 });
+    assert.equal(a.W, 320);
+    assert.equal(a.wEstimated, false);
+    // and drives the strength read, not the 11% protein
+    assert.equal(a.categoryKey, 'flour.veryStrong');
+  });
+
+  test('protein-only matches the calculator’s own flour profile', () => {
+    const a = analyseFlour({ protein: 13 });
+    const fp = flourProfile(13, 0);
+    assert.equal(a.W, fp.W);
+    assert.equal(a.hydrLo, fp.hydrLo);
+    assert.equal(a.hydrHi, fp.hydrHi);
+    near(a.maxHours, fp.maxHours, 1e-9);
+  });
+
+  test('a printed absorption anchors the hydration window', () => {
+    const a = analyseFlour({ protein: 12.5, absorption: 70 });
+    assert.equal(a.absorptionEstimated, false);
+    assert.equal(a.hydrLo, 66);
+    assert.equal(a.hydrHi, 74);
+  });
+
+  test('out-of-range entries are clamped, not rejected', () => {
+    const a = analyseFlour({ protein: 99, w: 9999, pl: -5 });
+    assert.equal(a.protein, 20);
+    assert.equal(a.W, 500);
+    assert.equal(a.pl, 0.1);
+  });
+});
+
+describe('analyseFlour — ferment capacity', () => {
+  test('high amylase (low falling number) shortens the safe prove', () => {
+    const plain = analyseFlour({ protein: 13 });
+    const enzymey = analyseFlour({ protein: 13, fallingNumber: 200 });
+    assert.ok(enzymey.maxHours < plain.maxHours);
+    near(enzymey.maxHours, plain.maxHours * 0.8, 1e-9);
+  });
+
+  test('a sluggish, high falling number buys a little more', () => {
+    const plain = analyseFlour({ protein: 13 });
+    const sluggish = analyseFlour({ protein: 13, fallingNumber: 400 });
+    assert.ok(sluggish.maxHours > plain.maxHours);
+  });
+
+  test('a mid falling number leaves capacity untouched', () => {
+    near(analyseFlour({ protein: 13, fallingNumber: 300 }).maxHours,
+         analyseFlour({ protein: 13 }).maxHours, 1e-9);
+  });
+
+  test('bran cuts capacity; fine white flour does not', () => {
+    const white = analyseFlour({ protein: 13, ash: 0.5 });
+    const high = analyseFlour({ protein: 13, ash: 1.0 });
+    const wholemeal = analyseFlour({ protein: 13, ash: 1.6 });
+    near(white.maxHours, analyseFlour({ protein: 13 }).maxHours, 1e-9);
+    assert.ok(high.maxHours < white.maxHours);
+    assert.ok(wholemeal.maxHours < high.maxHours);
+  });
+});
+
+describe('analyseFlour — findings', () => {
+  const codes = (a) => a.findings.map((f) => f.code);
+
+  test('every flour gets exactly one strength read', () => {
+    [8, 10, 12.5, 15, 18].forEach((protein) => {
+      const strengths = codes(analyseFlour({ protein })).filter((c) => c.startsWith('flourFind.strength.'));
+      assert.equal(strengths.length, 1, `protein ${protein}`);
+    });
+  });
+
+  test('strength bands follow W', () => {
+    assert.ok(codes(analyseFlour({ protein: 10, w: 150 })).includes('flourFind.strength.weak'));
+    assert.ok(codes(analyseFlour({ protein: 11, w: 200 })).includes('flourFind.strength.medium'));
+    assert.ok(codes(analyseFlour({ protein: 13, w: 300 })).includes('flourFind.strength.strong'));
+    assert.ok(codes(analyseFlour({ protein: 15, w: 380 })).includes('flourFind.strength.veryStrong'));
+  });
+
+  test('a weak flour is flagged warn, a pizza-strength one good', () => {
+    const weak = analyseFlour({ protein: 9 }).findings[0];
+    const strong = analyseFlour({ protein: 13 }).findings[0];
+    assert.equal(weak.tone, 'warn');
+    assert.equal(strong.tone, 'good');
+  });
+
+  test('W above what the protein predicts reads as gluten quality', () => {
+    const a = analyseFlour({ protein: 11, w: 320 }); // predicts 200
+    assert.ok(codes(a).includes('flourFind.quality.high'));
+  });
+
+  test('W below what the protein predicts is a warning', () => {
+    const a = analyseFlour({ protein: 14, w: 180 }); // predicts 320
+    const f = a.findings.find((x) => x.code === 'flourFind.quality.low');
+    assert.ok(f);
+    assert.equal(f.tone, 'warn');
+  });
+
+  test('no quality finding when W and protein agree, or when W is estimated', () => {
+    assert.ok(!codes(analyseFlour({ protein: 12.5, w: 260 })).includes('flourFind.quality.high'));
+    assert.ok(!codes(analyseFlour({ protein: 12.5, w: 260 })).includes('flourFind.quality.low'));
+    assert.ok(!codes(analyseFlour({ protein: 12.5 })).some((c) => c.startsWith('flourFind.quality.')));
+  });
+
+  test('P/L bands, and nothing said when the bag omits it', () => {
+    assert.ok(codes(analyseFlour({ protein: 13, pl: 1.1 })).includes('flourFind.pl.veryElastic'));
+    assert.ok(codes(analyseFlour({ protein: 13, pl: 0.7 })).includes('flourFind.pl.elastic'));
+    assert.ok(codes(analyseFlour({ protein: 13, pl: 0.55 })).includes('flourFind.pl.balanced'));
+    assert.ok(codes(analyseFlour({ protein: 13, pl: 0.35 })).includes('flourFind.pl.extensible'));
+    assert.ok(!codes(analyseFlour({ protein: 13 })).some((c) => c.startsWith('flourFind.pl.')));
+  });
+
+  test('ash bands, and nothing said when the bag omits it', () => {
+    assert.ok(codes(analyseFlour({ protein: 13, ash: 0.5 })).includes('flourFind.ash.fine'));
+    assert.ok(codes(analyseFlour({ protein: 13, ash: 0.7 })).includes('flourFind.ash.mid'));
+    assert.ok(codes(analyseFlour({ protein: 13, ash: 1.0 })).includes('flourFind.ash.high'));
+    assert.ok(codes(analyseFlour({ protein: 13, ash: 1.6 })).includes('flourFind.ash.wholemeal'));
+    assert.ok(!codes(analyseFlour({ protein: 13 })).some((c) => c.startsWith('flourFind.ash.')));
+  });
+
+  test('falling-number bands, and nothing said when the bag omits it', () => {
+    assert.ok(codes(analyseFlour({ protein: 13, fallingNumber: 200 })).includes('flourFind.falling.low'));
+    assert.ok(codes(analyseFlour({ protein: 13, fallingNumber: 300 })).includes('flourFind.falling.ok'));
+    assert.ok(codes(analyseFlour({ protein: 13, fallingNumber: 420 })).includes('flourFind.falling.high'));
+    assert.ok(!codes(analyseFlour({ protein: 13 })).some((c) => c.startsWith('flourFind.falling.')));
+  });
+
+  test('a thirsty flour reads as an absorption strength, a mean one as a warning', () => {
+    const thirsty = analyseFlour({ protein: 12, absorption: 70 });
+    const mean = analyseFlour({ protein: 12, absorption: 54 });
+    assert.ok(codes(thirsty).includes('flourFind.absorption.high'));
+    assert.equal(mean.findings.find((f) => f.code === 'flourFind.absorption.low').tone, 'warn');
+  });
+
+  test('every finding carries a tone the UI knows how to colour', () => {
+    const a = analyseFlour({ protein: 12.5, w: 300, pl: 0.6, ash: 0.5, absorption: 62, fallingNumber: 300 });
+    a.findings.forEach((f) => assert.ok(['good', 'warn', 'bad'].includes(f.tone), f.code));
+    assert.equal(a.findings.length, 5); // strength, P/L, absorption, ash, falling number
+  });
+});
+
+describe('analyseFlour — style fit', () => {
+  test('scores every built-in style, best first', () => {
+    const a = analyseFlour({ protein: 12.5 });
+    assert.equal(a.styleFit.length, Object.keys(STYLE_GUIDELINES).length);
+    for (let i = 1; i < a.styleFit.length; i++) {
+      assert.ok(a.styleFit[i - 1].score >= a.styleFit[i].score);
+    }
+  });
+
+  test('scores stay in [0, 1] and tones follow them', () => {
+    [8, 10, 12.5, 14, 18].forEach((protein) => {
+      analyseFlour({ protein }).styleFit.forEach((s) => {
+        assert.ok(s.score >= 0 && s.score <= 1, `${s.id} ${s.score}`);
+        const expected = s.score >= 0.8 ? 'good' : s.score >= 0.5 ? 'warn' : 'bad';
+        assert.equal(s.tone, expected);
+      });
+    });
+  });
+
+  test('a pizza-strength flour suits at least one style; a cake flour suits none', () => {
+    assert.ok(analyseFlour({ protein: 12.5 }).bestStyles.length > 0);
+    assert.equal(analyseFlour({ protein: 8 }).bestStyles.length, 0);
+  });
+
+  test('a good fit says so; a poor one names its weakest dimension', () => {
+    analyseFlour({ protein: 12.5 }).styleFit.forEach((s) => {
+      if (s.tone === 'good') assert.equal(s.reasonCode, 'flourFit.reason.suits');
+      else assert.ok(['protein', 'ferment', 'hydration', 'pl'].includes(s.reasonCode.split('.').pop()));
+    });
+  });
+
+  test('a flour that cannot hold the prove is limited by ferment, not protein', () => {
+    // right protein for New York, but the enzymes burn it out long before 24 h
+    const a = analyseFlour({ protein: 12.5, fallingNumber: 150, ash: 1.6 });
+    const ny = a.styleFit.find((s) => s.id === 'ny');
+    assert.equal(ny.reasonCode, 'flourFit.reason.ferment');
+    assert.ok(ny.reasonParams.maxH < 24);
+  });
+
+  test('P/L only counts toward the fit when the bag prints it', () => {
+    const without = analyseFlour({ protein: 12.5 });
+    const elastic = analyseFlour({ protein: 12.5, pl: 1.2 });
+    const roman = (a) => a.styleFit.find((s) => s.id === 'roman').score;
+    assert.ok(roman(elastic) < roman(without)); // far too springy to stretch into a tray
+    assert.ok(!without.styleFit.some((s) => s.reasonCode === 'flourFit.reason.pl'));
+  });
+
+  test('summary tracks the best fit found', () => {
+    assert.equal(analyseFlour({ protein: 12.5 }).summary.code, 'flourSummary.good');
+    assert.equal(analyseFlour({ protein: 8 }).summary.code, 'flourSummary.weak');
+    assert.ok(['flourSummary.good', 'flourSummary.mixed', 'flourSummary.weak']
+      .includes(analyseFlour({ protein: 11 }).summary.code));
+  });
+
+  test('every style has a P/L preference range to score against', () => {
+    Object.keys(STYLE_GUIDELINES).forEach((id) => {
+      const range = STYLE_PL_RANGE[id];
+      assert.ok(Array.isArray(range) && range[0] < range[1], id);
+    });
+  });
+});
+
+describe('analyseFlour — handing values back to the calculator', () => {
+  test('suggested values land inside the calculator’s own ranges', () => {
+    [5, 9, 12.3, 13.7, 20].forEach((protein) => {
+      const s = analyseFlour({ protein, pl: 0.6, absorption: 95 }).suggest;
+      assert.ok(s.protein >= 8 && s.protein <= 15);
+      assert.ok(s.plVal >= 0 && s.plVal <= 100);
+      assert.ok(s.hydration >= 50 && s.hydration <= 85);
+      assert.equal(s.hydration, Math.round(s.hydration));
+    });
+  });
+
+  test('an off-grid protein is kept, not snapped onto the slider step', () => {
+    // the flour catalogue is full of these — snapping 12.7 to 12.5 would
+    // stop the picker recognising the bag the user actually owns
+    assert.equal(analyseFlour({ protein: 12.7 }).suggest.protein, 12.7);
+    assert.equal(analyseFlour({ protein: 14.2 }).suggest.protein, 14.2);
+    for (const f of FLOUR_PRESETS) {
+      assert.equal(analyseFlour({ protein: f.protein }).suggest.protein, f.protein, f.id);
+    }
+  });
+
+  test('no P/L on the bag means no P/L suggestion to apply', () => {
+    assert.equal(analyseFlour({ protein: 12.5 }).suggest.plVal, null);
+    assert.equal(analyseFlour({ protein: 12.5, pl: 0.6 }).suggest.plVal, plToSlider(0.6));
+  });
+
+  test('applying a catalogue flour’s own protein leaves it still recognised', () => {
+    // FlourPicker matches on exact protein + plVal, so a round trip through
+    // the analyser must not knock a picked bag off its own entry
+    for (const f of FLOUR_PRESETS) {
+      const s = analyseFlour({ protein: f.protein }).suggest;
+      assert.equal(s.protein, f.protein, f.id);
+      assert.equal(s.plVal, null, f.id); // plVal left alone, so f.plVal survives
+    }
+  });
+
+  test('suggested hydration sits in the middle of the reported window', () => {
+    const a = analyseFlour({ protein: 12.5, absorption: 70 });
+    assert.equal(a.suggest.hydration, 70);
+    assert.ok(a.suggest.hydration >= a.hydrLo && a.suggest.hydration <= a.hydrHi);
+  });
+});
+
+describe('FLOUR_FIELDS', () => {
+  test('protein is the only required field', () => {
+    assert.deepEqual(FLOUR_FIELDS.filter((f) => f.required).map((f) => f.key), ['protein']);
+  });
+
+  test('every field has a sane min/max/step', () => {
+    FLOUR_FIELDS.forEach((f) => {
+      assert.ok(f.min < f.max, f.key);
+      assert.ok(f.step > 0, f.key);
+    });
+  });
+
+  test('field bounds match what analyseFlour clamps to', () => {
+    const maxed = {}, minned = {};
+    FLOUR_FIELDS.forEach((f) => { maxed[f.key] = f.max * 10; minned[f.key] = f.min / 10; });
+    const hi = analyseFlour(maxed), lo = analyseFlour(minned);
+    FLOUR_FIELDS.forEach((f) => {
+      const read = { protein: 'protein', w: 'W', pl: 'pl', fallingNumber: 'fallingNumber', ash: 'ash' }[f.key];
+      if (!read) return;
+      assert.equal(hi[read], f.max, f.key);
+      assert.equal(lo[read], f.min, f.key);
+    });
+  });
+});
+
+describe('analyseFlour — blank fields', () => {
+  test('a blank string is absent, not zero clamped to the field minimum', () => {
+    const blanks = analyseFlour({ protein: 12.5, w: '', pl: '', ash: '', absorption: '', fallingNumber: '  ' });
+    const omitted = analyseFlour({ protein: 12.5 });
+    assert.equal(blanks.wEstimated, true);
+    assert.equal(blanks.plEstimated, true);
+    assert.equal(blanks.absorptionEstimated, true);
+    assert.equal(blanks.ash, null);
+    assert.equal(blanks.fallingNumber, null);
+    assert.deepEqual(blanks.findings, omitted.findings);
+    assert.deepEqual(blanks.suggest, omitted.suggest);
+  });
+
+  test('a blank protein is still no analysis', () => {
+    assert.equal(analyseFlour({ protein: '' }), null);
+    assert.equal(analyseFlour({ protein: '   ', w: '300' }), null);
+  });
+
+  test('a real zero is still clamped to the field minimum', () => {
+    assert.equal(analyseFlour({ protein: 12.5, ash: 0 }).ash, 0.2);
   });
 });
 
