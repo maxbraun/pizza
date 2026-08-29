@@ -13,6 +13,12 @@ const {
   plToSlider,
   absorptionFromFlour,
   bandScore,
+  FLOUR_PRESETS,
+  FLOUR_REGIONS,
+  DOUGH_RANGES,
+  DOUGH_ENUMS,
+  DOUGH_PARAMS,
+  sanitizeInputs,
   hydrationVerdict,
   fermentVerdict,
   overProofRecommendations,
@@ -1137,19 +1143,39 @@ describe('analyseFlour — style fit', () => {
 });
 
 describe('analyseFlour — handing values back to the calculator', () => {
-  test('suggested values land on the calculator’s own slider ranges and steps', () => {
+  test('suggested values land inside the calculator’s own ranges', () => {
     [5, 9, 12.3, 13.7, 20].forEach((protein) => {
-      const s = analyseFlour({ protein, absorption: 95 }).suggest;
+      const s = analyseFlour({ protein, pl: 0.6, absorption: 95 }).suggest;
       assert.ok(s.protein >= 8 && s.protein <= 15);
-      assert.equal(s.protein * 2, Math.round(s.protein * 2)); // 0.5 steps
       assert.ok(s.plVal >= 0 && s.plVal <= 100);
       assert.ok(s.hydration >= 50 && s.hydration <= 85);
       assert.equal(s.hydration, Math.round(s.hydration));
     });
   });
 
-  test('suggested P/L is the middle of the slider when the bag omits it', () => {
-    assert.equal(analyseFlour({ protein: 12.5 }).suggest.plVal, 50);
+  test('an off-grid protein is kept, not snapped onto the slider step', () => {
+    // the flour catalogue is full of these — snapping 12.7 to 12.5 would
+    // stop the picker recognising the bag the user actually owns
+    assert.equal(analyseFlour({ protein: 12.7 }).suggest.protein, 12.7);
+    assert.equal(analyseFlour({ protein: 14.2 }).suggest.protein, 14.2);
+    for (const f of FLOUR_PRESETS) {
+      assert.equal(analyseFlour({ protein: f.protein }).suggest.protein, f.protein, f.id);
+    }
+  });
+
+  test('no P/L on the bag means no P/L suggestion to apply', () => {
+    assert.equal(analyseFlour({ protein: 12.5 }).suggest.plVal, null);
+    assert.equal(analyseFlour({ protein: 12.5, pl: 0.6 }).suggest.plVal, plToSlider(0.6));
+  });
+
+  test('applying a catalogue flour’s own protein leaves it still recognised', () => {
+    // FlourPicker matches on exact protein + plVal, so a round trip through
+    // the analyser must not knock a picked bag off its own entry
+    for (const f of FLOUR_PRESETS) {
+      const s = analyseFlour({ protein: f.protein }).suggest;
+      assert.equal(s.protein, f.protein, f.id);
+      assert.equal(s.plVal, null, f.id); // plVal left alone, so f.plVal survives
+    }
   });
 
   test('suggested hydration sits in the middle of the reported window', () => {
@@ -1204,5 +1230,121 @@ describe('analyseFlour — blank fields', () => {
 
   test('a real zero is still clamped to the field minimum', () => {
     assert.equal(analyseFlour({ protein: 12.5, ash: 0 }).ash, 0.2);
+  });
+});
+
+describe('FLOUR_PRESETS', () => {
+  test('ids are unique', () => {
+    const ids = FLOUR_PRESETS.map(f => f.id);
+    assert.equal(new Set(ids).size, ids.length);
+  });
+
+  test('every flour sits inside the protein and P/L slider ranges', () => {
+    for (const f of FLOUR_PRESETS) {
+      assert.ok(f.protein >= 8 && f.protein <= 15, `${f.id} protein ${f.protein} out of slider range`);
+      assert.ok(f.plVal >= 0 && f.plVal <= 100, `${f.id} plVal ${f.plVal} out of slider range`);
+      assert.equal(f.plVal, Math.round(f.plVal), `${f.id} plVal must be a whole slider step`);
+    }
+  });
+
+  test('every flour declares a known region, and every region has flours', () => {
+    for (const f of FLOUR_PRESETS) assert.ok(FLOUR_REGIONS.includes(f.region), `${f.id} region ${f.region}`);
+    for (const r of FLOUR_REGIONS) assert.ok(FLOUR_PRESETS.some(f => f.region === r), `region ${r} is empty`);
+  });
+
+  test('label and spec are non-empty strings', () => {
+    for (const f of FLOUR_PRESETS) {
+      assert.ok(f.label && typeof f.label === 'string', `${f.id} label`);
+      assert.ok(f.spec && typeof f.spec === 'string', `${f.id} spec`);
+    }
+  });
+
+  test('the catalogue spans soft to very strong', () => {
+    const cats = new Set(FLOUR_PRESETS.map(f => flourProfile(f.protein, (f.plVal - 50) / 50).categoryKey));
+    assert.deepEqual([...cats].sort(), ['flour.medium', 'flour.soft', 'flour.strong', 'flour.veryStrong']);
+  });
+});
+
+describe('the dough input contract', () => {
+  const BASE = {
+    tempC: 21, hours: 8, protein: 12.5, plVal: 50, hydration: 62,
+    salt: 2.5, oilPct: 1.5, sugarPct: 0.5, starterStr: 50,
+    ballCount: 4, ballWeight: 250, roomTemp: 20, ddt: 24, ovenC: 250,
+    leavening: 'commercial', yeastType: 'idy', preferment: 'straight',
+    mixMethod: 'hand', surface: 'steel',
+  };
+
+  test('every field has both a range (or enum) and a query param', () => {
+    const fields = Object.keys(DOUGH_RANGES).concat(Object.keys(DOUGH_ENUMS)).sort();
+    assert.deepEqual(fields, Object.keys(DOUGH_PARAMS).sort());
+    assert.deepEqual(fields, Object.keys(BASE).sort());
+  });
+
+  test('param names are unique', () => {
+    const params = Object.values(DOUGH_PARAMS);
+    assert.equal(new Set(params).size, params.length);
+  });
+
+  test('accepts a valid dough and returns a copy, not the original', () => {
+    const clean = sanitizeInputs(BASE);
+    assert.deepEqual(clean, BASE);
+    assert.notEqual(clean, BASE);
+  });
+
+  test('drops unknown keys', () => {
+    const clean = sanitizeInputs({ ...BASE, evil: 'payload', doughWeight: 1000 });
+    assert.deepEqual(Object.keys(clean).sort(), Object.keys(BASE).sort());
+  });
+
+  test('keeps hand-typed off-grid values intact', () => {
+    // Number fields accept typed entry, so 313 g and 62.7% are legal doughs
+    // and must not be rounded onto any step grid on the way through.
+    const clean = sanitizeInputs({ ...BASE, ballWeight: 313, hydration: 62.7, salt: 2.35 });
+    assert.equal(clean.ballWeight, 313);
+    assert.equal(clean.hydration, 62.7);
+    assert.equal(clean.salt, 2.35);
+  });
+
+  test('rejects out-of-range scalars', () => {
+    for (const [key, [lo, hi]] of Object.entries(DOUGH_RANGES)) {
+      assert.equal(sanitizeInputs({ ...BASE, [key]: lo - 1 }), null, `${key} below ${lo}`);
+      assert.equal(sanitizeInputs({ ...BASE, [key]: hi + 1 }), null, `${key} above ${hi}`);
+      assert.ok(sanitizeInputs({ ...BASE, [key]: lo }), `${key} at ${lo}`);
+      assert.ok(sanitizeInputs({ ...BASE, [key]: hi }), `${key} at ${hi}`);
+    }
+  });
+
+  test('rejects missing, empty, non-numeric and non-finite scalars', () => {
+    for (const bad of [undefined, null, '', 'sixty', NaN, Infinity, {}]) {
+      assert.equal(sanitizeInputs({ ...BASE, hydration: bad }), null, String(bad));
+    }
+  });
+
+  test('rejects unknown enum values', () => {
+    for (const key of Object.keys(DOUGH_ENUMS)) {
+      assert.equal(sanitizeInputs({ ...BASE, [key]: 'nope' }), null, key);
+      assert.equal(sanitizeInputs({ ...BASE, [key]: undefined }), null, key);
+    }
+  });
+
+  test('accepts every enum value', () => {
+    for (const [key, values] of Object.entries(DOUGH_ENUMS)) {
+      for (const value of values) assert.ok(sanitizeInputs({ ...BASE, [key]: value }), `${key}=${value}`);
+    }
+  });
+
+  test('rejects non-objects', () => {
+    for (const v of [null, undefined, 'dough', 42, []]) assert.equal(sanitizeInputs(v), null);
+  });
+
+  test('accepts numeric strings, as they arrive from a query string', () => {
+    const fromUrl = Object.fromEntries(Object.entries(BASE).map(([k, v]) => [k, String(v)]));
+    assert.deepEqual(sanitizeInputs(fromUrl), BASE);
+  });
+
+  test('every catalogue flour is a legal dough component', () => {
+    for (const f of FLOUR_PRESETS) {
+      assert.ok(sanitizeInputs({ ...BASE, protein: f.protein, plVal: f.plVal }), f.id);
+    }
   });
 });
