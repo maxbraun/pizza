@@ -115,6 +115,97 @@ const OVEN_PRESETS = [
   { id: "wood", label: "Wood-fired", set: { ovenC: 490, surface: "stone" } },
 ];
 
+// A shelf of flours people actually buy, so protein and P/L stop being two
+// blind sliders: pick the bag, get the numbers. `protein` is the label /
+// published figure and `plVal` is this app's 0-100 extensible↔elastic
+// slider (50 = balanced), *not* a literal P/L ratio — the real ratio, where
+// the miller publishes one, is in `spec`. Every bag varies by harvest and
+// mill run, so these are starting points; the sliders stay editable and a
+// tweaked flour can be saved to the user's own shelf (see recipeStore.js).
+// German Type numbers grade ash content, not protein, so their protein
+// figures here are the usual range for that grade rather than a spec.
+const FLOUR_PRESETS = [
+  // --- Italian 00 / pizza flours ---
+  { id: "caputo-pizzeria",  label: "Caputo Pizzeria",         region: "it", protein: 12.5, plVal: 50, spec: "00 · W 260–270 · P/L 0.50–0.60" },
+  { id: "caputo-cuoco",     label: "Caputo Cuoco",            region: "it", protein: 13.0, plVal: 55, spec: "00 · W 300–320 · P/L 0.50–0.60" },
+  { id: "caputo-nuvola",    label: "Caputo Nuvola",           region: "it", protein: 12.5, plVal: 45, spec: "00 · W 260–270 · airier rim" },
+  { id: "caputo-manitoba",  label: "Caputo Manitoba Oro",     region: "it", protein: 14.5, plVal: 65, spec: "0 · W 380–400 · blending flour" },
+  { id: "cinque-stagioni",  label: "Le 5 Stagioni Napoletana", region: "it", protein: 12.5, plVal: 50, spec: "00 · W 250–270" },
+  { id: "polselli-super",   label: "Polselli Super",          region: "it", protein: 13.5, plVal: 55, spec: "00 · W ~330" },
+  // --- North American ---
+  { id: "gold-medal-ap",    label: "Gold Medal All-Purpose",  region: "us", protein: 10.5, plVal: 45, spec: "10.5% protein · soft" },
+  { id: "ka-ap",            label: "King Arthur All-Purpose", region: "us", protein: 11.7, plVal: 45, spec: "11.7% protein · unbleached" },
+  { id: "ka-bread",         label: "King Arthur Bread Flour", region: "us", protein: 12.7, plVal: 55, spec: "12.7% protein · unbleached" },
+  { id: "all-trumps",       label: "General Mills All Trumps", region: "us", protein: 14.2, plVal: 65, spec: "high-gluten · NY-slice standard" },
+  { id: "ka-lancelot",      label: "King Arthur Sir Lancelot", region: "us", protein: 14.2, plVal: 65, spec: "high-gluten · 14.2% protein" },
+  // --- German / Austrian Type grades ---
+  { id: "type-405",         label: "Weizenmehl Type 405",     region: "de", protein: 10.0, plVal: 40, spec: "soft · cakes, same-day doughs" },
+  { id: "type-550",         label: "Weizenmehl Type 550",     region: "de", protein: 11.5, plVal: 50, spec: "the standard German pizza flour" },
+  { id: "type-812",         label: "Weizenmehl Type 812",     region: "de", protein: 12.0, plVal: 55, spec: "darker, a touch stronger" },
+  { id: "type-1050",        label: "Weizenmehl Type 1050",    region: "de", protein: 12.5, plVal: 60, spec: "high-extraction · more bran" },
+  // --- generic descriptions, for bags with no published spec ---
+  { id: "uk-plain",         label: "Plain / plain white flour", region: "generic", protein: 9.5,  plVal: 40, spec: "soft · struggles past ~12 h" },
+  { id: "uk-strong",        label: "Strong white bread flour", region: "generic", protein: 12.5, plVal: 55, spec: "typical supermarket bread flour" },
+  { id: "manitoba",         label: "Manitoba (generic)",      region: "generic", protein: 14.5, plVal: 70, spec: "W 380+ · very strong" },
+];
+const FLOUR_REGIONS = ["it", "us", "de", "generic"];
+
+// ---- the dough input contract ----------------------------------------
+// What `computeAll` will accept: every field, its legal range, and the
+// query param the UI persists it under. The engine consumes these inputs,
+// so it's the engine that says what a legal dough is — the recipe box
+// checks a stored or imported dough against exactly this, rather than
+// keeping a second opinion of its own.
+//
+// Ranges mirror the slider bounds in index.html; typed entry is clamped to
+// the same bounds, so anything inside a range is a value the UI can hold.
+const DOUGH_RANGES = {
+  tempC: [2, 35], hours: [2, 96], protein: [8, 15], plVal: [0, 100],
+  hydration: [50, 85], salt: [0, 4], oilPct: [0, 6], sugarPct: [0, 4],
+  starterStr: [0, 100], ballCount: [1, 12], ballWeight: [100, 500],
+  roomTemp: [12, 30], ddt: [20, 28], ovenC: [200, 500],
+};
+
+const DOUGH_ENUMS = {
+  leavening:  ["commercial", "sourdough"],
+  yeastType:  ["idy", "ady", "fresh"],
+  preferment: ["straight", "poolish", "biga"],
+  mixMethod:  ["hand", "mixer", "processor"],
+  surface:    ["steel", "stone", "pan", "rack"],
+};
+
+// field -> the query param index.html's useConfigX hooks keep it under.
+const DOUGH_PARAMS = {
+  tempC: "tempC", hours: "hours", protein: "protein", plVal: "pl",
+  hydration: "hydration", salt: "salt", oilPct: "oil", sugarPct: "sugar",
+  yeastType: "yeast", leavening: "leaven", starterStr: "starter",
+  preferment: "preferment", ballCount: "balls", ballWeight: "ballWeight",
+  roomTemp: "room", ddt: "ddt", mixMethod: "mix", ovenC: "oven", surface: "surface",
+};
+
+// Returns a fresh object holding exactly the known fields, or null if any
+// is missing, non-finite, out of range, or not one of the enum's values.
+// Numeric strings are accepted, since that's how values arrive from a query
+// string. Rounding is to 4 decimals — enough to absorb float noise without
+// flattening a hand-typed 62.75%.
+function sanitizeInputs(obj) {
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return null;
+  const out = {};
+  for (const key in DOUGH_RANGES) {
+    const [lo, hi] = DOUGH_RANGES[key];
+    const raw = obj[key];
+    if (raw === "" || raw == null) return null;
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n < lo - 1e-9 || n > hi + 1e-9) return null;
+    out[key] = Math.round(n * 10000) / 10000;
+  }
+  for (const key in DOUGH_ENUMS) {
+    if (!DOUGH_ENUMS[key].includes(obj[key])) return null;
+    out[key] = obj[key];
+  }
+  return out;
+}
+
 const STYLE_GUIDELINES = {
   neapolitan: [
     { key:"protein",   label:"Protein",    lo:12.5, hi:13.5, unit:"%",  note:"00 flour, W 280–320" },
@@ -485,6 +576,12 @@ const __ENGINE__ = {
   DG,
   PIZZA_PRESETS,
   OVEN_PRESETS,
+  FLOUR_PRESETS,
+  FLOUR_REGIONS,
+  DOUGH_RANGES,
+  DOUGH_ENUMS,
+  DOUGH_PARAMS,
+  sanitizeInputs,
   STYLE_GUIDELINES,
   TONE,
   CRUMB_PTS,
