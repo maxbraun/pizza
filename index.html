@@ -1070,9 +1070,8 @@ function NameForm({ label, initial, submitLabel, onSubmit, onCancel, inRow }) {
 // head, and they're a property of the bag rather than of the recipe — so
 // they get picked, not guessed. The catalogue ships with the engine; the
 // "My flours" group is whatever the user has saved.
-function FlourPicker({ flours, protein, plVal, onPick, onSave }) {
+function FlourPicker({ flours, protein, plVal, onPick }) {
   const t = useT();
-  const [naming, setNaming] = useState(false);
   const matches = (f) => f.protein === protein && f.plVal === plVal;
   const mine = flours.find(matches);
   const preset = !mine && FLOUR_PRESETS.find(matches);
@@ -1105,6 +1104,18 @@ function FlourPicker({ flours, protein, plVal, onPick, onSave }) {
         ))}
       </select>
       <p className="fc-note-line">{preset ? preset.spec : t('flour.note')}</p>
+    </div>
+  );
+}
+
+// Saves the protein and P/L above it, so it sits under those sliders
+// rather than under the picker.
+function SaveFlour({ flours, protein, plVal, onSave }) {
+  const t = useT();
+  const [naming, setNaming] = useState(false);
+  const mine = flours.find((f) => f.protein === protein && f.plVal === plVal);
+  return (
+    <div className="fc-field">
       {naming ? (
         <NameForm label={t('flour.nameLabel')} initial={mine ? mine.name : ''}
           onCancel={() => setNaming(false)}
@@ -1990,7 +2001,7 @@ function FermentCalculator() {
 
             <p className="fc-subhead">{t('subhead.flour')}</p>
             <FlourPicker flours={box.flours} protein={protein} plVal={plVal}
-              onPick={api.pickFlour} onSave={api.saveFlour} />
+              onPick={api.pickFlour} />
             <Help>{t('help.flourPicker')}</Help>
             <Slider label={t('label.flourProtein')} value={protein} unit="%"
               min={8} max={15} step={0.5} onChange={setProtein} accent={accent}
@@ -2004,6 +2015,7 @@ function FermentCalculator() {
                 <Help>{t('help.pl')}</Help>
               </>
             )}
+            <SaveFlour flours={box.flours} protein={protein} plVal={plVal} onSave={api.saveFlour} />
             <Slider label={t('label.hydration')} value={hydration} unit="%"
               min={50} max={85} step={1} onChange={setHydration} accent={accent}
               note={t('note.hydration', { lo: fp.hydrLo, hi: fp.hydrHi })}
