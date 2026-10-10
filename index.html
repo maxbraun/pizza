@@ -794,7 +794,7 @@ function Slider({ label, value, unit, min, max, step, onChange, accent, note, no
       <input
         type="range" min={min} max={max} step={step} value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
-        style={{ background: `linear-gradient(to right, ${accent} ${pctPos}%, #d9cfbe ${pctPos}%)` }}
+        style={{ '--track': `linear-gradient(to right, ${accent} ${pctPos}%, #d9cfbe ${pctPos}%)` }}
       />
       {note && <p className="fc-note-line" style={noteColor ? { color: noteColor } : undefined}>{note}</p>}
     </div>
@@ -1502,8 +1502,9 @@ function FermentCalculator() {
           min-height:100%; padding:24px 20px 48px; box-sizing:border-box; -webkit-font-smoothing:antialiased;
         }
         .fc-wrap{ max-width:980px; margin:0 auto; }
-        .fc-top{ display:flex; justify-content:space-between; align-items:center; gap:12px; }
-        .fc-toggles{ display:flex; gap:8px; }
+        .fc-top{ display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+        .fc-toggles{ display:flex; gap:8px; flex-wrap:wrap; }
+        @media (max-width:760px){ .fc-top{ margin-bottom:18px; } }
         .fc-help{ font-size:12px; line-height:1.5; color:var(--ink-soft); margin:-2px 0 18px;
           padding:9px 11px; background:rgba(155,138,163,.10); border-left:2px solid #9b8aa3; border-radius:0 7px 7px 0; }
         .fc-nerd-toggle{ font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.14em;
@@ -1571,7 +1572,8 @@ function FermentCalculator() {
           font-size:10px; line-height:1.7; white-space:pre; letter-spacing:.04em;
           padding:9px 13px; border-radius:8px; opacity:0; pointer-events:none;
           transition:opacity .15s; z-index:20; text-transform:none; }
-        .fc-style-tip:hover::after{ opacity:1; }
+        .fc-style-tip:hover::after, .fc-style-tip:focus::after{ opacity:1; }
+        .fc-style-tip:focus{ outline:none; }
 
         .fc-stagetag{ font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.14em;
           text-transform:uppercase; color:var(--ink-soft); }
@@ -1594,15 +1596,38 @@ function FermentCalculator() {
         .fc-note-line{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-soft);
           margin:8px 0 0; letter-spacing:.02em; transition:color .4s cubic-bezier(.4,0,.2,1); }
 
-        input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:6px;
-          border-radius:99px; outline:none; cursor:pointer; margin:0;
-          box-shadow:inset 0 2px 5px rgba(58,40,26,0.10); }
-        input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:18px; height:18px;
+        /* The input itself is a tall, transparent hit area so it is easy to grab
+           with a finger; the visible 6px track (with its --track fill gradient)
+           is drawn by the track pseudo-element. */
+        input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:28px;
+          background:transparent; outline:none; cursor:pointer; margin:-11px 0;
+          touch-action:pan-y; -webkit-tap-highlight-color:transparent; --thumb:18px; }
+        input[type=range]::-webkit-slider-runnable-track{ height:6px; border-radius:99px;
+          background:var(--track); box-shadow:inset 0 2px 5px rgba(58,40,26,0.10); }
+        input[type=range]::-moz-range-track{ height:6px; border-radius:99px;
+          background:var(--track); box-shadow:inset 0 2px 5px rgba(58,40,26,0.10); }
+        input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none;
+          width:var(--thumb); height:var(--thumb); margin-top:calc((6px - var(--thumb)) / 2);
           border-radius:50%; background:var(--paper-2); border:2.5px solid var(--ink); cursor:pointer;
-          transition:transform .2s cubic-bezier(.4,0,.2,1); }
+          box-sizing:border-box; transition:transform .2s cubic-bezier(.4,0,.2,1); }
         input[type=range]::-webkit-slider-thumb:hover{ transform:scale(1.15); }
-        input[type=range]::-moz-range-thumb{ width:18px; height:18px; border-radius:50%; background:var(--paper-2);
-          border:2.5px solid var(--ink); cursor:pointer; }
+        input[type=range]:active::-webkit-slider-thumb{ transform:scale(1.15); }
+        input[type=range]::-moz-range-thumb{ width:var(--thumb); height:var(--thumb); border-radius:50%;
+          background:var(--paper-2); border:2.5px solid var(--ink); cursor:pointer; box-sizing:border-box; }
+        input[type=range]:focus-visible::-webkit-slider-thumb{ outline:2px solid var(--ink); outline-offset:2px; }
+
+        /* Touch screens: a finger-sized slider and controls, and 16px form text
+           so iOS doesn't zoom the page in when a field is focused. */
+        @media (pointer:coarse){
+          input[type=range]{ height:44px; margin:-4px 0; --thumb:28px; }
+          input[type=range]::-webkit-slider-thumb:hover{ transform:none; }
+          .fc-field-head{ margin-bottom:0; }
+          .fc-note-line{ margin-top:0; }
+          .fc-root .fc-nerd-toggle{ padding:10px 14px; }
+          .fc-root .fc-box-actions .fc-nerd-toggle{ padding:9px 12px; }
+          .fc-root .fc-stepper button{ width:40px; height:40px; }
+          .fc-root .fc-val-input, .fc-root .fc-input, .fc-root .fc-select{ font-size:16px; }
+        }
 
         .fc-seg{ display:flex; gap:6px; }
         .fc-seg button{ flex:1; font-family:'Hanken Grotesk',sans-serif; font-size:12.5px; font-weight:500;
@@ -2084,7 +2109,7 @@ function FermentCalculator() {
 
         {/* ---- bake stage ---- */}
         <div className="fc-panel fc-bake">
-          <p className="fc-panel-head"><span>{t('panel.bake')}</span><span className="fc-style-tip" data-tip={t('bakeStyle.tip')} style={{ color: EMBER }}>{t(bake.styleKey)}<span className="fc-style-i">ⓘ</span></span></p>
+          <p className="fc-panel-head"><span>{t('panel.bake')}</span><span className="fc-style-tip" tabIndex={0} data-tip={t('bakeStyle.tip')} style={{ color: EMBER }}>{t(bake.styleKey)}<span className="fc-style-i">ⓘ</span></span></p>
           <div className="fc-presets bake">
             <span className="fc-preset-label">{t('label.oven')}</span>
             {OVEN_PRESETS.map((p) => (
