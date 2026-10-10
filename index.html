@@ -271,26 +271,52 @@ const TRANSLATIONS = {
     'recipe.sourdoughStarter': 'Sourdough starter', 'recipe.yeast': 'Yeast',
     'recipe.levainPct': '{pct}% levain',
     'recipe.makes': 'Makes {balls} ball{suffix} · {weight} g total', 'recipe.ballSuffix': 's', 'recipe.each': ' each',
-    'recipe.step.poolish': 'The night before, whisk a pinch of the yeast into equal parts flour and water (a poolish) and leave covered overnight; mix it into the dough at the start.',
-    'recipe.step.biga': 'The night before, mix a pinch of the yeast into flour with half its weight in water (a stiff biga) and leave covered overnight; break it into the dough at the start.',
-    'recipe.step.mixSourdough': 'Mix the active sourdough starter ({levainG} g) into the water ({waterG} g at ~{waterTemp} °C), add the flour ({flourG} g), mix to a shaggy mass and rest 20 min.',
-    'recipe.step.mixYeast': 'Whisk the {yeastLabel} yeast ({yeastG} g) into the water ({waterG} g at ~{waterTemp} °C), add the flour ({flourG} g), mix to a shaggy mass and rest 20 min.',
-    'recipe.step.addSalt': 'Add the salt ({saltG} g){oilText}{sugarText}, then {kneadText}',
-    'recipe.step.addOil': ' and oil ({oilG} g)', 'recipe.step.addSugar': ' and sugar ({sugarG} g)',
+    'recipe.group.pf': 'Preferment · {name}', 'recipe.group.final': 'Final dough',
+    'recipe.pfAll': 'all of it', 'recipe.noYeast': 'none needed',
+    'recipe.totals': 'In total: {flour} g flour · {water} g water · {yeast} g yeast',
+    'recipe.startBy': 'Start {t} before you want to bake.',
+    'when.before': '{t} before baking', 'when.bake': 'At bake time',
+    'dur.hours': '{h} h', 'dur.days': '{d} d {h} h', 'dur.daysOnly': '{d} d',
+    'label.pfPct': 'Preferment share', 'label.pfHours': 'Preferment time',
+    'note.pfPct': '{flourG} g flour + {waterG} g water · {hyd}% hydration',
+    'note.pfHours': 'at room temperature (~{room} °C) · typically {lo}–{hi} h',
+    'help.pfPct': "How much of the recipe's flour goes into the preferment. 10–30% is typical; more adds more flavour and strength.",
+    'help.pfHours': 'How long the preferment ferments at room temperature before you mix the dough. Its yeast is sized so it peaks right then.',
+    'yeast.pfPart': ' · {g} g of it in the preferment',
+    'recipe.step.poolish': 'Make the poolish: stir the yeast ({yeastG} g{pinch}) into {waterG} g room-temperature water, then mix in {flourG} g flour until no dry flour is left and you have a smooth batter. Cover it in a container at least twice its size and leave it at room temperature (~{roomTemp} °C) for {hours} h, until bubbly and domed.',
+    'recipe.step.biga': "Make the biga: dissolve the yeast ({yeastG} g{pinch}) in {waterG} g room-temperature water, add {flourG} g flour and mix only until no dry flour is left. It should stay as shaggy lumps, so don't knead it. Cover and leave at room temperature (~{roomTemp} °C) for {hours} h.",
+    'recipe.pinch': ' — about a pinch',
+    'recipe.mix.warmYeast': 'Your water is cold, so first dissolve the dry yeast in a splash of warm water (~40 °C) for 10 minutes. ',
+    'recipe.mix.water': 'Pour {waterG} g water at ~{waterTemp} °C into {vessel}{pfIn}.',
+    'recipe.vessel.hand': 'a bowl', 'recipe.vessel.mixer': 'the mixer bowl', 'recipe.vessel.processor': 'the processor bowl',
+    'recipe.mix.pfIn.poolish': ' and loosen the poolish in it', 'recipe.mix.pfIn.biga': ' and break the biga into it in small pieces',
+    'recipe.mix.stir': ' Stir in {items}.',
+    'recipe.mix.item.salt': 'the salt ({g} g)', 'recipe.mix.item.sugar': 'the sugar ({g} g)',
+    'recipe.mix.item.yeast': 'the yeast ({g} g)', 'recipe.mix.item.starter': 'the sourdough starter ({g} g)',
+    'recipe.mix.noYeast': ' No extra yeast is needed — the preferment carries enough.',
+    'recipe.mix.flour.hand': ' Add the flour ({flourG} g) and mix with a scraper or spoon until no dry flour is left.',
+    'recipe.mix.flour.mixer': ' Add the flour ({flourG} g) and run the mixer on speed 1 for about 2 minutes, until it comes together.',
+    'recipe.mix.flour.processor': ' Add the flour ({flourG} g){leavenLast} and pulse 2–3 times to combine.',
+    'recipe.mix.leavenLast': ' with {item} on top',
+    'list.and': ' and ',
     'recipe.step.bulkRise': 'Cover and bulk-rise until puffy, then divide into {balls} ball{suffix} of ~{ballW} g{eachText}.',
     'recipe.step.prove': 'Prove {fermentLoc} for {hours} h.{coldNote}',
     'recipe.step.bulkStage': 'Cover and bulk-ferment {fermentLoc} for {h1} h.',
     'recipe.step.ballStage': 'Divide into {balls} ball{suffix} of ~{ballW} g{eachText} and prove {fermentLoc2} for {h2} h.{coldNote}',
     'recipe.step.overFerment': 'Heads up — at {protein}% protein this flour may over-ferment across {hours} h and slacken. A stronger flour or a shorter prove keeps the rim intact.',
     'recipe.step.openBall': 'Open each ball into a base, leaving a thicker rim, and top lightly so it bakes through.',
-    'recipe.step.bake': 'Preheat your {surface}{ovenSuffix} to {ovenC} °C. Bake ~{bakeTime}{bakeFinish}',
+    'recipe.step.bake': 'Preheat your {surface}{ovenSuffix} to {ovenC} °C. Bake {bakeTime}{bakeFinish}',
     'recipe.step.bakeOvenSuffix': ' (and oven)',
     'recipe.bakeFinish.leopard': ', until the rim is puffed and leopard-spotted.',
     'recipe.bakeFinish.hot': ', until golden with a crisp, spotted base.',
     'recipe.bakeFinish.normal': ', rotating once, until evenly golden.',
-    'recipe.knead.stretch': 'develop it with 3–4 sets of stretch-and-folds over the first hour rather than hard kneading.',
-    'recipe.knead.long': 'knead just 3–4 minutes — the long prove finishes the gluten for you.',
-    'recipe.knead.normal': 'knead 8–10 minutes until smooth and elastic.',
+    'recipe.knead.oil': 'Once the flour has soaked up all the water, add the oil ({oilG} g). ',
+    'recipe.knead.hand.slap': 'Slap and fold the dough on the counter 50–100 times until it holds together and feels smooth — it is too wet to knead the usual way.',
+    'recipe.knead.hand.light': 'Knead by hand for 3–4 minutes until smooth and satiny — the long ferment finishes the gluten.',
+    'recipe.knead.hand.full': 'Knead by hand for 8–10 minutes until smooth and elastic.',
+    'recipe.knead.mixer.light': 'Knead on speed 2 just until the dough looks smooth — the long ferment does the rest. Never go above speed 2.',
+    'recipe.knead.mixer.full': 'Knead on speed 2 until the dough clears the sides of the bowl and clings to the hook. Never go above speed 2.',
+    'recipe.knead.processor': "Run the processor for about 30 seconds, never more than 45, and finish by hand if the dough is still rough. It heats the dough quickly, so don't let it run on.",
     'recipe.fermentLoc.cold': 'in the fridge ({tempC} °C)', 'recipe.fermentLoc.cool': 'somewhere cool (~{tempC} °C)', 'recipe.fermentLoc.room': 'at room temperature (~{tempC} °C)',
     'recipe.coldNote': ' Pull it out 1–2 h before baking to take off the chill.',
     'recipe.tip.warm': "Use cool water (~15 °C) so the dough doesn't race ahead.",
@@ -303,13 +329,14 @@ const TRANSLATIONS = {
     'note.sugar.none': 'none', 'note.sugar.some': '{sugarG} g — feeds browning',
     'note.starter.sluggish': 'sluggish — needs more levain', 'note.starter.vigorous': 'vigorous — needs less', 'note.starter.average': 'average activity',
     'note.ddt': 'use water at ~{temp} °C{icedNote}', 'note.ddt.iced': ' (iced)',
+    'note.ddt.band': 'aim for {lo}–{hi} °C into a {kind}', 'fdt.cold': 'cold ferment', 'fdt.room': 'room-temperature ferment',
     'note.levain': "Levain % is a rule of thumb — your starter's real ripeness and activity dominate.",
     'nerd.confidence.grounded': 'grounded', 'nerd.confidence.heuristic': 'calibrated heuristic', 'nerd.confidence.illustrative': 'illustrative',
     'nerd.col.leaven': 'Leaven', 'nerd.col.recipe': 'Recipe & mix', 'nerd.col.flour': 'Flour & rise', 'nerd.col.bake': 'Bake & geometry',
     'graph.inputs': 'Inputs', 'graph.models': 'Models', 'graph.outputs': 'Outputs',
     'nerd.graph.head': 'Dependency graph',
     'nerd.graph.note': 'How a setting becomes a number: inputs feed models feed outputs. Edge colour marks the confidence of what it feeds.',
-    'nerd.formula.note': 'Dots mark confidence: grounded values are arithmetic or standard formulas; heuristics are calibrated guesses; illustrative ones build intuition, not precision. water °C = N·FDT − (N−1)·room − friction (N = 4 with a preferment, else 3). yeast% = 2.4 / (Σᵢ hᵢ · Q₁₀^((Tᵢ−21)/10) · e^(−0.12·(S−2.5))) · type, summed over the stages. Capacity and digestion tick on the same sum with Q₁₀ ≈ {Q10m}. bake ≈ 116·e^(−0.0098·T) · surface.',
+    'nerd.formula.note': 'Dots mark confidence: grounded values are arithmetic or standard formulas; heuristics are calibrated guesses; illustrative ones build intuition, not precision. water °C = N·FDT − (N−1)·room − friction (N = 4 with a preferment, else 3). yeast% = 2.4 / (Σᵢ hᵢ · Q₁₀^((Tᵢ−21)/10) · e^(−0.12·(S−2.5))) · type, summed over the stages. Capacity and digestion tick on the same sum with Q₁₀ ≈ {Q10m}. A poolish or biga gets its own dose (0.1% or 0.3% of its flour at 20 °C, scaled by time and Q₁₀) and the final dough gets the rest. bake ≈ 116·e^(−0.0098·T) · surface.',
     'footer': 'A teaching model, not a lab instrument. Yeast follows a temperature–time budget (anchored on ~0.3% IDY → full proof in ~8 h at 21 °C, Q₁₀ = {Q10}); a split schedule sums both stages, and the first ~2 h after each temperature change are billed at the midpoint while the dough core catches up. Over-proof capacity and digestibility tick on a slower enzyme clock (Q₁₀ ≈ {Q10m}) — which is why the fridge stretches the safe window. Flour W-value, hydration range and ferment capacity are simple heuristics from protein. Bake time follows an inverse-exponential fit and the crust gauge tracks heat — real ovens, stones, steels and toppings all shift it. Use it for intuition: doubling the time halves the yeast, stronger flour buys hydration and ferment length, and a hotter oven trades minutes for leopard spots.',
     'sources.head': 'Sources', 'sources.note': "Links open the study or resource. Peer-reviewed work is paraphrased in this tool's heuristics, not implemented from the original methods.",
     'guideline.label.protein': 'Protein', 'guideline.label.hydration': 'Hydration', 'guideline.label.salt': 'Salt',
@@ -345,7 +372,7 @@ const TRANSLATIONS = {
     'help.yeastType': 'The same yeast in three forms. Instant and active-dry come in jars; fresh is the cake from the fridge. The tool converts the amounts between them.',
     'help.preferment': '"Straight" mixes everything at once. A poolish (wet) or biga (stiff) is a bit of dough fermented the night before, then mixed in — more flavour and strength for a little planning.',
     'help.roomTemp': "How warm your kitchen is. It's used to work out the water temperature so the dough finishes mixing at your target.",
-    'help.ddt': 'The temperature you want the dough to be right after mixing (~24 °C is a good default). The tool tells you what temperature water to use to land there.',
+    'help.ddt': 'The temperature you want the dough to be right after mixing: 23–27 °C if it ferments on the counter, 18–23 °C if it goes straight into the fridge. The tool tells you what temperature water to use to land there.',
     'help.mixMethod': 'Mixing adds heat through friction — a machine adds more than your hands — so a mixer or processor needs cooler water to hit the same dough temperature.',
     'help.ballCount': 'How many pizzas you want to make this batch.',
     'help.ballWeight': 'How much dough goes into each ball — a good everyday pizza is around 250 g.',
@@ -358,7 +385,7 @@ const TRANSLATIONS = {
     'help.bakingSurface': 'What the pizza sits on. A preheated steel or stone stores heat and crisps the underside; a bare oven rack browns the base the least.',
     'sources.group.fermentation': 'Fermentation', 'sources.group.flourGluten': 'Flour & gluten',
     'sources.group.saltRheology': 'Salt & rheology', 'sources.group.overFermentation': 'Over-fermentation',
-    'sources.group.bakingStorage': 'Baking & storage',
+    'sources.group.bakingStorage': 'Baking & storage', 'sources.group.mixing': 'Mixing & kneading',
     'graph.node.i_prove': 'Temp · Time', 'graph.node.i_flour': 'Protein · P/L',
     'graph.node.i_pct': 'Hydr·Salt·Oil·Sugar', 'graph.node.i_leaven': 'Leaven · Preferment',
     'graph.node.i_mix': 'Room · FDT · Method', 'graph.node.i_batch': 'Dough weight',
@@ -376,6 +403,7 @@ const TRANSLATIONS = {
     'nrow.starterStrength': 'starter strength', 'nrow.levainPct': 'levain %', 'nrow.starter': 'starter',
     'nrow.baseIdyPct': 'base IDY %', 'nrow.yeastTypeMult': 'yeast type mult',
     'nrow.effYeastPct': 'effective yeast %', 'nrow.yeast': 'yeast', 'nrow.yeastTsp': 'yeast (tsp)',
+    'nrow.pfYeast': 'preferment yeast', 'nrow.finalYeast': 'final-dough yeast',
     'nrow.preferment': 'preferment', 'nrow.digestibility': 'digestibility',
     'nrow.flour': 'flour', 'nrow.water': 'water', 'nrow.salt': 'salt', 'nrow.oil': 'oil',
     'nrow.sugar': 'sugar', 'nrow.totalDough': 'total dough', 'nrow.roomTemp': 'room temp',
@@ -526,26 +554,52 @@ const TRANSLATIONS = {
     'recipe.sourdoughStarter': 'Sauerteigstarter', 'recipe.yeast': 'Hefe',
     'recipe.levainPct': '{pct}% Levain',
     'recipe.makes': '{balls} Kugel{suffix} · {weight} g gesamt', 'recipe.ballSuffix': 'n', 'recipe.each': ' je',
-    'recipe.step.poolish': 'Am Abend zuvor eine Prise Hefe in gleiche Teile Mehl und Wasser einrühren (Poolish) und abgedeckt über Nacht stehen lassen; zu Beginn in den Teig einarbeiten.',
-    'recipe.step.biga': 'Am Abend zuvor eine Prise Hefe in Mehl mit der halben Wassermenge einarbeiten (steife Biga) und abgedeckt über Nacht stehen lassen; zu Beginn in den Teig einkneten.',
-    'recipe.step.mixSourdough': 'Den aktiven Sauerteigstarter ({levainG} g) in das Wasser ({waterG} g, ca. {waterTemp} °C) einrühren, Mehl ({flourG} g) zugeben, zu einer groben Masse mischen und 20 Min. ruhen lassen.',
-    'recipe.step.mixYeast': 'Die {yeastLabel} ({yeastG} g) in das Wasser ({waterG} g, ca. {waterTemp} °C) einrühren, Mehl ({flourG} g) zugeben, zu einer groben Masse mischen und 20 Min. ruhen lassen.',
-    'recipe.step.addSalt': 'Salz ({saltG} g){oilText}{sugarText} zugeben, dann {kneadText}',
-    'recipe.step.addOil': ' und Öl ({oilG} g)', 'recipe.step.addSugar': ' und Zucker ({sugarG} g)',
+    'recipe.group.pf': 'Vorteig · {name}', 'recipe.group.final': 'Hauptteig',
+    'recipe.pfAll': 'komplett', 'recipe.noYeast': 'nicht nötig',
+    'recipe.totals': 'Insgesamt: {flour} g Mehl · {water} g Wasser · {yeast} g Hefe',
+    'recipe.startBy': 'Starte {t} vor dem Backen.',
+    'when.before': '{t} vor dem Backen', 'when.bake': 'Zum Backen',
+    'dur.hours': '{h} h', 'dur.days': '{d} Tg. {h} h', 'dur.daysOnly': '{d} Tg.',
+    'label.pfPct': 'Vorteig-Anteil', 'label.pfHours': 'Vorteig-Zeit',
+    'note.pfPct': '{flourG} g Mehl + {waterG} g Wasser · {hyd}% Hydration',
+    'note.pfHours': 'bei Raumtemperatur (~{room} °C) · üblich {lo}–{hi} h',
+    'help.pfPct': 'Wie viel vom Mehl des Rezepts in den Vorteig geht. 10–30% sind üblich; mehr bringt mehr Aroma und Kraft.',
+    'help.pfHours': 'Wie lange der Vorteig bei Raumtemperatur reift, bevor du den Hauptteig mischst. Die Hefe darin ist so bemessen, dass er genau dann am Höhepunkt ist.',
+    'yeast.pfPart': ' · davon {g} g im Vorteig',
+    'recipe.step.poolish': 'Poolish ansetzen: die Hefe ({yeastG} g{pinch}) in {waterG} g zimmerwarmes Wasser rühren, dann {flourG} g Mehl einrühren, bis kein trockenes Mehl mehr übrig ist und ein glatter Brei entsteht. In einem Gefäß, das mindestens doppelt so groß ist, abgedeckt bei Raumtemperatur (~{roomTemp} °C) {hours} h stehen lassen, bis er Blasen wirft und sich wölbt.',
+    'recipe.step.biga': 'Biga ansetzen: die Hefe ({yeastG} g{pinch}) in {waterG} g zimmerwarmem Wasser auflösen, {flourG} g Mehl zugeben und nur so lange mischen, bis kein trockenes Mehl mehr übrig ist. Sie soll grob und klumpig bleiben, also nicht kneten. Abgedeckt bei Raumtemperatur (~{roomTemp} °C) {hours} h stehen lassen.',
+    'recipe.pinch': ' — etwa eine Prise',
+    'recipe.mix.warmYeast': 'Dein Wasser ist kalt: löse die Trockenhefe zuerst 10 Minuten in einem Schluck warmem Wasser (~40 °C) auf. ',
+    'recipe.mix.water': '{waterG} g Wasser mit ~{waterTemp} °C in {vessel} geben{pfIn}.',
+    'recipe.vessel.hand': 'eine Schüssel', 'recipe.vessel.mixer': 'die Schüssel der Knetmaschine', 'recipe.vessel.processor': 'die Küchenmaschine',
+    'recipe.mix.pfIn.poolish': ' und den Poolish darin auflockern', 'recipe.mix.pfIn.biga': ' und die Biga in kleinen Stücken hineinbröckeln',
+    'recipe.mix.stir': ' {ItemsCap} einrühren.',
+    'recipe.mix.item.salt': 'das Salz ({g} g)', 'recipe.mix.item.sugar': 'den Zucker ({g} g)',
+    'recipe.mix.item.yeast': 'die Hefe ({g} g)', 'recipe.mix.item.starter': 'den Sauerteigstarter ({g} g)',
+    'recipe.mix.noYeast': ' Zusätzliche Hefe ist nicht nötig — der Vorteig bringt genug mit.',
+    'recipe.mix.flour.hand': ' Das Mehl ({flourG} g) zugeben und mit Teigschaber oder Löffel mischen, bis kein trockenes Mehl mehr übrig ist.',
+    'recipe.mix.flour.mixer': ' Das Mehl ({flourG} g) zugeben und die Knetmaschine etwa 2 Minuten auf Stufe 1 laufen lassen, bis alles zusammenkommt.',
+    'recipe.mix.flour.processor': ' Das Mehl ({flourG} g){leavenLast} zugeben und 2–3 Mal kurz pulsieren.',
+    'recipe.mix.leavenLast': ' und darauf {item}',
+    'list.and': ' und ',
     'recipe.step.bulkRise': 'Abgedeckt aufgehen lassen bis der Teig sich aufbläht, dann in {balls} Kugel{suffix} à ~{ballW} g teilen{eachText}.',
     'recipe.step.prove': '{fermentLoc} für {hours} h gären lassen.{coldNote}',
     'recipe.step.bulkStage': 'Abgedeckt {fermentLoc} für {h1} h gären lassen (Stockgare).',
     'recipe.step.ballStage': 'In {balls} Kugel{suffix} à ~{ballW} g teilen und {fermentLoc2} für {h2} h gären lassen (Stückgare).{coldNote}',
     'recipe.step.overFerment': 'Achtung — bei {protein}% Protein kann dieses Mehl über {hours} h übergären. Ein stärkeres Mehl oder kürzere Gärzeit hält den Rand intakt.',
     'recipe.step.openBall': 'Jede Kugel zu einem Boden ausziehen, dabei einen dickeren Rand lassen, und leicht belegen damit es durchbackt.',
-    'recipe.step.bake': '{surface}{ovenSuffix} auf {ovenC} °C vorheizen. Ca. {bakeTime} backen{bakeFinish}',
+    'recipe.step.bake': '{surface}{ovenSuffix} auf {ovenC} °C vorheizen. {bakeTime} backen{bakeFinish}',
     'recipe.step.bakeOvenSuffix': ' (und Ofen)',
     'recipe.bakeFinish.leopard': ', bis der Rand aufgegangen ist und Leopardflecken hat.',
     'recipe.bakeFinish.hot': ', bis golden mit knuspriger, gefleckter Basis.',
     'recipe.bakeFinish.normal': ', einmal wenden, bis gleichmäßig golden.',
-    'recipe.knead.stretch': '3–4 Mal Dehnen und Falten in der ersten Stunde statt kräftigen Knetens.',
-    'recipe.knead.long': 'nur 3–4 Minuten kneten — die lange Gärzeit entwickelt das Gluten.',
-    'recipe.knead.normal': '8–10 Minuten kneten bis der Teig glatt und elastisch ist.',
+    'recipe.knead.oil': 'Sobald das Mehl das ganze Wasser aufgenommen hat, das Öl ({oilG} g) zugeben. ',
+    'recipe.knead.hand.slap': 'Den Teig 50–100 Mal auf der Arbeitsfläche schlagen und falten, bis er zusammenhält und sich glatt anfühlt — er ist zu nass zum normalen Kneten.',
+    'recipe.knead.hand.light': '3–4 Minuten von Hand kneten, bis der Teig glatt und seidig ist — die lange Gärung entwickelt das Gluten fertig.',
+    'recipe.knead.hand.full': '8–10 Minuten von Hand kneten, bis der Teig glatt und elastisch ist.',
+    'recipe.knead.mixer.light': 'Auf Stufe 2 nur kneten, bis der Teig glatt aussieht — den Rest erledigt die lange Gärung. Nie über Stufe 2 gehen.',
+    'recipe.knead.mixer.full': 'Auf Stufe 2 kneten, bis sich der Teig vom Schüsselrand löst und am Haken hängt. Nie über Stufe 2 gehen.',
+    'recipe.knead.processor': 'Die Küchenmaschine etwa 30 Sekunden laufen lassen, nie länger als 45, und von Hand fertig kneten, falls der Teig noch rau ist. Sie erwärmt den Teig schnell, also nicht weiterlaufen lassen.',
     'recipe.fermentLoc.cold': 'im Kühlschrank ({tempC} °C)', 'recipe.fermentLoc.cool': 'an einem kühlen Ort (~{tempC} °C)', 'recipe.fermentLoc.room': 'bei Raumtemperatur (~{tempC} °C)',
     'recipe.coldNote': ' 1–2 Stunden vor dem Backen herausnehmen, damit der Teig Temperatur annimmt.',
     'recipe.tip.warm': 'Kühles Wasser (~15 °C) verwenden, damit der Teig nicht zu schnell aufgeht.',
@@ -558,13 +612,14 @@ const TRANSLATIONS = {
     'note.sugar.none': 'ohne', 'note.sugar.some': '{sugarG} g — fördert Bräunung',
     'note.starter.sluggish': 'träge — mehr Levain nötig', 'note.starter.vigorous': 'aktiv — weniger nötig', 'note.starter.average': 'durchschnittliche Aktivität',
     'note.ddt': 'Wasser bei ~{temp} °C verwenden{icedNote}', 'note.ddt.iced': ' (mit Eis)',
+    'note.ddt.band': 'Ziel {lo}–{hi} °C für eine {kind}', 'fdt.cold': 'Kaltgärung', 'fdt.room': 'Gärung bei Raumtemperatur',
     'note.levain': 'Levain % ist ein Richtwert — Reife und Aktivität des Starters sind entscheidend.',
     'nerd.confidence.grounded': 'fundiert', 'nerd.confidence.heuristic': 'kalibrierte Heuristik', 'nerd.confidence.illustrative': 'illustrativ',
     'nerd.col.leaven': 'Triebmittel', 'nerd.col.recipe': 'Rezept & Mischen', 'nerd.col.flour': 'Mehl & Aufgang', 'nerd.col.bake': 'Backen & Geometrie',
     'graph.inputs': 'Eingaben', 'graph.models': 'Modelle', 'graph.outputs': 'Ausgaben',
     'nerd.graph.head': 'Abhängigkeitsgraph',
     'nerd.graph.note': 'Wie eine Einstellung zur Zahl wird: Eingaben speisen Modelle, Modelle speisen Ausgaben. Kantenfarbe zeigt die Konfidenz.',
-    'nerd.formula.note': 'Punkte markieren Konfidenz: fundierte Werte sind Arithmetik oder Standardformeln; Heuristiken sind kalibrierte Schätzungen; illustrative bauen Intuition auf. Wasser °C = N·ETT − (N−1)·Raum − Reibung. Hefe% = 2,4 / (Σᵢ hᵢ · Q₁₀^((Tᵢ−21)/10) · e^(−0,12·(S−2,5))) · Typ, summiert über die Stufen. Kapazität und Verträglichkeit laufen auf derselben Summe mit Q₁₀ ≈ {Q10m}. Backzeit ≈ 116·e^(−0,0098·T) · Fläche.',
+    'nerd.formula.note': 'Punkte markieren Konfidenz: fundierte Werte sind Arithmetik oder Standardformeln; Heuristiken sind kalibrierte Schätzungen; illustrative bauen Intuition auf. Wasser °C = N·ETT − (N−1)·Raum − Reibung. Hefe% = 2,4 / (Σᵢ hᵢ · Q₁₀^((Tᵢ−21)/10) · e^(−0,12·(S−2,5))) · Typ, summiert über die Stufen. Kapazität und Verträglichkeit laufen auf derselben Summe mit Q₁₀ ≈ {Q10m}. Ein Poolish oder eine Biga bekommt eine eigene Dosis (0,1% bzw. 0,3% seines Mehls bei 20 °C, skaliert über Zeit und Q₁₀), der Hauptteig den Rest. Backzeit ≈ 116·e^(−0,0098·T) · Fläche.',
     'footer': 'Ein Lehrmodell, kein Laborinstrument. Hefe folgt einem Temperatur-Zeit-Budget (Anker: ~0,3% Trockenhefe → volle Gärung in ~8 h bei 21 °C, Q₁₀ = {Q10}); ein geteilter Ablauf summiert beide Stufen, und die ersten ~2 h nach jedem Temperaturwechsel zählen zum Mittelwert, während der Teigkern nachzieht. Übergär-Kapazität und Verträglichkeit laufen auf einer trägeren Enzym-Uhr (Q₁₀ ≈ {Q10m}) — deshalb dehnt der Kühlschrank das sichere Fenster. Mehl-W-Wert, Hydrations-Fenster und Gärkapazität sind einfache Heuristiken aus dem Proteingehalt. Backzeit folgt einer inversen Exponentialfunktion, die Krustenskala trackt die Hitze — echte Öfen, Steine, Stahlplatten und Beläge verschieben das alles. Zur Intuition: Doppelte Zeit halbiert die Hefe, stärkeres Mehl erlaubt mehr Hydration und Gärzeit, ein heißerer Ofen tauscht Minuten gegen Leopardflecken.',
     'sources.head': 'Quellen', 'sources.note': 'Links öffnen die Studie oder Ressource. Peer-reviewed-Arbeiten werden in den Heuristiken dieses Tools zusammengefasst, nicht aus den Originalmethoden implementiert.',
     'guideline.label.protein': 'Protein', 'guideline.label.hydration': 'Hydration', 'guideline.label.salt': 'Salz',
@@ -600,7 +655,7 @@ const TRANSLATIONS = {
     'help.yeastType': 'Dieselbe Hefe in drei Formen. Trocken- und aktive Trockenhefe kommen im Päckchen; Frischhefe als Würfel aus dem Kühlregal. Das Tool rechnet die Mengen um.',
     'help.preferment': '„Direkt" mischt alles auf einmal. Ein Poolish (nass) oder eine Biga (steif) ist ein Stück Teig, der am Vorabend fermentiert wird und dann eingeknetet wird — mehr Aroma und Stärke mit etwas Planung.',
     'help.roomTemp': 'Wie warm deine Küche ist. Wird verwendet, um die Wassertemperatur zu berechnen, damit der Teig nach dem Kneten deine Zieltemperatur erreicht.',
-    'help.ddt': 'Die gewünschte Teigtemperatur direkt nach dem Kneten (~24 °C ist ein guter Standard). Das Tool sagt, welche Wassertemperatur du brauchst.',
+    'help.ddt': 'Die gewünschte Teigtemperatur direkt nach dem Kneten: 23–27 °C, wenn der Teig bei Raumtemperatur gärt, 18–23 °C, wenn er direkt in den Kühlschrank geht. Das Tool sagt, welche Wassertemperatur du brauchst.',
     'help.mixMethod': 'Kneten erzeugt Wärme durch Reibung — eine Maschine mehr als die Hände — daher braucht eine Knetmaschine kühleres Wasser für die gleiche Teigtemperatur.',
     'help.ballCount': 'Wie viele Pizzen du mit dieser Menge machen möchtest.',
     'help.ballWeight': 'Wie viel Teig in jede Kugel kommt — eine gute Alltagspizza liegt bei etwa 250 g.',
@@ -613,7 +668,7 @@ const TRANSLATIONS = {
     'help.bakingSurface': 'Worauf die Pizza liegt. Eine vorgeheizte Stahl- oder Steinplatte speichert Hitze und krispt die Unterseite; ein blankes Gitter bräunt die Basis am wenigsten.',
     'sources.group.fermentation': 'Gärung', 'sources.group.flourGluten': 'Mehl & Gluten',
     'sources.group.saltRheology': 'Salz & Rheologie', 'sources.group.overFermentation': 'Übergärung',
-    'sources.group.bakingStorage': 'Backen & Lagerung',
+    'sources.group.bakingStorage': 'Backen & Lagerung', 'sources.group.mixing': 'Mischen & Kneten',
     'graph.node.i_prove': 'Temp · Zeit', 'graph.node.i_flour': 'Protein · P/L',
     'graph.node.i_pct': 'Hydr·Salz·Öl·Zucker', 'graph.node.i_leaven': 'Trieb · Vorteig',
     'graph.node.i_mix': 'Raum · ETT · Methode', 'graph.node.i_batch': 'Teiggewicht',
@@ -631,6 +686,7 @@ const TRANSLATIONS = {
     'nrow.starterStrength': 'Starteraktivität', 'nrow.levainPct': 'Levain %', 'nrow.starter': 'Starter',
     'nrow.baseIdyPct': 'Basis-Trockenhefe %', 'nrow.yeastTypeMult': 'Hefetyp-Faktor',
     'nrow.effYeastPct': 'effektive Hefe %', 'nrow.yeast': 'Hefe', 'nrow.yeastTsp': 'Hefe (TL)',
+    'nrow.pfYeast': 'Vorteig-Hefe', 'nrow.finalYeast': 'Hauptteig-Hefe',
     'nrow.preferment': 'Vorteig', 'nrow.digestibility': 'Verträglichkeit',
     'nrow.flour': 'Mehl', 'nrow.water': 'Wasser', 'nrow.salt': 'Salz', 'nrow.oil': 'Öl',
     'nrow.sugar': 'Zucker', 'nrow.totalDough': 'Teig gesamt', 'nrow.roomTemp': 'Raumtemperatur',
@@ -1299,11 +1355,13 @@ function FermentCalculator() {
   const [leavening, setLeavening] = useConfigEnum('leaven', "commercial", ['commercial', 'sourdough']);
   const [starterStr, setStarterStr] = useConfigNumber('starter', 50, 0, 100);
   const [preferment, setPreferment] = useConfigEnum('preferment', "straight", ['straight', 'poolish', 'biga']);
+  const [pfPct, setPfPct] = useConfigNumber('pf', 30, 10, 50);
+  const [pfHours, setPfHours] = useConfigNumber('pfHours', 12, 4, 24);
   const [ballCount, setBallCount] = useConfigNumber('balls', 4, 1, 12);
   const [ballWeight, setBallWeight] = useConfigNumber('ballWeight', 250, 100, 500);
   const doughWeight = ballCount * ballWeight;
   const [roomTemp, setRoomTemp] = useConfigNumber('room', 20, 12, 30);
-  const [ddt, setDdt] = useConfigNumber('ddt', 24, 20, 28);
+  const [ddt, setDdt] = useConfigNumber('ddt', 24, 18, 28);
   const [mixMethod, setMixMethod] = useConfigEnum('mix', "hand", ['hand', 'mixer', 'processor']);
   const [ovenC, setOvenC] = useConfigNumber('oven', 250, 200, 500);
   const [surface, setSurface] = useConfigEnum('surface', "steel", ['steel', 'stone', 'pan', 'rack']);
@@ -1377,7 +1435,7 @@ function FermentCalculator() {
   const accent = tempColor(tempC);
   // ballWeight is here for the recipe box, which stores a whole dough; the
   // engine works off doughWeight, which is why the memo below doesn't list it.
-  const inputs = { tempC, hours, split, temp2C, hours2, protein, plVal, hydration, salt, oilPct, sugarPct, leavening, yeastType, starterStr, preferment, roomTemp, ddt, mixMethod, doughWeight, ballCount, ballWeight, ovenC, surface };
+  const inputs = { tempC, hours, split, temp2C, hours2, protein, plVal, hydration, salt, oilPct, sugarPct, leavening, yeastType, starterStr, preferment, pfPct, pfHours, roomTemp, ddt, mixMethod, doughWeight, ballCount, ballWeight, ovenC, surface };
   // A dough that came in on a link is just the query string by the time the
   // hooks have read it, so it's snapshotted on the first render — before the
   // user can nudge a slider — and that snapshot is what the offer to save it
@@ -1386,7 +1444,7 @@ function FermentCalculator() {
   const sharedDough = sharedRef.current || null;
   // single pure entry point — all numbers come from the engine
   const M = useMemo(() => computeAll(inputs),
-    [tempC, hours, split, temp2C, hours2, protein, plVal, hydration, salt, oilPct, sugarPct, leavening, yeastType, starterStr, preferment, roomTemp, ddt, mixMethod, doughWeight, ballCount, ovenC, surface]);
+    [tempC, hours, split, temp2C, hours2, protein, plVal, hydration, salt, oilPct, sugarPct, leavening, yeastType, starterStr, preferment, pfPct, pfHours, roomTemp, ddt, mixMethod, doughWeight, ballCount, ovenC, surface]);
   const { r, fp, bake, digest, geometry, water, verdicts, proof: proofQuality, pl } = M;
   const hVerdict = verdicts.hydration, fVerdict = verdicts.ferment, dVerdict = verdicts.digestion, bVerdict = verdicts.bake;
   const oVal = geometry.openness, sVal = geometry.strength, springFrac = geometry.springFrac, rimIndex = geometry.rimIndex;
@@ -1403,7 +1461,45 @@ function FermentCalculator() {
   const selectedPresetLabel = selectedStyle ? t('preset.' + selectedStyle) : null;
 
   // ---- recipe copy (presentation text derived from the engine's numbers) ----
-  const kneadText = hydration > 68 ? t('recipe.knead.stretch') : totalHours >= 24 ? t('recipe.knead.long') : t('recipe.knead.normal');
+  const pf = r.pf;
+  const fmtG = (g) => (g < 1 ? g.toFixed(2) : g.toFixed(1));
+  const joinList = (items) => items.length < 2 ? items.join('') : items.slice(0, -1).join(', ') + t('list.and') + items[items.length - 1];
+  const finalYeastG = r.final.yeastGrams;
+  const processor = mixMethod === 'processor';
+  const leavenItem = sourdough
+    ? t('recipe.mix.item.starter', { g: r.levainGrams.toFixed(0) })
+    : finalYeastG > 0 ? t('recipe.mix.item.yeast', { g: fmtG(finalYeastG) }) : null;
+  const stirItems = [t('recipe.mix.item.salt', { g: r.saltGrams.toFixed(1) })];
+  if (sugarPct > 0) stirItems.push(t('recipe.mix.item.sugar', { g: r.sugarGrams.toFixed(0) }));
+  if (leavenItem && !processor) stirItems.push(leavenItem); // a processor takes the yeast last, on top of the flour
+  const stirText = joinList(stirItems);
+  // cold water damages dry yeast (PizzaBlab), so it gets a warm head start
+  const dryYeastInColdWater = !sourdough && yeastType !== 'fresh' && finalYeastG > 0 && waterTempReco < 20;
+  const mixText =
+    (dryYeastInColdWater ? t('recipe.mix.warmYeast') : '') +
+    t('recipe.mix.water', { waterG: Math.round(r.final.water), waterTemp: waterTempReco, vessel: t('recipe.vessel.' + mixMethod), pfIn: pf ? t('recipe.mix.pfIn.' + pf.type) : '' }) +
+    t('recipe.mix.stir', { items: stirText, ItemsCap: stirText.charAt(0).toUpperCase() + stirText.slice(1) }) +
+    (!sourdough && finalYeastG === 0 ? t('recipe.mix.noYeast') : '') +
+    t('recipe.mix.flour.' + mixMethod, { flourG: Math.round(r.final.flour), leavenLast: processor && leavenItem ? t('recipe.mix.leavenLast', { item: leavenItem }) : '' });
+  // long ferments want only light kneading — the time builds the gluten
+  const lightKnead = totalHours >= 12;
+  const kneadKey = processor ? 'recipe.knead.processor'
+    : mixMethod === 'mixer' ? (lightKnead ? 'recipe.knead.mixer.light' : 'recipe.knead.mixer.full')
+    : hydration > 70 ? 'recipe.knead.hand.slap'
+    : lightKnead ? 'recipe.knead.hand.light' : 'recipe.knead.hand.full';
+  const kneadText = (oilPct > 0 ? t('recipe.knead.oil', { oilG: r.oilGrams.toFixed(0) }) : '') + t(kneadKey);
+  const prefermentText = pf && t('recipe.step.' + pf.type, {
+    yeastG: fmtG(pf.grams), pinch: pf.grams < 0.25 ? t('recipe.pinch') : '',
+    waterG: Math.round(pf.water), flourG: Math.round(pf.flour), roomTemp, hours: pfHours,
+  });
+  const fmtDur = (h) => {
+    const x = Math.round(h * 2) / 2;
+    if (x < 48) return t('dur.hours', { h: x });
+    const d = Math.floor(x / 24), rest = x - d * 24;
+    return rest ? t('dur.days', { d, h: rest }) : t('dur.daysOnly', { d });
+  };
+  const when = (h) => t('when.before', { t: fmtDur(h) });
+  const tl = M.timeline;
   const locKey = (T) => T <= 10 ? 'recipe.fermentLoc.cold' : T <= 18 ? 'recipe.fermentLoc.cool' : 'recipe.fermentLoc.room';
   const fermentLoc = t(locKey(tempC), { tempC });
   const fermentLoc2 = t(locKey(temp2C), { tempC: temp2C });
@@ -1411,14 +1507,13 @@ function FermentCalculator() {
   const ballColdNote = temp2C <= 10 ? t('recipe.coldNote') : '';
   const bakeFinish = bake.leopard ? t('recipe.bakeFinish.leopard') : ovenC >= 280 ? t('recipe.bakeFinish.hot') : t('recipe.bakeFinish.normal');
   const recipeTip = tempC >= 22 ? t('recipe.tip.warm') : cold ? t('recipe.tip.cold') : null;
-  const prefermentText = preferment === "poolish" ? t('recipe.step.poolish') : preferment === "biga" ? t('recipe.step.biga') : null;
   const ballSuffix = balls > 1 ? t('recipe.ballSuffix') : '';
 
   // ---- presets (view-side state wiring) ----
   const setters = {
     tempC: setTempC, hours: setHours, split: setSplit, temp2C: setTemp2C, hours2: setHours2,
     protein: setProtein, plVal: setPlVal, hydration: setHydration,
-    salt: setSalt, oilPct: setOilPct, sugarPct: setSugarPct, leavening: setLeavening, preferment: setPreferment,
+    salt: setSalt, oilPct: setOilPct, sugarPct: setSugarPct, leavening: setLeavening, preferment: setPreferment, pfPct: setPfPct, pfHours: setPfHours,
     ovenC: setOvenC, surface: setSurface, ddt: setDdt, starterStr: setStarterStr, yeastType: setYeastType,
     mixMethod: setMixMethod, ballCount: setBallCount, ballWeight: setBallWeight, roomTemp: setRoomTemp,
   };
@@ -1745,6 +1840,11 @@ function FermentCalculator() {
         .fc-ing .nm{ color:var(--ink); }
         .fc-ing .nm small{ display:block; color:var(--ink-soft); font-size:11px; margin-top:2px; letter-spacing:.01em; }
         .fc-ing .amt{ font-family:'JetBrains Mono',monospace; font-weight:500; color:var(--ink); white-space:nowrap; }
+        .fc-ing-group{ font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em;
+          text-transform:uppercase; color:var(--ink-soft); margin:14px 0 0; }
+        .fc-recipe-start{ font-size:13px; line-height:1.5; color:var(--ink-soft); margin:8px 0 0; }
+        .fc-when{ display:block; font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.08em;
+          text-transform:uppercase; color:var(--ink-soft); margin-bottom:2px; }
         .fc-recipe-yield{ font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.1em;
           text-transform:uppercase; color:var(--ink-soft); margin:14px 0 0; }
         .fc-steps{ list-style:none; counter-reset:step; margin:10px 0 0; padding:0; }
@@ -2074,7 +2174,7 @@ function FermentCalculator() {
                 <Help>{t('help.yeastType')}</Help>
               </>
             )}
-            {!simple && (
+            {!simple && !sourdough && (
               <>
                 <div className="fc-field">
                   <div className="fc-field-head"><span className="fc-label">{t('label.preferment')}</span></div>
@@ -2085,6 +2185,18 @@ function FermentCalculator() {
                   </div>
                 </div>
                 <Help>{t('help.preferment')}</Help>
+                {pf && (
+                  <>
+                    <Slider label={t('label.pfPct')} value={pfPct} unit="%"
+                      min={10} max={50} step={5} onChange={setPfPct} accent={accent}
+                      note={t('note.pfPct', { flourG: Math.round(pf.flour), waterG: Math.round(pf.water), hyd: pf.hydration })} />
+                    <Help>{t('help.pfPct')}</Help>
+                    <Slider label={t('label.pfHours')} value={pfHours} unit="h"
+                      min={4} max={24} step={1} onChange={setPfHours} accent={accent}
+                      note={t('note.pfHours', { room: roomTemp, lo: pf.typical[0], hi: pf.typical[1] })} />
+                    <Help>{t('help.pfHours')}</Help>
+                  </>
+                )}
               </>
             )}
 
@@ -2095,8 +2207,10 @@ function FermentCalculator() {
                   min={12} max={30} step={1} onChange={setRoomTemp} accent={accent} />
                 <Help>{t('help.roomTemp')}</Help>
                 <Slider label={t('label.ddt')} value={ddt} unit="°C"
-                  min={20} max={28} step={0.5} onChange={setDdt} accent={accent}
-                  note={t('note.ddt', { temp: waterTempReco, icedNote: waterTempReco <= 4 ? t('note.ddt.iced') : '' })} />
+                  min={18} max={28} step={0.5} onChange={setDdt} accent={accent}
+                  note={t('note.ddt', { temp: waterTempReco, icedNote: waterTempReco <= 4 ? t('note.ddt.iced') : '' }) + ' · '
+                    + t('note.ddt.band', { lo: verdicts.ddt.params.lo, hi: verdicts.ddt.params.hi, kind: t(verdicts.ddt.params.kindKey) })}
+                  noteColor={verdicts.ddt.tone === 'warn' ? TONE.warn : undefined} />
                 <Help>{t('help.ddt')}</Help>
                 <div className="fc-field">
                   <div className="fc-field-head"><span className="fc-label">{t('label.mixMethod')}</span></div>
@@ -2124,6 +2238,7 @@ function FermentCalculator() {
                 ? t('yeast.levainSub', { levainPct: r.levainPct.toFixed(0), flourG: Math.round(r.flour), saltG: r.saltGrams.toFixed(1) })
                 : t('yeast.commercialSub', { pct: r.pct.toFixed(3), flourG: Math.round(r.flour), saltG: r.saltGrams.toFixed(1) })}
               {!sourdough && r.tsp != null && t('yeast.tsp', { tsp: r.tsp.toFixed(2) })}
+              {pf && t('yeast.pfPart', { g: fmtG(pf.grams) })}
             </p>
 
             <div className="fc-fit">
@@ -2245,37 +2360,47 @@ function FermentCalculator() {
           <div className="fc-recipe-grid">
             <div>
               <p className="fc-src-label">{t('recipe.ingredients')}</p>
+              {pf && (
+                <>
+                  <p className="fc-ing-group">{t('recipe.group.pf', { name: t('preferment.' + pf.type) })}</p>
+                  <ul className="fc-ing">
+                    <li><span className="nm">{t('recipe.flour')}<small>{pfPct}%</small></span><span className="amt">{Math.round(pf.flour)} g</span></li>
+                    <li><span className="nm">{t('recipe.water')}<small>{pf.hydration}%</small></span><span className="amt">{Math.round(pf.water)} g</span></li>
+                    <li><span className="nm">{t('recipe.yeast')}<small>{t('yeast.' + yeastType)}</small></span><span className="amt">{fmtG(pf.grams)} g</span></li>
+                  </ul>
+                  <p className="fc-ing-group">{t('recipe.group.final')}</p>
+                </>
+              )}
               <ul className="fc-ing">
-                <li><span className="nm">{t('recipe.flour')}<small>{t(fp.categoryKey)}, ~{protein}%</small></span><span className="amt">{Math.round(r.flour)} g</span></li>
-                <li><span className="nm">{t('recipe.water')}<small>{hydration}% · ~{waterTempReco} °C</small></span><span className="amt">{Math.round(waterTotal)} g</span></li>
+                {pf && <li><span className="nm">{t('preferment.' + pf.type)}<small>{t('recipe.pfAll')}</small></span><span className="amt">{Math.round(pf.flour + pf.water + pf.grams)} g</span></li>}
+                <li><span className="nm">{t('recipe.flour')}<small>{t(fp.categoryKey)}, ~{protein}%</small></span><span className="amt">{Math.round(r.final.flour)} g</span></li>
+                <li><span className="nm">{t('recipe.water')}<small>{pf ? '' : hydration + '% · '}~{waterTempReco} °C</small></span><span className="amt">{Math.round(r.final.water)} g</span></li>
                 <li><span className="nm">{t('recipe.salt')}<small>{salt}%</small></span><span className="amt">{r.saltGrams.toFixed(1)} g</span></li>
                 {oilPct > 0 && <li><span className="nm">{t('recipe.oil')}<small>{oilPct}%</small></span><span className="amt">{r.oilGrams.toFixed(0)} g</span></li>}
                 {sugarPct > 0 && <li><span className="nm">{t('recipe.sugar')}<small>{sugarPct}%</small></span><span className="amt">{r.sugarGrams.toFixed(0)} g</span></li>}
                 {sourdough
                   ? <li><span className="nm">{t('recipe.sourdoughStarter')}<small>{t('recipe.levainPct', { pct: r.levainPct.toFixed(0) })}</small></span><span className="amt">{r.levainGrams.toFixed(0)} g</span></li>
-                  : <li><span className="nm">{t('recipe.yeast')}<small>{t('yeast.' + yeastType)}</small></span><span className="amt">{gramsTxt} g</span></li>}
+                  : <li><span className="nm">{t('recipe.yeast')}<small>{t('yeast.' + yeastType)}</small></span><span className="amt">{finalYeastG > 0 ? fmtG(finalYeastG) + ' g' : t('recipe.noYeast')}</span></li>}
               </ul>
+              {pf && <p className="fc-recipe-yield">{t('recipe.totals', { flour: Math.round(r.flour), water: Math.round(waterTotal), yeast: gramsTxt })}</p>}
               <p className="fc-recipe-yield">{t('recipe.makes', { balls, suffix: ballSuffix, weight: doughWeight })}</p>
             </div>
             <div>
               <p className="fc-src-label">{t('recipe.method')}</p>
+              <p className="fc-recipe-start">{t('recipe.startBy', { t: fmtDur(tl.start) })}</p>
               <ol className="fc-steps">
-                {prefermentText && <li>{prefermentText}</li>}
-                <li>
-                  {sourdough
-                    ? t('recipe.step.mixSourdough', { levainG: r.levainGrams.toFixed(0), waterG: Math.round(waterTotal), waterTemp: waterTempReco, flourG: Math.round(r.flour) })
-                    : t('recipe.step.mixYeast', { yeastLabel: t('yeast.' + yeastType), yeastG: gramsTxt, waterG: Math.round(waterTotal), waterTemp: waterTempReco, flourG: Math.round(r.flour) })}
-                </li>
-                <li>{t('recipe.step.addSalt', { saltG: r.saltGrams.toFixed(1), oilText: oilPct > 0 ? t('recipe.step.addOil', { oilG: r.oilGrams.toFixed(0) }) : '', sugarText: sugarPct > 0 ? t('recipe.step.addSugar', { sugarG: r.sugarGrams.toFixed(0) }) : '', kneadText })}</li>
+                {prefermentText && <li><span className="fc-when">{when(tl.preferment)}</span>{prefermentText}</li>}
+                <li><span className="fc-when">{when(tl.mix)}</span>{mixText}</li>
+                <li>{kneadText}</li>
                 {!split && <li>{t('recipe.step.bulkRise', { balls, suffix: ballSuffix, ballW, eachText: balls > 1 ? t('recipe.each') : '' })}</li>}
                 {!split && <li>{t('recipe.step.prove', { fermentLoc, hours, coldNote })}</li>}
                 {split && <li>{t('recipe.step.bulkStage', { fermentLoc, h1: hours })}</li>}
-                {split && <li>{t('recipe.step.ballStage', { balls, suffix: ballSuffix, ballW, eachText: balls > 1 ? t('recipe.each') : '', fermentLoc2, h2: hours2Label, coldNote: ballColdNote })}</li>}
+                {split && <li><span className="fc-when">{when(tl.balls)}</span>{t('recipe.step.ballStage', { balls, suffix: ballSuffix, ballW, eachText: balls > 1 ? t('recipe.each') : '', fermentLoc2, h2: hours2Label, coldNote: ballColdNote })}</li>}
                 {M.overProof && M.overProof.raw >= 1 && (
                   <li>{t('recipe.step.overFerment', { protein, hours: totalLabel })}</li>
                 )}
                 <li>{t('recipe.step.openBall')}</li>
-                <li>{t('recipe.step.bake', { surface: t('surface.' + surface), ovenSuffix: surface === "rack" ? "" : t('recipe.step.bakeOvenSuffix'), ovenC, bakeTime: fmtBake(bake.t), bakeFinish })}</li>
+                <li><span className="fc-when">{t('when.bake')}</span>{t('recipe.step.bake', { surface: t('surface.' + surface), ovenSuffix: surface === "rack" ? "" : t('recipe.step.bakeOvenSuffix'), ovenC, bakeTime: fmtBake(bake.t), bakeFinish })}</li>
               </ol>
               {recipeTip && <p className="fc-recipe-tip">{recipeTip}</p>}
             </div>
@@ -2309,6 +2434,8 @@ function FermentCalculator() {
                       <NRow k="nrow.yeastTypeMult" v={`${TYPE[yeastType].mult}×`} tier="g" />
                       <NRow k="nrow.effYeastPct" v={`${r.pct.toFixed(3)}%`} tier="g" />
                       <NRow k="nrow.yeast" v={`${r.grams.toFixed(2)} g`} tier="g" />
+                      {pf && <NRow k="nrow.pfYeast" v={`${pf.grams.toFixed(2)} g`} tier="h" />}
+                      {pf && <NRow k="nrow.finalYeast" v={`${finalYeastG.toFixed(2)} g`} tier="h" />}
                       <NRow k="nrow.yeastTsp" v={r.tsp != null ? `${r.tsp.toFixed(2)} tsp` : "—"} tier="g" />
                     </>}
                 <NRow k="nrow.preferment" v={t('preferment.' + preferment)} tier="i" />

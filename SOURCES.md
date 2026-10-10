@@ -16,6 +16,11 @@ tool's heuristics, not implemented from the original methods.
 - [Reducing fermentation time (rheofermentometer)](https://www.researchgate.net/publication/262662318)
 - [Fermentation & baking → antioxidant content](https://www.eurekalert.org/news-releases/848139)
 - [Thermodynamic sensors to monitor fermentation](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8914819/)
+- [Guide to preferments: poolish, biga, amounts and yeast (PizzaBlab)](https://www.pizzablab.com/learning-and-resources/general-articles/guide-to-preferments/)
+
+## Mixing & kneading
+
+- [Practical guide to kneading: ingredient order, mixers, food processors, dough temperature (PizzaBlab)](https://www.pizzablab.com/learning-and-resources/mixing-kneading/practical-guide-to-pizza-dough-kneading/)
 
 ## Flour & gluten
 

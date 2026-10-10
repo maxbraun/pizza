@@ -19,7 +19,9 @@ The app is built in three stages that feed one another:
    two temperature zones (e.g. a cold bulk in the fridge, then a warm
    ball proof) and rendered as a modified-Gompertz rise curve. Over-proof
    capacity and digestibility tick on a slower enzyme clock (Q₁₀ ~1.7),
-   which is why refrigeration stretches the safe window.
+   which is why refrigeration stretches the safe window. A poolish or
+   biga gets its own yeast dose, and the final dough gets what the main
+   ferment still needs.
 2. **Flour** — protein % and P/L estimate a flour-strength (`W`) proxy,
    a workable hydration range, and how many hours the dough can ferment
    before it's pushed past its structural limit.

@@ -42,6 +42,16 @@ const TRANSITION_H = 2;
 const gasRate = (tempC) => Math.pow(Q10, (tempC - REF.tempC) / 10);
 const matureRate = (tempC) => Math.pow(Q10_MATURE, (tempC - REF.tempC) / 10);
 const SALT_REF = 2.5; // salt % at which the fermentation anchor was set
+// Preferment yeast is anchored on PizzaBlab's standard doses at ~20 °C,
+// as % IDY of the preferment's own flour: poolish 0.1% over 8–16 h, biga
+// 0.3% over 16–24 h. A stiff biga ferments far slower than a runny
+// poolish, so each type keeps its own anchor rather than sharing K; Q10
+// scales it to other times and temperatures.
+const PREFERMENT = {
+  poolish: { hydration: 100, idyPct: 0.1, hours: 12, typical: [8, 16] },
+  biga:    { hydration: 45,  idyPct: 0.3, hours: 20, typical: [16, 24] },
+};
+const PF_REF_TEMP = 20;
 const TYPE = {
   idy: { label: "Instant dry", mult: 1.0, gPerTsp: 3.15 },
   ady: { label: "Active dry", mult: 1.33, gPerTsp: 3.1 },
@@ -115,11 +125,11 @@ const GRAPH = {
 const DG = { W: 760, H: 384, colX: [8, 300, 620], colW: [152, 180, 132], top: 30, nodeH: 26 };
 
 const PIZZA_PRESETS = [
-  { id: "neapolitan", label: "Neapolitan", set: { tempC: 18, hours: 24, split: false, temp2C: 21, hours2: 2, protein: 13, plVal: 55, hydration: 60, salt: 2.8, oilPct: 0, sugarPct: 0, leavening: "commercial", preferment: "biga", ovenC: 460, surface: "stone", ddt: 23 } },
-  { id: "ny", label: "New York", set: { tempC: 4, hours: 46, split: true, temp2C: 21, hours2: 2, protein: 13, plVal: 50, hydration: 63, salt: 2, oilPct: 2.5, sugarPct: 1, leavening: "commercial", preferment: "straight", ovenC: 300, surface: "steel", ddt: 24 } },
+  { id: "neapolitan", label: "Neapolitan", set: { tempC: 18, hours: 24, split: false, temp2C: 21, hours2: 2, protein: 13, plVal: 55, hydration: 60, salt: 2.8, oilPct: 0, sugarPct: 0, leavening: "commercial", preferment: "biga", pfPct: 30, pfHours: 18, ovenC: 460, surface: "stone", ddt: 23 } },
+  { id: "ny", label: "New York", set: { tempC: 4, hours: 46, split: true, temp2C: 21, hours2: 2, protein: 13, plVal: 50, hydration: 63, salt: 2, oilPct: 2.5, sugarPct: 1, leavening: "commercial", preferment: "straight", ovenC: 300, surface: "steel", ddt: 22 } },
   { id: "detroit", label: "Detroit", set: { tempC: 20, hours: 6, split: false, temp2C: 21, hours2: 2, protein: 13, plVal: 45, hydration: 70, salt: 2, oilPct: 1, sugarPct: 0, leavening: "commercial", preferment: "straight", ovenC: 280, surface: "pan", ddt: 25 } },
-  { id: "roman", label: "Roman al taglio", set: { tempC: 4, hours: 46, split: true, temp2C: 21, hours2: 2, protein: 12.5, plVal: 40, hydration: 80, salt: 2.2, oilPct: 2, sugarPct: 0, leavening: "commercial", preferment: "poolish", ovenC: 290, surface: "steel", ddt: 23 } },
-  { id: "sourdough", label: "Sourdough", set: { tempC: 5, hours: 22, split: true, temp2C: 21, hours2: 2, protein: 12.5, plVal: 50, hydration: 72, salt: 2.5, oilPct: 0, sugarPct: 0, leavening: "sourdough", preferment: "straight", ovenC: 270, surface: "steel", ddt: 24, starterStr: 60 } },
+  { id: "roman", label: "Roman al taglio", set: { tempC: 4, hours: 46, split: true, temp2C: 21, hours2: 2, protein: 12.5, plVal: 40, hydration: 80, salt: 2.2, oilPct: 2, sugarPct: 0, leavening: "commercial", preferment: "poolish", pfPct: 30, pfHours: 12, ovenC: 290, surface: "steel", ddt: 23 } },
+  { id: "sourdough", label: "Sourdough", set: { tempC: 5, hours: 22, split: true, temp2C: 21, hours2: 2, protein: 12.5, plVal: 50, hydration: 72, salt: 2.5, oilPct: 0, sugarPct: 0, leavening: "sourdough", preferment: "straight", ovenC: 270, surface: "steel", ddt: 23, starterStr: 60 } },
 ];
 const OVEN_PRESETS = [
   { id: "home", label: "Home oven", set: { ovenC: 250, surface: "steel" } },
@@ -177,8 +187,9 @@ const DOUGH_RANGES = {
   tempC: [2, 35], hours: [2, 96], protein: [8, 15], plVal: [0, 100],
   hydration: [50, 85], salt: [0, 4], oilPct: [0, 6], sugarPct: [0, 4],
   starterStr: [0, 100], ballCount: [1, 12], ballWeight: [100, 500],
-  roomTemp: [12, 30], ddt: [20, 28], ovenC: [200, 500],
+  roomTemp: [12, 30], ddt: [18, 28], ovenC: [200, 500],
   temp2C: [2, 35], hours2: [0.5, 24],
+  pfPct: [10, 50], pfHours: [4, 24],
 };
 
 const DOUGH_ENUMS = {
@@ -190,10 +201,11 @@ const DOUGH_ENUMS = {
   split:      [false, true],
 };
 
-// The ball-proof stage arrived after the recipe box, so doughs saved
-// before it lack these fields. A missing value means the single-stage
-// schedule those doughs were made with, not a broken recipe.
-const DOUGH_OPTIONAL = { split: false, temp2C: 21, hours2: 2 };
+// The ball-proof stage and the preferment amounts arrived after the recipe
+// box, so doughs saved before them lack these fields. A missing value means
+// the single-stage schedule and default preferment those doughs were made
+// with, not a broken recipe.
+const DOUGH_OPTIONAL = { split: false, temp2C: 21, hours2: 2, pfPct: 30, pfHours: 12 };
 
 // field -> the query param index.html's useConfigX hooks keep it under.
 const DOUGH_PARAMS = {
@@ -203,6 +215,7 @@ const DOUGH_PARAMS = {
   preferment: "preferment", ballCount: "balls", ballWeight: "ballWeight",
   roomTemp: "room", ddt: "ddt", mixMethod: "mix", ovenC: "oven", surface: "surface",
   split: "split", temp2C: "temp2", hours2: "hours2",
+  pfPct: "pf", pfHours: "pfHours",
 };
 
 // Returns a fresh object holding exactly the known fields, or null if any
@@ -345,6 +358,10 @@ const SOURCES = [
     { t: "Reducing fermentation time (rheofermentometer)", u: "https://www.researchgate.net/publication/262662318" },
     { t: "Fermentation & baking → antioxidant content", u: "https://www.eurekalert.org/news-releases/848139" },
     { t: "Thermodynamic sensors to monitor fermentation", u: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8914819/" },
+    { t: "Guide to preferments: poolish, biga, amounts and yeast (PizzaBlab)", u: "https://www.pizzablab.com/learning-and-resources/general-articles/guide-to-preferments/" },
+  ] },
+  { group: "Mixing & kneading", groupKey: "sources.group.mixing", items: [
+    { t: "Practical guide to kneading: ingredient order, mixers, food processors, dough temperature (PizzaBlab)", u: "https://www.pizzablab.com/learning-and-resources/mixing-kneading/practical-guide-to-pizza-dough-kneading/" },
   ] },
   { group: "Flour & gluten", groupKey: "sources.group.flourGluten", items: [
     { t: "Flour protein → dough & crust (etliekmek)", u: "https://pmc.ncbi.nlm.nih.gov/articles/PMC7026350/" },
@@ -501,7 +518,7 @@ function overProofRecommendations(inp, fp, profile) {
   if (profile.meanTemp > 10)        levers.push({ kCode: 'overproof.lever.temperatureKey', vCode: 'overproof.lever.temperature', params: { val: Math.round(profile.meanTemp) } });
   if (inp.salt < 2.5)               levers.push({ kCode: 'overproof.lever.saltKey',        vCode: 'overproof.lever.salt',        params: { val: inp.salt } });
   levers.push(                       { kCode: 'overproof.lever.timeKey',         vCode: 'overproof.lever.time',        params: { val: Math.max(1, Math.round(profile.totalHours - wallMax * 0.85)) } });
-  if (inp.preferment === 'straight') levers.push({ kCode: 'overproof.lever.prefermentKey', vCode: 'overproof.lever.preferment',  params: {} });
+  if (inp.preferment === 'straight' && inp.leavening !== 'sourdough') levers.push({ kCode: 'overproof.lever.prefermentKey', vCode: 'overproof.lever.preferment',  params: {} });
   if (inp.hydration > 68)           levers.push({ kCode: 'overproof.lever.hydrationKey',   vCode: 'overproof.lever.hydration',   params: { val: inp.hydration } });
   return { raw, severity, labelCode, whyCode, whyParams, levers };
 }
@@ -562,7 +579,29 @@ function crustLabelKey(c) {
   return c < 30 ? "crust.pale" : c < 55 ? "crust.golden" : c < 78 ? "crust.deepGolden" : "crust.charred";
 }
 
-function compute({ tempC, hours, split, temp2C, hours2, ddt, yeastType, doughWeight, hydration, salt, oilPct, sugarPct, leavening, preferment, starterStr }) {
+// A levain already is a preferment, so a sourdough dough never takes a
+// yeasted poolish or biga on top.
+function prefermentType(leavening, preferment) {
+  return leavening === "sourdough" || !PREFERMENT[preferment] ? "straight" : preferment;
+}
+
+// The preferment's flour, water and yeast. It ferments salt-free at room
+// temperature, so its dose scales from the type's anchor by time and Q10
+// alone; yeastMult converts IDY to the yeast type the dough uses.
+function prefermentFn(type, pfPct, pfHours, roomTemp, flour, yeastMult) {
+  const def = PREFERMENT[type];
+  const pfFlour = flour * (pfPct / 100);
+  const idyPct = (def.idyPct * def.hours) / (pfHours * Math.pow(Q10, (roomTemp - PF_REF_TEMP) / 10));
+  return {
+    type, hydration: def.hydration, typical: def.typical, idyPct,
+    flour: pfFlour,
+    water: pfFlour * (def.hydration / 100),
+    grams: pfFlour * (idyPct / 100) * yeastMult,
+  };
+}
+
+function compute({ tempC, hours, split, temp2C, hours2, ddt, yeastType, doughWeight, hydration, salt, oilPct, sugarPct, leavening, preferment, starterStr,
+  roomTemp = 20, pfPct = DOUGH_OPTIONAL.pfPct, pfHours = DOUGH_OPTIONAL.pfHours }) {
   // the dose divides by the summed gas budget, so every stage (and the
   // equilibration windows between them) contributes fermentation work
   const profile = fermentProfile(fermentStages({ tempC, hours, split, temp2C, hours2 }), ddt);
@@ -573,21 +612,58 @@ function compute({ tempC, hours, split, temp2C, hours2, ddt, yeastType, doughWei
   const saltGrams = flour * (salt / 100);
   const oilGrams = flour * (oilPct / 100);
   const sugarGrams = flour * (sugarPct / 100);
-  const pfYeast = preferment !== "straight" ? 0.85 : 1; // preferment carries some leavening
-  let idyPct = 0, pct = 0, grams = 0, tsp = null, levainPct = 0, levainGrams = 0;
+  const pfType = prefermentType(leavening, preferment);
+  let idyPct = 0, pct = 0, grams = 0, tsp = null, levainPct = 0, levainGrams = 0, finalYeastGrams = 0, pf = null;
   if (leavening === "sourdough") {
     // anchored on ~15% levain → roughly 8 h at 24 °C; a vigorous starter needs less
     const strength = 0.7 + (starterStr / 100) * 0.6; // 0.7 sluggish .. 1.3 vigorous
     levainPct = clamp(150 / (profile.gasUnits * saltRate * strength), 3, 40);
     levainGrams = flour * (levainPct / 100);
   } else {
-    idyPct = K / (profile.gasUnits * saltRate);
-    pct = idyPct * TYPE[yeastType].mult * pfYeast;
-    grams = flour * (pct / 100);
+    const mult = TYPE[yeastType].mult;
+    idyPct = K / (profile.gasUnits * saltRate); // what the main ferment needs, % of all flour
+    if (pfType !== "straight") pf = prefermentFn(pfType, pfPct, pfHours, roomTemp, flour, mult);
+    // PizzaBlab's calculator logic: the final dough gets the total the main
+    // ferment needs minus what the preferment already carries, and nothing
+    // when the preferment covers it
+    const needGrams = flour * (idyPct / 100) * mult;
+    finalYeastGrams = Math.max(0, needGrams - (pf ? pf.grams : 0));
+    grams = finalYeastGrams + (pf ? pf.grams : 0);
+    pct = (grams / flour) * 100;
     const gPerTsp = TYPE[yeastType].gPerTsp;
     tsp = gPerTsp ? grams / gPerTsp : null;
   }
-  return { rateFactor, saltRate, idyPct, pct, flour, grams, saltGrams, oilGrams, sugarGrams, tsp, waterG, levainPct, levainGrams, profile };
+  const final = {
+    flour: flour - (pf ? pf.flour : 0),
+    water: waterG - (pf ? pf.water : 0),
+    yeastGrams: finalYeastGrams,
+  };
+  return { rateFactor, saltRate, idyPct, pct, flour, grams, saltGrams, oilGrams, sugarGrams, tsp, waterG, levainPct, levainGrams, profile, pf, final };
+}
+
+// PizzaBlab's final-dough-temperature bands: a dough going straight into
+// the fridge should leave the mixer cooler than one fermenting on the
+// counter, so it spends less of its budget racing while it chills.
+function fdtTarget(firstStageTempC) {
+  return firstStageTempC <= 10
+    ? { lo: 18, hi: 23, kindKey: "fdt.cold" }
+    : { lo: 23, hi: 27, kindKey: "fdt.room" };
+}
+function ddtVerdict(ddt, firstStageTempC) {
+  const b = fdtTarget(firstStageTempC);
+  const tone = ddt >= b.lo && ddt <= b.hi ? "good" : "warn";
+  return { tone, code: "note.ddt.band", params: { lo: b.lo, hi: b.hi, kindKey: b.kindKey } };
+}
+
+// Hours before baking at which each timed recipe step starts.
+function timelineFn(profile, pf, pfHours) {
+  const mix = profile.totalHours;
+  return {
+    preferment: pf ? mix + pfHours : null,
+    mix,
+    balls: profile.boundaries.length ? mix - profile.boundaries[0] : null,
+    start: mix + (pf ? pfHours : 0),
+  };
 }
 
 // pure rise model — Gompertz values only, no pixels. The sigmoid lives in
@@ -647,8 +723,9 @@ function computeAll(inp) {
   const rise = riseModel(profile, inp.protein);
   const proof = proofQualityFn(profile.matureUnits, fp.maxHours);
   const bake = bakeProfile(inp.ovenC, inp.hydration, inp.salt, inp.sugarPct, inp.oilPct, inp.surface);
-  const digest = digestScore(profile.matureUnits, inp.leavening, inp.preferment);
-  const water = waterTempFn(inp.ddt, inp.roomTemp, inp.mixMethod, inp.preferment);
+  const pfType = prefermentType(inp.leavening, inp.preferment);
+  const digest = digestScore(profile.matureUnits, inp.leavening, pfType);
+  const water = waterTempFn(inp.ddt, inp.roomTemp, inp.mixMethod, pfType);
   const batch = batchFn(inp.doughWeight, inp.ballCount);
   const geometry = geometryFn(inp.hydration, inp.protein, inp.ovenC, proof, pl);
   const verdicts = {
@@ -662,8 +739,11 @@ function computeAll(inp) {
     warmup: profile.endTemp < 12
       ? { tone: "warn", code: "verdict.warmup.cold", params: { t: Math.round(profile.endTemp) } }
       : null,
+    ddt: ddtVerdict(inp.ddt, inp.tempC),
   };
-  return { r, profile, fp, rise, proof, bake, digest, water, batch, geometry, verdicts, pl, overProof: overProofRecommendations(inp, fp, profile) };
+  const timeline = timelineFn(profile, r.pf, inp.pfHours == null ? DOUGH_OPTIONAL.pfHours : inp.pfHours);
+  const overProof = overProofRecommendations({ ...inp, preferment: pfType }, fp, profile);
+  return { r, profile, fp, rise, proof, bake, digest, water, batch, geometry, verdicts, pl, timeline, overProof };
 }
 
 // view-only: turn a rise model into SVG path strings
@@ -700,6 +780,11 @@ const __ENGINE__ = {
   riseModel,
   proofQualityFn,
   waterTempFn,
+  prefermentType,
+  prefermentFn,
+  fdtTarget,
+  ddtVerdict,
+  timelineFn,
   batchFn,
   geometryFn,
   computeAll,
@@ -708,6 +793,8 @@ const __ENGINE__ = {
   K,
   Q10,
   Q10_MATURE,
+  PREFERMENT,
+  PF_REF_TEMP,
   TRANSITION_H,
   SALT_REF,
   TYPE,

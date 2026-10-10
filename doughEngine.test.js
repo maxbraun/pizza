@@ -30,6 +30,11 @@ const {
   riseModel,
   proofQualityFn,
   waterTempFn,
+  PIZZA_PRESETS,
+  prefermentType,
+  prefermentFn,
+  fdtTarget,
+  ddtVerdict,
   batchFn,
   geometryFn,
   computeAll,
@@ -875,15 +880,148 @@ describe('bakeVerdict', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('compute — preferment and yeast-type branches', () => {
-  test('preferment reduces yeast by 15% vs straight (pfYeast=0.85)', () => {
-    const straight = compute({ ...BASE, preferment: 'straight' });
-    const biga     = compute({ ...BASE, preferment: 'biga' });
-    near(biga.pct, straight.pct * 0.85, 0.001, 'biga pct = straight × 0.85');
-  });
-
   test('fresh yeast has null tsp (no volume conversion)', () => {
     const r = compute({ ...BASE, yeastType: 'fresh' });
     assert.equal(r.tsp, null);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Preferments (poolish / biga)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('prefermentFn', () => {
+  test("reproduces PizzaBlab's standard doses at 20 °C", () => {
+    near(prefermentFn('poolish', 30, 12, 20, 1000, 1).idyPct, 0.1, 1e-9, 'poolish 0.1% over 12 h');
+    near(prefermentFn('biga', 30, 20, 20, 1000, 1).idyPct, 0.3, 1e-9, 'biga 0.3% over 20 h');
+  });
+
+  test('a longer or warmer preferment needs less yeast', () => {
+    const base = prefermentFn('poolish', 30, 12, 20, 1000, 1).idyPct;
+    assert.ok(prefermentFn('poolish', 30, 16, 20, 1000, 1).idyPct < base, 'longer');
+    near(prefermentFn('poolish', 30, 12, 30, 1000, 1).idyPct, base / Q10, 1e-9, 'warmer by 10 °C = Q10');
+  });
+
+  test('flour share and hydration follow the type', () => {
+    const poolish = prefermentFn('poolish', 30, 12, 20, 1000, 1);
+    assert.equal(poolish.flour, 300);
+    assert.equal(poolish.water, 300);
+    const biga = prefermentFn('biga', 20, 18, 20, 1000, 1);
+    assert.equal(biga.flour, 200);
+    near(biga.water, 90, 1e-9, '45% hydration');
+  });
+
+  test('grams convert to the dough\'s yeast type', () => {
+    const idy = prefermentFn('biga', 30, 18, 20, 1000, TYPE.idy.mult);
+    const fresh = prefermentFn('biga', 30, 18, 20, 1000, TYPE.fresh.mult);
+    near(fresh.grams, idy.grams * TYPE.fresh.mult, 1e-9);
+  });
+});
+
+describe('compute — preferment split', () => {
+  const PF = { ...BASE, preferment: 'poolish', pfPct: 30, pfHours: 12 };
+
+  test('straight dough has no preferment and the final dough holds everything', () => {
+    const r = compute(BASE);
+    assert.equal(r.pf, null);
+    near(r.final.flour, r.flour, 1e-9);
+    near(r.final.water, r.waterG, 1e-9);
+    near(r.final.yeastGrams, r.grams, 1e-9);
+  });
+
+  test('preferment plus final dough add back up to the recipe', () => {
+    const r = compute(PF);
+    near(r.pf.flour + r.final.flour, r.flour, 1e-9, 'flour');
+    near(r.pf.water + r.final.water, r.waterG, 1e-9, 'water');
+    near(r.pf.grams + r.final.yeastGrams, r.grams, 1e-9, 'yeast');
+  });
+
+  test("final-dough yeast is the main ferment's need minus what the preferment carries", () => {
+    const straight = compute(BASE);
+    const r = compute(PF);
+    near(r.idyPct, straight.idyPct, 1e-9, 'the need does not depend on the preferment');
+    near(r.final.yeastGrams, straight.grams - r.pf.grams, 1e-9);
+  });
+
+  test('a preferment that covers the need leaves the final dough without extra yeast', () => {
+    // a big, short biga carries more yeast than an 8 h room-temperature dough needs
+    const r = compute({ ...BASE, preferment: 'biga', pfPct: 50, pfHours: 4 });
+    assert.equal(r.final.yeastGrams, 0);
+    near(r.grams, r.pf.grams, 1e-9, 'total is just the preferment');
+  });
+
+  test('defaults apply when the preferment fields are missing', () => {
+    const r = compute({ ...BASE, preferment: 'biga' });
+    near(r.pf.flour, r.flour * DOUGH_OPTIONAL.pfPct / 100, 1e-9);
+  });
+
+  test('sourdough ignores a preferment — the levain already is one', () => {
+    const r = compute({ ...BASE, leavening: 'sourdough', preferment: 'biga' });
+    assert.equal(r.pf, null);
+    assert.equal(prefermentType('sourdough', 'poolish'), 'straight');
+    assert.equal(prefermentType('commercial', 'poolish'), 'poolish');
+  });
+
+  test('sourdough with a preferment selected computes like straight sourdough', () => {
+    const inp = { ...BASE, leavening: 'sourdough' };
+    const a = computeAll({ ...inp, preferment: 'straight' });
+    const b = computeAll({ ...inp, preferment: 'biga' });
+    assert.equal(b.digest, a.digest);
+    assert.equal(b.water.nFactor, 3);
+  });
+
+  test('no "switch to a preferment" advice for sourdough', () => {
+    const over = { ...BASE, leavening: 'sourdough', protein: 10, hours: 48 };
+    const M = computeAll(over);
+    assert.ok(M.overProof, 'scenario is over capacity');
+    assert.ok(!M.overProof.levers.some((l) => l.kCode === 'overproof.lever.prefermentKey'));
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Final dough temperature target
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('fdtTarget / ddtVerdict', () => {
+  test("PizzaBlab's bands: 18–23 °C into the fridge, 23–27 °C on the counter", () => {
+    assert.deepEqual([fdtTarget(4).lo, fdtTarget(4).hi], [18, 23]);
+    assert.deepEqual([fdtTarget(21).lo, fdtTarget(21).hi], [23, 27]);
+  });
+
+  test('the first stage decides the band', () => {
+    assert.equal(computeAll({ ...BASE, tempC: 4, ddt: 25 }).verdicts.ddt.tone, 'warn');
+    assert.equal(computeAll({ ...BASE, tempC: 4, ddt: 21 }).verdicts.ddt.tone, 'good');
+    assert.equal(computeAll({ ...BASE, tempC: 21, ddt: 25 }).verdicts.ddt.tone, 'good');
+    assert.equal(computeAll({ ...BASE, tempC: 21, ddt: 21 }).verdicts.ddt.tone, 'warn');
+  });
+
+  test('every preset mixes to a temperature inside its own band', () => {
+    for (const p of PIZZA_PRESETS) {
+      assert.equal(ddtVerdict(p.set.ddt, p.set.tempC).tone, 'good', p.id);
+    }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Recipe timeline
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('timelineFn', () => {
+  test('single stage, no preferment: mix one schedule before baking', () => {
+    const t = computeAll(BASE).timeline;
+    assert.deepEqual(t, { preferment: null, mix: 8, balls: null, start: 8 });
+  });
+
+  test('cold bulk + balls + poolish: the poolish starts first', () => {
+    const t = computeAll({ ...BASE, tempC: 4, hours: 46, split: true, temp2C: 21, hours2: 2,
+      preferment: 'poolish', pfPct: 30, pfHours: 12 }).timeline;
+    assert.deepEqual(t, { preferment: 60, mix: 48, balls: 2, start: 60 });
+  });
+
+  test('sourdough never schedules a preferment', () => {
+    const t = computeAll({ ...BASE, leavening: 'sourdough', preferment: 'biga', pfHours: 18 }).timeline;
+    assert.equal(t.preferment, null);
+    assert.equal(t.start, t.mix);
   });
 });
 
@@ -1125,7 +1263,7 @@ describe('the dough input contract', () => {
     ballCount: 4, ballWeight: 250, roomTemp: 20, ddt: 24, ovenC: 250,
     leavening: 'commercial', yeastType: 'idy', preferment: 'straight',
     mixMethod: 'hand', surface: 'steel',
-    split: true, temp2C: 21, hours2: 2,
+    split: true, temp2C: 21, hours2: 2, pfPct: 25, pfHours: 16,
   };
 
   test('every field has both a range (or enum) and a query param', () => {
@@ -1181,14 +1319,14 @@ describe('the dough input contract', () => {
     }
   });
 
-  test('a dough saved before the ball-proof stage reads as single-stage', () => {
-    const { split, temp2C, hours2, ...legacy } = BASE;
+  test('a dough saved before the ball-proof stage and preferment amounts reads with their defaults', () => {
+    const legacy = Object.fromEntries(Object.entries(BASE).filter(([k]) => !(k in DOUGH_OPTIONAL)));
     assert.deepEqual(sanitizeInputs(legacy), { ...legacy, ...DOUGH_OPTIONAL });
     assert.equal(sanitizeInputs(legacy).split, false);
   });
 
-  test('only the schedule fields are optional', () => {
-    assert.deepEqual(Object.keys(DOUGH_OPTIONAL).sort(), ['hours2', 'split', 'temp2C']);
+  test('only the fields added after the recipe box shipped are optional', () => {
+    assert.deepEqual(Object.keys(DOUGH_OPTIONAL).sort(), ['hours2', 'pfHours', 'pfPct', 'split', 'temp2C']);
     for (const key of Object.keys(DOUGH_OPTIONAL)) assert.ok(key in DOUGH_PARAMS, key);
   });
 
