@@ -16,8 +16,9 @@
 
 /* ------------------------------------------------------------------ *
  *  Dough calculator — three stages
- *  1. Ferment: yeast from a temperature/time "budget" (Q10); modified
- *     Gompertz rise curve coloured along a cold->warm axis
+ *  1. Ferment: yeast from a temperature/time "budget" (Q10), summed
+ *     over one or two temperature zones (e.g. cold bulk, then a warm
+ *     ball proof); modified Gompertz rise curve in budget time
  *  2. Flour: protein -> W estimate, hydration range, ferment capacity;
  *     weak flour over-fermented visibly collapses
  *  3. Bake: oven temp -> bake time (exponential), crust-colour gauge,
@@ -26,8 +27,31 @@
 
 const REF = { yeastPct: 0.3, hours: 8, tempC: 21 }; // IDY anchor
 const K = REF.yeastPct * REF.hours; // 2.4 (%·h) at 21°C
-const Q10 = 2.5;
+// Gas clock: yeast CO₂ output. PizzaBlab's rule of thumb (1 h at 20 °C ≈ 6 h
+// at 4 °C) and Dough School's activity table (~10% at 4 °C vs 25 °C) both
+// imply Q10 ≈ 3 across the fridge↔room span.
+const Q10 = 3.0;
+// Maturation clock: proteolysis / flavour / fructan breakdown. Enzymes slow
+// far less in the cold than yeast (~40–50% activity at 4 °C), which is why
+// the fridge stretches the safe window and builds flavour per unit of rise.
+const Q10_MATURE = 1.7;
+// A dough's core takes roughly this long to meet a new ambient temperature
+// (Lehmann's cross-stack window; PizzaBlab's worked example bills these
+// hours at about the midpoint of the two temperatures).
+const TRANSITION_H = 2;
+const gasRate = (tempC) => Math.pow(Q10, (tempC - REF.tempC) / 10);
+const matureRate = (tempC) => Math.pow(Q10_MATURE, (tempC - REF.tempC) / 10);
 const SALT_REF = 2.5; // salt % at which the fermentation anchor was set
+// Preferment yeast is anchored on PizzaBlab's standard doses at ~20 °C,
+// as % IDY of the preferment's own flour: poolish 0.1% over 8–16 h, biga
+// 0.3% over 16–24 h. A stiff biga ferments far slower than a runny
+// poolish, so each type keeps its own anchor rather than sharing K; Q10
+// scales it to other times and temperatures.
+const PREFERMENT = {
+  poolish: { hydration: 100, idyPct: 0.1, hours: 12, typical: [8, 16] },
+  biga:    { hydration: 45,  idyPct: 0.3, hours: 20, typical: [16, 24] },
+};
+const PF_REF_TEMP = 20;
 const TYPE = {
   idy: { label: "Instant dry", mult: 1.0, gPerTsp: 3.15 },
   ady: { label: "Active dry", mult: 1.33, gPerTsp: 3.1 },
@@ -101,11 +125,11 @@ const GRAPH = {
 const DG = { W: 760, H: 384, colX: [8, 300, 620], colW: [152, 180, 132], top: 30, nodeH: 26 };
 
 const PIZZA_PRESETS = [
-  { id: "neapolitan", label: "Neapolitan", set: { tempC: 18, hours: 24, protein: 13, plVal: 55, hydration: 60, salt: 2.8, oilPct: 0, sugarPct: 0, leavening: "commercial", preferment: "biga", ovenC: 460, surface: "stone", ddt: 23 } },
-  { id: "ny", label: "New York", set: { tempC: 4, hours: 48, protein: 13, plVal: 50, hydration: 63, salt: 2, oilPct: 2.5, sugarPct: 1, leavening: "commercial", preferment: "straight", ovenC: 300, surface: "steel", ddt: 24 } },
-  { id: "detroit", label: "Detroit", set: { tempC: 20, hours: 6, protein: 13, plVal: 45, hydration: 70, salt: 2, oilPct: 1, sugarPct: 0, leavening: "commercial", preferment: "straight", ovenC: 280, surface: "pan", ddt: 25 } },
-  { id: "roman", label: "Roman al taglio", set: { tempC: 4, hours: 48, protein: 12.5, plVal: 40, hydration: 80, salt: 2.2, oilPct: 2, sugarPct: 0, leavening: "commercial", preferment: "poolish", ovenC: 290, surface: "steel", ddt: 23 } },
-  { id: "sourdough", label: "Sourdough", set: { tempC: 5, hours: 24, protein: 12.5, plVal: 50, hydration: 72, salt: 2.5, oilPct: 0, sugarPct: 0, leavening: "sourdough", preferment: "straight", ovenC: 270, surface: "steel", ddt: 24, starterStr: 60 } },
+  { id: "neapolitan", label: "Neapolitan", set: { tempC: 18, hours: 24, split: false, temp2C: 21, hours2: 2, protein: 13, plVal: 55, hydration: 60, salt: 2.8, oilPct: 0, sugarPct: 0, leavening: "commercial", preferment: "biga", pfPct: 30, pfHours: 18, ovenC: 460, surface: "stone", ddt: 23 } },
+  { id: "ny", label: "New York", set: { tempC: 4, hours: 46, split: true, temp2C: 21, hours2: 2, protein: 13, plVal: 50, hydration: 63, salt: 2, oilPct: 2.5, sugarPct: 1, leavening: "commercial", preferment: "straight", ovenC: 300, surface: "steel", ddt: 22 } },
+  { id: "detroit", label: "Detroit", set: { tempC: 20, hours: 6, split: false, temp2C: 21, hours2: 2, protein: 13, plVal: 45, hydration: 70, salt: 2, oilPct: 1, sugarPct: 0, leavening: "commercial", preferment: "straight", ovenC: 280, surface: "pan", ddt: 25 } },
+  { id: "roman", label: "Roman al taglio", set: { tempC: 4, hours: 46, split: true, temp2C: 21, hours2: 2, protein: 12.5, plVal: 40, hydration: 80, salt: 2.2, oilPct: 2, sugarPct: 0, leavening: "commercial", preferment: "poolish", pfPct: 30, pfHours: 12, ovenC: 290, surface: "steel", ddt: 23 } },
+  { id: "sourdough", label: "Sourdough", set: { tempC: 5, hours: 22, split: true, temp2C: 21, hours2: 2, protein: 12.5, plVal: 50, hydration: 72, salt: 2.5, oilPct: 0, sugarPct: 0, leavening: "sourdough", preferment: "straight", ovenC: 270, surface: "steel", ddt: 23, starterStr: 60 } },
 ];
 const OVEN_PRESETS = [
   { id: "home", label: "Home oven", set: { ovenC: 250, surface: "steel" } },
@@ -163,7 +187,9 @@ const DOUGH_RANGES = {
   tempC: [2, 35], hours: [2, 96], protein: [8, 15], plVal: [0, 100],
   hydration: [50, 85], salt: [0, 4], oilPct: [0, 6], sugarPct: [0, 4],
   starterStr: [0, 100], ballCount: [1, 12], ballWeight: [100, 500],
-  roomTemp: [12, 30], ddt: [20, 28], ovenC: [200, 500],
+  roomTemp: [12, 30], ddt: [18, 28], ovenC: [200, 500],
+  temp2C: [2, 35], hours2: [0.5, 24],
+  pfPct: [10, 50], pfHours: [4, 24],
 };
 
 const DOUGH_ENUMS = {
@@ -172,7 +198,14 @@ const DOUGH_ENUMS = {
   preferment: ["straight", "poolish", "biga"],
   mixMethod:  ["hand", "mixer", "processor"],
   surface:    ["steel", "stone", "pan", "rack"],
+  split:      [false, true],
 };
+
+// The ball-proof stage and the preferment amounts arrived after the recipe
+// box, so doughs saved before them lack these fields. A missing value means
+// the single-stage schedule and default preferment those doughs were made
+// with, not a broken recipe.
+const DOUGH_OPTIONAL = { split: false, temp2C: 21, hours2: 2, pfPct: 30, pfHours: 12 };
 
 // field -> the query param index.html's useConfigX hooks keep it under.
 const DOUGH_PARAMS = {
@@ -181,6 +214,8 @@ const DOUGH_PARAMS = {
   yeastType: "yeast", leavening: "leaven", starterStr: "starter",
   preferment: "preferment", ballCount: "balls", ballWeight: "ballWeight",
   roomTemp: "room", ddt: "ddt", mixMethod: "mix", ovenC: "oven", surface: "surface",
+  split: "split", temp2C: "temp2", hours2: "hours2",
+  pfPct: "pf", pfHours: "pfHours",
 };
 
 // Returns a fresh object holding exactly the known fields, or null if any
@@ -194,14 +229,22 @@ function sanitizeInputs(obj) {
   for (const key in DOUGH_RANGES) {
     const [lo, hi] = DOUGH_RANGES[key];
     const raw = obj[key];
-    if (raw === "" || raw == null) return null;
+    if (raw === "" || raw == null) {
+      if (!(key in DOUGH_OPTIONAL)) return null;
+      out[key] = DOUGH_OPTIONAL[key];
+      continue;
+    }
     const n = Number(raw);
     if (!Number.isFinite(n) || n < lo - 1e-9 || n > hi + 1e-9) return null;
     out[key] = Math.round(n * 10000) / 10000;
   }
   for (const key in DOUGH_ENUMS) {
-    if (!DOUGH_ENUMS[key].includes(obj[key])) return null;
-    out[key] = obj[key];
+    let v = obj[key];
+    if (v == null && key in DOUGH_OPTIONAL) v = DOUGH_OPTIONAL[key];
+    // a flag that came through a query string arrives as text
+    if (typeof DOUGH_ENUMS[key][0] === "boolean") v = v === "1" || v === "true" ? true : v === "0" || v === "false" ? false : v;
+    if (!DOUGH_ENUMS[key].includes(v)) return null;
+    out[key] = v;
   }
   return out;
 }
@@ -315,6 +358,10 @@ const SOURCES = [
     { t: "Reducing fermentation time (rheofermentometer)", u: "https://www.researchgate.net/publication/262662318" },
     { t: "Fermentation & baking → antioxidant content", u: "https://www.eurekalert.org/news-releases/848139" },
     { t: "Thermodynamic sensors to monitor fermentation", u: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8914819/" },
+    { t: "Guide to preferments: poolish, biga, amounts and yeast (PizzaBlab)", u: "https://www.pizzablab.com/learning-and-resources/general-articles/guide-to-preferments/" },
+  ] },
+  { group: "Mixing & kneading", groupKey: "sources.group.mixing", items: [
+    { t: "Practical guide to kneading: ingredient order, mixers, food processors, dough temperature (PizzaBlab)", u: "https://www.pizzablab.com/learning-and-resources/mixing-kneading/practical-guide-to-pizza-dough-kneading/" },
   ] },
   { group: "Flour & gluten", groupKey: "sources.group.flourGluten", items: [
     { t: "Flour protein → dough & crust (etliekmek)", u: "https://pmc.ncbi.nlm.nih.gov/articles/PMC7026350/" },
@@ -346,6 +393,83 @@ const SOURCES = [
   ] },
 ];
 
+// ---- fermentation schedule ------------------------------------------
+// One or two temperature zones: a bulk stage, optionally followed by a
+// ball-proof stage at a different temperature.
+function fermentStages({ tempC, hours, split, temp2C, hours2 }) {
+  const stages = [{ tempC, hours }];
+  if (split && hours2 > 0) stages.push({ tempC: temp2C, hours: hours2 });
+  return stages;
+}
+
+// Piecewise-constant temperature schedule with two cumulative clocks:
+// gas (yeast CO₂, Q10) and maturation (enzymes, Q10_MATURE), both in
+// "equivalent hours at 21 °C". Whenever the ambient changes — mix into
+// stage 1, or stage 1 into stage 2 — the first TRANSITION_H hours are
+// billed at the midpoint temperature while the dough core catches up.
+// startTemp is the dough temp entering stage 1 (FDT); omit for a dough
+// already at stage-1 temperature.
+function fermentProfile(stages, startTemp) {
+  const segs = [];
+  let prevT = startTemp == null ? stages[0].tempC : startTemp;
+  let tempHours = 0;
+  for (const s of stages) {
+    const trans = Math.abs(prevT - s.tempC) > 0.5 ? Math.min(TRANSITION_H, s.hours) : 0;
+    if (trans > 0) segs.push({ h: trans, T: (prevT + s.tempC) / 2 });
+    if (s.hours - trans > 0) segs.push({ h: s.hours - trans, T: s.tempC });
+    tempHours += trans * ((prevT + s.tempC) / 2) + (s.hours - trans) * s.tempC;
+    prevT = s.tempC;
+  }
+  const edges = [{ t: 0, gas: 0, mature: 0 }];
+  let t = 0, gas = 0, mature = 0;
+  for (const g of segs) {
+    t += g.h; gas += g.h * gasRate(g.T); mature += g.h * matureRate(g.T);
+    edges.push({ t, gas, mature });
+  }
+  const totalHours = t, gasUnits = gas, matureUnits = mature;
+  const last = stages[stages.length - 1];
+  const tail = { gas: gasRate(last.tempC), mature: matureRate(last.tempC) };
+  // both clocks are piecewise linear in wall-clock time, so interpolation
+  // between segment edges is exact; beyond the schedule the dough just sits
+  // on at the final stage's temperature
+  const at = (x, key) => {
+    if (x >= totalHours) return edges[edges.length - 1][key] + (x - totalHours) * tail[key];
+    for (let i = 1; i < edges.length; i++) {
+      if (x <= edges[i].t) {
+        const a = edges[i - 1], b = edges[i];
+        return a[key] + (b[key] - a[key]) * ((x - a.t) / (b.t - a.t));
+      }
+    }
+    return edges[edges.length - 1][key];
+  };
+  const wallAt = (u, key) => {
+    const end = edges[edges.length - 1][key];
+    if (u >= end) return totalHours + (u - end) / tail[key];
+    for (let i = 1; i < edges.length; i++) {
+      if (u <= edges[i][key]) {
+        const a = edges[i - 1], b = edges[i];
+        return a.t + (b.t - a.t) * ((u - a[key]) / (b[key] - a[key]));
+      }
+    }
+    return totalHours;
+  };
+  // dough temp when the schedule ends: still mid-transition if the final
+  // stage is shorter than the equilibration window
+  const entryT = stages.length > 1 ? stages[stages.length - 2].tempC
+    : (startTemp == null ? last.tempC : startTemp);
+  const endTemp = entryT + (last.tempC - entryT) * Math.min(last.hours / TRANSITION_H, 1);
+  const boundaries = [];
+  for (let i = 0, acc = 0; i < stages.length - 1; i++) { acc += stages[i].hours; boundaries.push(acc); }
+  return {
+    stages, totalHours, gasUnits, matureUnits, boundaries, endTemp,
+    meanTemp: tempHours / totalHours,
+    gasAt: (x) => at(x, 'gas'),
+    matureAt: (x) => at(x, 'mature'),
+    wallAtGas: (u) => wallAt(u, 'gas'),
+    wallAtMature: (u) => wallAt(u, 'mature'),
+  };
+}
+
 // ---- flour-strength model -------------------------------------------
 function flourProfile(protein, pl) {
   const W = clamp(Math.round((protein - 6) * 40), 60, 400);
@@ -368,28 +492,33 @@ function hydrationVerdict(hydration, fp) {
   return { tone: "good", code: "verdict.hydration.good", params: { lo: fp.hydrLo, hi: fp.hydrHi } };
 }
 
-function fermentVerdict(hours, fp) {
-  const m = Math.round(fp.maxHours);
-  if (hours > fp.maxHours * 1.25) return { tone: "bad", code: "verdict.ferment.tooLong", params: { m } };
-  if (hours > fp.maxHours) return { tone: "warn", code: "verdict.ferment.limit", params: { m } };
+// Capacity is spent on the maturation clock, not the wall clock: maxHours is
+// defined at 21 °C and a cold schedule consumes it more slowly. Verdicts
+// report the wall-clock capacity at the user's own schedule.
+function fermentVerdict(profile, fp) {
+  const used = profile.matureUnits;
+  const m = Math.round(profile.wallAtMature(fp.maxHours));
+  if (used > fp.maxHours * 1.25) return { tone: "bad", code: "verdict.ferment.tooLong", params: { m } };
+  if (used > fp.maxHours) return { tone: "warn", code: "verdict.ferment.limit", params: { m } };
   return { tone: "good", code: "verdict.ferment.good", params: { m } };
 }
 
-function overProofRecommendations(inp, fp) {
-  const raw = inp.hours / fp.maxHours;
+function overProofRecommendations(inp, fp, profile) {
+  const raw = profile.matureUnits / fp.maxHours;
   if (raw < 0.8) return null;
+  const wallMax = profile.wallAtMature(fp.maxHours);
   const severity = raw >= 1.25 ? 'bad' : raw >= 1 ? 'warn' : 'caution';
   const labelCode = `overproof.${severity}`;
   const whyCode = raw >= 1 ? 'overproof.why.over' : 'overproof.why.near';
   const whyParams = raw >= 1
-    ? { tempC: inp.tempC, protein: inp.protein, maxHours: Math.round(fp.maxHours) }
-    : { maxHours: Math.round(fp.maxHours), headroom: Math.round(fp.maxHours - inp.hours) };
+    ? { protein: inp.protein, maxHours: Math.round(wallMax) }
+    : { maxHours: Math.round(wallMax), headroom: Math.max(0, Math.round(wallMax - profile.totalHours)) };
   const levers = [];
   if (inp.protein < 13)             levers.push({ kCode: 'overproof.lever.proteinKey',     vCode: 'overproof.lever.protein',     params: { val: inp.protein } });
-  if (inp.tempC > 10)               levers.push({ kCode: 'overproof.lever.temperatureKey', vCode: 'overproof.lever.temperature', params: { val: inp.tempC } });
+  if (profile.meanTemp > 10)        levers.push({ kCode: 'overproof.lever.temperatureKey', vCode: 'overproof.lever.temperature', params: { val: Math.round(profile.meanTemp) } });
   if (inp.salt < 2.5)               levers.push({ kCode: 'overproof.lever.saltKey',        vCode: 'overproof.lever.salt',        params: { val: inp.salt } });
-  levers.push(                       { kCode: 'overproof.lever.timeKey',         vCode: 'overproof.lever.time',        params: { val: Math.max(1, Math.round(inp.hours - fp.maxHours * 0.85)) } });
-  if (inp.preferment === 'straight') levers.push({ kCode: 'overproof.lever.prefermentKey', vCode: 'overproof.lever.preferment',  params: {} });
+  levers.push(                       { kCode: 'overproof.lever.timeKey',         vCode: 'overproof.lever.time',        params: { val: Math.max(1, Math.round(profile.totalHours - wallMax * 0.85)) } });
+  if (inp.preferment === 'straight' && inp.leavening !== 'sourdough') levers.push({ kCode: 'overproof.lever.prefermentKey', vCode: 'overproof.lever.preferment',  params: {} });
   if (inp.hydration > 68)           levers.push({ kCode: 'overproof.lever.hydrationKey',   vCode: 'overproof.lever.hydration',   params: { val: inp.hydration } });
   return { raw, severity, labelCode, whyCode, whyParams, levers };
 }
@@ -416,10 +545,14 @@ function bakeProfile(ovenC, hydration, salt, sugarPct, oilPct, surface) {
   return { t, colour: top, base, leopard, acryl, styleKey };
 }
 
-function digestScore(hours, tempC, leavening, preferment) {
-  let d = 28 + 14 * Math.log2(Math.max(hours, 2) / 4);
+// Runs on maturation-clock hours: the linked Neapolitan digestibility study
+// tracked FODMAP breakdown against fermentation *time at temperature*, so a
+// cold schedule earns its (slower) breakdown through the enzyme clock rather
+// than a flat cold bonus. Per unit of rise, cold still wins — the enzyme
+// clock outpaces the gas clock in the fridge.
+function digestScore(matureUnits, leavening, preferment) {
+  let d = 28 + 14 * Math.log2(Math.max(matureUnits, 2) / 4);
   if (leavening === "sourdough") d += 22;       // LAB break down FODMAPs/fructans
-  if (tempC <= 10) d += 8;                        // slow cold ferment = more breakdown
   if (preferment !== "straight") d += 8;
   return clamp(Math.round(d), 5, 99);
 }
@@ -446,47 +579,122 @@ function crustLabelKey(c) {
   return c < 30 ? "crust.pale" : c < 55 ? "crust.golden" : c < 78 ? "crust.deepGolden" : "crust.charred";
 }
 
-function compute({ tempC, hours, yeastType, doughWeight, hydration, salt, oilPct, sugarPct, leavening, preferment, starterStr }) {
-  const rateFactor = Math.pow(Q10, (tempC - REF.tempC) / 10);
+// A levain already is a preferment, so a sourdough dough never takes a
+// yeasted poolish or biga on top.
+function prefermentType(leavening, preferment) {
+  return leavening === "sourdough" || !PREFERMENT[preferment] ? "straight" : preferment;
+}
+
+// The preferment's flour, water and yeast. It ferments salt-free at room
+// temperature, so its dose scales from the type's anchor by time and Q10
+// alone; yeastMult converts IDY to the yeast type the dough uses.
+function prefermentFn(type, pfPct, pfHours, roomTemp, flour, yeastMult) {
+  const def = PREFERMENT[type];
+  const pfFlour = flour * (pfPct / 100);
+  const idyPct = (def.idyPct * def.hours) / (pfHours * Math.pow(Q10, (roomTemp - PF_REF_TEMP) / 10));
+  return {
+    type, hydration: def.hydration, typical: def.typical, idyPct,
+    flour: pfFlour,
+    water: pfFlour * (def.hydration / 100),
+    grams: pfFlour * (idyPct / 100) * yeastMult,
+  };
+}
+
+function compute({ tempC, hours, split, temp2C, hours2, ddt, yeastType, doughWeight, hydration, salt, oilPct, sugarPct, leavening, preferment, starterStr,
+  roomTemp = 20, pfPct = DOUGH_OPTIONAL.pfPct, pfHours = DOUGH_OPTIONAL.pfHours }) {
+  // the dose divides by the summed gas budget, so every stage (and the
+  // equilibration windows between them) contributes fermentation work
+  const profile = fermentProfile(fermentStages({ tempC, hours, split, temp2C, hours2 }), ddt);
+  const rateFactor = profile.gasUnits / profile.totalHours; // mean speed vs the 21 °C anchor
   const saltRate = Math.exp(-0.12 * (salt - SALT_REF)); // more salt -> slower yeast
   const flour = doughWeight / (1 + hydration / 100 + salt / 100 + oilPct / 100 + sugarPct / 100);
   const waterG = flour * (hydration / 100);
   const saltGrams = flour * (salt / 100);
   const oilGrams = flour * (oilPct / 100);
   const sugarGrams = flour * (sugarPct / 100);
-  const pfYeast = preferment !== "straight" ? 0.85 : 1; // preferment carries some leavening
-  let idyPct = 0, pct = 0, grams = 0, tsp = null, levainPct = 0, levainGrams = 0;
+  const pfType = prefermentType(leavening, preferment);
+  let idyPct = 0, pct = 0, grams = 0, tsp = null, levainPct = 0, levainGrams = 0, finalYeastGrams = 0, pf = null;
   if (leavening === "sourdough") {
     // anchored on ~15% levain → roughly 8 h at 24 °C; a vigorous starter needs less
     const strength = 0.7 + (starterStr / 100) * 0.6; // 0.7 sluggish .. 1.3 vigorous
-    levainPct = clamp(150 / (hours * rateFactor * saltRate * strength), 3, 40);
+    levainPct = clamp(150 / (profile.gasUnits * saltRate * strength), 3, 40);
     levainGrams = flour * (levainPct / 100);
   } else {
-    idyPct = K / (hours * rateFactor * saltRate);
-    pct = idyPct * TYPE[yeastType].mult * pfYeast;
-    grams = flour * (pct / 100);
+    const mult = TYPE[yeastType].mult;
+    idyPct = K / (profile.gasUnits * saltRate); // what the main ferment needs, % of all flour
+    if (pfType !== "straight") pf = prefermentFn(pfType, pfPct, pfHours, roomTemp, flour, mult);
+    // PizzaBlab's calculator logic: the final dough gets the total the main
+    // ferment needs minus what the preferment already carries, and nothing
+    // when the preferment covers it
+    const needGrams = flour * (idyPct / 100) * mult;
+    finalYeastGrams = Math.max(0, needGrams - (pf ? pf.grams : 0));
+    grams = finalYeastGrams + (pf ? pf.grams : 0);
+    pct = (grams / flour) * 100;
     const gPerTsp = TYPE[yeastType].gPerTsp;
     tsp = gPerTsp ? grams / gPerTsp : null;
   }
-  return { rateFactor, saltRate, idyPct, pct, flour, grams, saltGrams, oilGrams, sugarGrams, tsp, waterG, levainPct, levainGrams };
+  const final = {
+    flour: flour - (pf ? pf.flour : 0),
+    water: waterG - (pf ? pf.water : 0),
+    yeastGrams: finalYeastGrams,
+  };
+  return { rateFactor, saltRate, idyPct, pct, flour, grams, saltGrams, oilGrams, sugarGrams, tsp, waterG, levainPct, levainGrams, profile, pf, final };
 }
 
-// pure rise model — Gompertz values only, no pixels
-function riseModel(tempC, hours, protein) {
-  const lagFrac = clamp(0.12 + (25 - tempC) * 0.006, 0.08, 0.45);
-  const lambda = hours * lagFrac;
-  const span = Math.max(hours - lambda, 0.5);
+// PizzaBlab's final-dough-temperature bands: a dough going straight into
+// the fridge should leave the mixer cooler than one fermenting on the
+// counter, so it spends less of its budget racing while it chills.
+function fdtTarget(firstStageTempC) {
+  return firstStageTempC <= 10
+    ? { lo: 18, hi: 23, kindKey: "fdt.cold" }
+    : { lo: 23, hi: 27, kindKey: "fdt.room" };
+}
+function ddtVerdict(ddt, firstStageTempC) {
+  const b = fdtTarget(firstStageTempC);
+  const tone = ddt >= b.lo && ddt <= b.hi ? "good" : "warn";
+  return { tone, code: "note.ddt.band", params: { lo: b.lo, hi: b.hi, kindKey: b.kindKey } };
+}
+
+// Hours before baking at which each timed recipe step starts.
+function timelineFn(profile, pf, pfHours) {
+  const mix = profile.totalHours;
+  return {
+    preferment: pf ? mix + pfHours : null,
+    mix,
+    balls: profile.boundaries.length ? mix - profile.boundaries[0] : null,
+    start: mix + (pf ? pfHours : 0),
+  };
+}
+
+// pure rise model — Gompertz values only, no pixels. The sigmoid lives in
+// gas-budget time (equivalent hours at 21 °C), then maps back to the wall
+// clock through the profile: a fridge stage stretches flat, a warm ball
+// proof compresses steep. Collapse decays on the maturation clock, so cold
+// storage spends the flour's capacity slowly. At a constant temperature
+// this reduces exactly to the old single-zone curve.
+function riseModel(profile, protein) {
+  const B = profile.gasUnits;
+  const lagFrac = clamp(0.12 + (25 - profile.meanTemp) * 0.006, 0.08, 0.45);
+  const lambdaB = B * lagFrac;
+  const spanB = Math.max(B - lambdaB, 0.5);
   const Arise = 90 + (protein - 8) * 8;
-  const mu = (Arise * 3.97) / (Math.E * span);
+  const mu = (Arise * 3.97) / (Math.E * spanB);
   const maxHours = clamp(6 * Math.pow(2, (protein - 9) / 1.5), 8, 120);
   const kd = clamp(2.0 / maxHours, 0.01, 0.2);
+  const hours = profile.totalHours;
   const tMax = hours * 1.4;
-  const riseAt = (t) => Arise * Math.exp(-Math.exp((mu * Math.E) / Arise * (lambda - t) + 1));
-  const vAt = (t) => { let r = riseAt(t); if (t > maxHours) r *= Math.exp(-kd * (t - maxHours)); return 100 + r; };
-  return { lambda, mu, Arise, maxHours, kd, tMax, collapses: maxHours < tMax, hours, vAt };
+  const riseAt = (tau) => Arise * Math.exp(-Math.exp((mu * Math.E) / Arise * (lambdaB - tau) + 1));
+  const vAt = (t) => {
+    let r = riseAt(profile.gasAt(t));
+    const m = profile.matureAt(t);
+    if (m > maxHours) r *= Math.exp(-kd * (m - maxHours));
+    return 100 + r;
+  };
+  const lambda = profile.wallAtGas(lambdaB); // lag end back in wall-clock hours
+  return { lambda, mu, Arise, maxHours, kd, tMax, collapses: profile.matureAt(tMax) > maxHours, hours, boundaries: profile.boundaries, vAt };
 }
-function proofQualityFn(hours, maxHours) {
-  const over = clamp((hours - maxHours) / maxHours, 0, 1.5);
+function proofQualityFn(matureUnits, maxHours) {
+  const over = clamp((matureUnits - maxHours) / maxHours, 0, 1.5);
   return clamp(1 - over * 0.6, 0.25, 1);
 }
 function waterTempFn(ddt, roomTemp, mixMethod, preferment) {
@@ -510,21 +718,32 @@ function geometryFn(hydration, protein, ovenC, proof, pl) {
 function computeAll(inp) {
   const pl = (inp.plVal - 50) / 50;
   const r = compute(inp);
+  const profile = r.profile;
   const fp = flourProfile(inp.protein, pl);
-  const rise = riseModel(inp.tempC, inp.hours, inp.protein);
-  const proof = proofQualityFn(inp.hours, fp.maxHours);
+  const rise = riseModel(profile, inp.protein);
+  const proof = proofQualityFn(profile.matureUnits, fp.maxHours);
   const bake = bakeProfile(inp.ovenC, inp.hydration, inp.salt, inp.sugarPct, inp.oilPct, inp.surface);
-  const digest = digestScore(inp.hours, inp.tempC, inp.leavening, inp.preferment);
-  const water = waterTempFn(inp.ddt, inp.roomTemp, inp.mixMethod, inp.preferment);
+  const pfType = prefermentType(inp.leavening, inp.preferment);
+  const digest = digestScore(profile.matureUnits, inp.leavening, pfType);
+  const water = waterTempFn(inp.ddt, inp.roomTemp, inp.mixMethod, pfType);
   const batch = batchFn(inp.doughWeight, inp.ballCount);
   const geometry = geometryFn(inp.hydration, inp.protein, inp.ovenC, proof, pl);
   const verdicts = {
     hydration: hydrationVerdict(inp.hydration, fp),
-    ferment: fermentVerdict(inp.hours, fp),
+    ferment: fermentVerdict(profile, fp),
     digestion: digestVerdict(digest),
     bake: bakeVerdict(bake, inp.ovenC),
+    // dough straight off a cold schedule is elastic and snaps back; it
+    // needs a warm ball stage before it will stretch (Lehmann opens at
+    // 10–13 °C core; below ~12 °C we flag it)
+    warmup: profile.endTemp < 12
+      ? { tone: "warn", code: "verdict.warmup.cold", params: { t: Math.round(profile.endTemp) } }
+      : null,
+    ddt: ddtVerdict(inp.ddt, inp.tempC),
   };
-  return { r, fp, rise, proof, bake, digest, water, batch, geometry, verdicts, pl, overProof: overProofRecommendations(inp, fp) };
+  const timeline = timelineFn(profile, r.pf, inp.pfHours == null ? DOUGH_OPTIONAL.pfHours : inp.pfHours);
+  const overProof = overProofRecommendations({ ...inp, preferment: pfType }, fp, profile);
+  return { r, profile, fp, rise, proof, bake, digest, water, batch, geometry, verdicts, pl, timeline, overProof };
 }
 
 // view-only: turn a rise model into SVG path strings
@@ -535,7 +754,8 @@ function buildRisePaths(m, w, h, pad, vAxis) {
   for (let i = 0; i <= 120; i++) { const t = (i / 120) * m.tMax; line += (i ? "L" : "M") + x(t).toFixed(1) + " " + y(m.vAt(t)).toFixed(1) + " "; }
   const baselineY = h - pad.b;
   const area = line + `L${x(m.tMax).toFixed(1)} ${baselineY.toFixed(1)} L${pad.l.toFixed(1)} ${baselineY.toFixed(1)} Z`;
-  return { line, area, target: { x: x(m.hours), y: y(m.vAt(m.hours)) }, lagX: x(m.lambda), baselineY };
+  const boundaryXs = (m.boundaries || []).map((b) => x(b)); // stage handovers
+  return { line, area, target: { x: x(m.hours), y: y(m.vAt(m.hours)) }, lagX: x(m.lambda), baselineY, boundaryXs };
 }
 
 // ---- dual export: CommonJS for tests, global for the browser -----------
@@ -544,6 +764,8 @@ const __ENGINE__ = {
   tempColor,
   mulberry32,
   lerpStops,
+  fermentStages,
+  fermentProfile,
   flourProfile,
   hydrationVerdict,
   fermentVerdict,
@@ -558,6 +780,11 @@ const __ENGINE__ = {
   riseModel,
   proofQualityFn,
   waterTempFn,
+  prefermentType,
+  prefermentFn,
+  fdtTarget,
+  ddtVerdict,
+  timelineFn,
   batchFn,
   geometryFn,
   computeAll,
@@ -565,6 +792,10 @@ const __ENGINE__ = {
   REF,
   K,
   Q10,
+  Q10_MATURE,
+  PREFERMENT,
+  PF_REF_TEMP,
+  TRANSITION_H,
   SALT_REF,
   TYPE,
   SURF,
@@ -580,6 +811,7 @@ const __ENGINE__ = {
   FLOUR_REGIONS,
   DOUGH_RANGES,
   DOUGH_ENUMS,
+  DOUGH_OPTIONAL,
   DOUGH_PARAMS,
   sanitizeInputs,
   STYLE_GUIDELINES,

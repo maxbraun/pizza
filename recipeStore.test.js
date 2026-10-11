@@ -14,6 +14,7 @@ const BASE = {
   ballCount: 4, ballWeight: 250, roomTemp: 20, ddt: 24, ovenC: 250,
   leavening: 'commercial', yeastType: 'idy', preferment: 'straight',
   mixMethod: 'hand', surface: 'steel',
+  split: false, temp2C: 21, hours2: 2, pfPct: 30, pfHours: 12,
 };
 
 // A localStorage stand-in. `failWith` makes the next writes throw the way a
@@ -46,6 +47,12 @@ describe('canonicalKey', () => {
   test('changes when any field changes', () => {
     assert.notEqual(canonicalKey({ ...BASE, hydration: 63 }), canonicalKey(BASE));
     assert.notEqual(canonicalKey({ ...BASE, surface: 'stone' }), canonicalKey(BASE));
+    assert.notEqual(canonicalKey({ ...BASE, split: true }), canonicalKey(BASE));
+  });
+
+  test('a dough saved before the ball-proof stage matches its single-stage self', () => {
+    const { split, temp2C, hours2, pfPct, pfHours, ...legacy } = BASE;
+    assert.equal(canonicalKey(legacy), canonicalKey(BASE));
   });
 
   test('is null for a dough that would never be admitted', () => {
@@ -79,6 +86,26 @@ describe('saving and listing recipes', () => {
     const reopened = createStore(storage);
     assert.equal(reopened.listRecipes()[0].name, 'Saturday');
     assert.deepEqual(reopened.listRecipes()[0].inputs, BASE);
+  });
+
+  test('keeps a two-stage schedule through the storage blob', () => {
+    const storage = fakeStorage();
+    const split = { ...BASE, tempC: 4, hours: 46, split: true, temp2C: 22, hours2: 2.5, preferment: 'biga', pfPct: 40, pfHours: 18 };
+    makeStore(storage).saveRecipe({ name: 'NY', inputs: split });
+    assert.deepEqual(createStore(storage).listRecipes()[0].inputs, split);
+  });
+
+  test('still opens recipes saved before the ball-proof stage existed', () => {
+    const { split, temp2C, hours2, pfPct, pfHours, ...legacy } = BASE;
+    const storage = fakeStorage();
+    makeStore(storage).saveRecipe({ name: 'Old faithful', inputs: BASE });
+    // rewrite the blob the way an older build stored it: no schedule fields
+    const blob = JSON.parse(storage.raw());
+    blob.recipes.forEach((r) => { for (const k of ['split', 'temp2C', 'hours2', 'pfPct', 'pfHours']) delete r.inputs[k]; });
+    storage.setItem(STORAGE_KEY, JSON.stringify(blob));
+    const [recipe] = createStore(storage).listRecipes();
+    assert.equal(recipe.name, 'Old faithful');
+    assert.deepEqual(recipe.inputs, { ...legacy, split: false, temp2C: 21, hours2: 2, pfPct: 30, pfHours: 12 });
   });
 
   test('newest first', () => {
