@@ -280,6 +280,8 @@ const TRANSLATIONS = {
     'label.pfPct': 'Preferment share', 'label.pfHours': 'Preferment time',
     'note.pfPct': '{flourG} g flour + {waterG} g water · {hyd}% hydration',
     'note.pfHours': 'at room temperature (~{room} °C) · typically {lo}–{hi} h',
+    'note.pfCapped': 'limited to {pct}% — the recipe has no more water for it',
+    'slider.offRange': 'outside the usual {lo}–{hi}{unit} range',
     'help.pfPct': "How much of the recipe's flour goes into the preferment. 10–30% is typical; more adds more flavour and strength.",
     'help.pfHours': 'How long the preferment ferments at room temperature before you mix the dough. Its yeast is sized so it peaks right then.',
     'yeast.pfPart': ' · {g} g of it in the preferment',
@@ -563,6 +565,8 @@ const TRANSLATIONS = {
     'label.pfPct': 'Vorteig-Anteil', 'label.pfHours': 'Vorteig-Zeit',
     'note.pfPct': '{flourG} g Mehl + {waterG} g Wasser · {hyd}% Hydration',
     'note.pfHours': 'bei Raumtemperatur (~{room} °C) · üblich {lo}–{hi} h',
+    'note.pfCapped': 'auf {pct}% begrenzt — mehr Wasser hat das Rezept dafür nicht',
+    'slider.offRange': 'außerhalb des üblichen Bereichs von {lo}–{hi}{unit}',
     'help.pfPct': 'Wie viel vom Mehl des Rezepts in den Vorteig geht. 10–30% sind üblich; mehr bringt mehr Aroma und Kraft.',
     'help.pfHours': 'Wie lange der Vorteig bei Raumtemperatur reift, bevor du den Hauptteig mischst. Die Hefe darin ist so bemessen, dass er genau dann am Höhepunkt ist.',
     'yeast.pfPart': ' · davon {g} g im Vorteig',
@@ -711,12 +715,17 @@ const {
   clamp, tempColor, mulberry32, lerpStops, flourProfile, hydrationVerdict, fermentVerdict,
   overProofRecommendations, bakeProfile, digestScore, digestVerdict, bakeVerdict, fmtBake,
   crustLabelKey, compute, riseModel, proofQualityFn, waterTempFn, batchFn,
-  geometryFn, computeAll, buildRisePaths, REF, K, Q10, Q10_MATURE, SALT_REF, TYPE, SURF, FRICTION, V_AXIS,
+  geometryFn, computeAll, buildRisePaths, FIELD_RANGES, REF, K, Q10, Q10_MATURE, SALT_REF, TYPE, SURF, FRICTION, V_AXIS,
   EMBER, CONF, GRAPH, DG, PIZZA_PRESETS, OVEN_PRESETS, FLOUR_PRESETS, FLOUR_REGIONS,
   STYLE_GUIDELINES, TONE, CRUMB_PTS,
   TOPPINGS, LEOPARD, CRUST_STOPS, SOURCES
 } = window.DoughEngine;
 const { encodeShareToken } = window.ShareLink;
+
+// Bounds come from the engine: the slider spans the usual range, typing
+// accepts anything within the field's limit.
+const limitOf = (field) => FIELD_RANGES[field].limit;
+const sliderRange = (field) => ({ min: FIELD_RANGES[field].slider[0], max: FIELD_RANGES[field].slider[1], limit: FIELD_RANGES[field].limit });
 
 // ---- config-in-URL ----------------------------------------------------
 // Three tiny hooks — one per value shape — that behave like useState but
@@ -860,19 +869,25 @@ function EditableValue({ value, unit, min, max, onChange, className, style }) {
   );
 }
 
-function Slider({ label, value, unit, min, max, step, onChange, accent, note, noteColor }) {
-  const pctPos = ((value - min) / (max - min)) * 100;
+// `min`/`max` bound the track; `limit` bounds what can be typed. A typed value
+// outside the track pins the thumb to the nearer end and says so.
+function Slider({ label, value, unit, min, max, limit = [min, max], step, onChange, accent, note, noteColor }) {
+  const t = useT();
+  const onTrack = clamp(value, min, max);
+  const offRange = onTrack !== value;
+  const pctPos = ((onTrack - min) / (max - min)) * 100;
   return (
     <div className="fc-field">
       <div className="fc-field-head">
         <span className="fc-label">{label}</span>
-        <EditableValue className="fc-val" style={{ color: accent }} value={value} unit={unit} min={min} max={max} onChange={onChange} />
+        <EditableValue className="fc-val" style={{ color: offRange ? TONE.warn : accent }} value={value} unit={unit} min={limit[0]} max={limit[1]} onChange={onChange} />
       </div>
       <input
-        type="range" min={min} max={max} step={step} value={value}
+        type="range" min={min} max={max} step={step} value={onTrack}
         onChange={(e) => onChange(parseFloat(e.target.value))}
         style={{ '--track': `linear-gradient(to right, ${accent} ${pctPos}%, #d9cfbe ${pctPos}%)` }}
       />
+      {offRange && <p className="fc-note-line" style={{ color: TONE.warn }}>{t('slider.offRange', { lo: min, hi: max, unit: unit && unit !== '%' ? ' ' + unit : unit })}</p>}
       {note && <p className="fc-note-line" style={noteColor ? { color: noteColor } : undefined}>{note}</p>}
     </div>
   );
@@ -1340,30 +1355,30 @@ function RecipeBox({ box, api, already, suggested, loaded, status, persistent })
 }
 
 function FermentCalculator() {
-  const [tempC, setTempC] = useConfigNumber('tempC', 5, 2, 35);
-  const [hours, setHours] = useConfigNumber('hours', 24, 2, 96);
+  const [tempC, setTempC] = useConfigNumber('tempC', 5, ...limitOf('tempC'));
+  const [hours, setHours] = useConfigNumber('hours', 24, ...limitOf('hours'));
   const [split, setSplit] = useConfigBool('split', false);
-  const [temp2C, setTemp2C] = useConfigNumber('temp2', 21, 2, 35);
-  const [hours2, setHours2] = useConfigNumber('hours2', 2, 0.5, 24);
-  const [protein, setProtein] = useConfigNumber('protein', 12.5, 8, 15);
-  const [plVal, setPlVal] = useConfigNumber('pl', 50, 0, 100);
-  const [hydration, setHydration] = useConfigNumber('hydration', 60, 50, 85);
-  const [salt, setSalt] = useConfigNumber('salt', 2.5, 0, 4);
-  const [oilPct, setOilPct] = useConfigNumber('oil', 0, 0, 6);
-  const [sugarPct, setSugarPct] = useConfigNumber('sugar', 0, 0, 4);
+  const [temp2C, setTemp2C] = useConfigNumber('temp2', 21, ...limitOf('temp2C'));
+  const [hours2, setHours2] = useConfigNumber('hours2', 2, ...limitOf('hours2'));
+  const [protein, setProtein] = useConfigNumber('protein', 12.5, ...limitOf('protein'));
+  const [plVal, setPlVal] = useConfigNumber('pl', 50, ...limitOf('plVal'));
+  const [hydration, setHydration] = useConfigNumber('hydration', 60, ...limitOf('hydration'));
+  const [salt, setSalt] = useConfigNumber('salt', 2.5, ...limitOf('salt'));
+  const [oilPct, setOilPct] = useConfigNumber('oil', 0, ...limitOf('oilPct'));
+  const [sugarPct, setSugarPct] = useConfigNumber('sugar', 0, ...limitOf('sugarPct'));
   const [yeastType, setYeastType] = useConfigEnum('yeast', "idy", ['idy', 'ady', 'fresh']);
   const [leavening, setLeavening] = useConfigEnum('leaven', "commercial", ['commercial', 'sourdough']);
-  const [starterStr, setStarterStr] = useConfigNumber('starter', 50, 0, 100);
+  const [starterStr, setStarterStr] = useConfigNumber('starter', 50, ...limitOf('starterStr'));
   const [preferment, setPreferment] = useConfigEnum('preferment', "straight", ['straight', 'poolish', 'biga']);
-  const [pfPct, setPfPct] = useConfigNumber('pf', 30, 10, 50);
-  const [pfHours, setPfHours] = useConfigNumber('pfHours', 12, 4, 24);
-  const [ballCount, setBallCount] = useConfigNumber('balls', 4, 1, 12);
-  const [ballWeight, setBallWeight] = useConfigNumber('ballWeight', 250, 100, 500);
+  const [pfPct, setPfPct] = useConfigNumber('pf', 30, ...limitOf('pfPct'));
+  const [pfHours, setPfHours] = useConfigNumber('pfHours', 12, ...limitOf('pfHours'));
+  const [ballCount, setBallCount] = useConfigNumber('balls', 4, ...limitOf('ballCount'));
+  const [ballWeight, setBallWeight] = useConfigNumber('ballWeight', 250, ...limitOf('ballWeight'));
   const doughWeight = ballCount * ballWeight;
-  const [roomTemp, setRoomTemp] = useConfigNumber('room', 20, 12, 30);
-  const [ddt, setDdt] = useConfigNumber('ddt', 24, 18, 28);
+  const [roomTemp, setRoomTemp] = useConfigNumber('room', 20, ...limitOf('roomTemp'));
+  const [ddt, setDdt] = useConfigNumber('ddt', 24, ...limitOf('ddt'));
   const [mixMethod, setMixMethod] = useConfigEnum('mix', "hand", ['hand', 'mixer', 'processor']);
-  const [ovenC, setOvenC] = useConfigNumber('oven', 250, 200, 500);
+  const [ovenC, setOvenC] = useConfigNumber('oven', 250, ...limitOf('ovenC'));
   const [surface, setSurface] = useConfigEnum('surface', "steel", ['steel', 'stone', 'pan', 'rack']);
   const [nerdMode, setNerdMode] = useConfigBool('nerd', false);
   const [learn, setLearn] = useConfigBool('learn', false);
@@ -2056,18 +2071,18 @@ function FermentCalculator() {
             <div className="fc-field">
               <div className="fc-field-head"><span className="fc-label">{t('label.ballCount')}</span></div>
               <div className="fc-stepper">
-                <button onClick={() => setBallCount((n) => stepAlong(n, 1, -1, 1, 12))}>−</button>
-                <EditableValue className="fc-step-val" value={ballCount} min={1} max={12} onChange={setBallCount} />
-                <button onClick={() => setBallCount((n) => stepAlong(n, 1, 1, 1, 12))}>+</button>
+                <button onClick={() => setBallCount((n) => stepAlong(n, 1, -1, ...limitOf('ballCount')))}>−</button>
+                <EditableValue className="fc-step-val" value={ballCount} min={limitOf('ballCount')[0]} max={limitOf('ballCount')[1]} onChange={(n) => setBallCount(Math.round(n))} />
+                <button onClick={() => setBallCount((n) => stepAlong(n, 1, 1, ...limitOf('ballCount')))}>+</button>
               </div>
             </div>
             <Help>{t('help.ballCount')}</Help>
             <div className="fc-field">
               <div className="fc-field-head"><span className="fc-label">{t('label.ballWeight')}</span></div>
               <div className="fc-stepper">
-                <button onClick={() => setBallWeight((w) => stepAlong(w, 25, -1, 100, 500))}>−</button>
-                <EditableValue className="fc-step-val" value={ballWeight} unit="g" min={100} max={500} onChange={setBallWeight} />
-                <button onClick={() => setBallWeight((w) => stepAlong(w, 25, 1, 100, 500))}>+</button>
+                <button onClick={() => setBallWeight((w) => stepAlong(w, 25, -1, ...limitOf('ballWeight')))}>−</button>
+                <EditableValue className="fc-step-val" value={ballWeight} unit="g" min={limitOf('ballWeight')[0]} max={limitOf('ballWeight')[1]} onChange={setBallWeight} />
+                <button onClick={() => setBallWeight((w) => stepAlong(w, 25, 1, ...limitOf('ballWeight')))}>+</button>
               </div>
             </div>
             <Help>{t('help.ballWeight')}</Help>
@@ -2083,17 +2098,17 @@ function FermentCalculator() {
             </div>
             <Help>{t('help.stages')}</Help>
             <Slider label={t(split ? 'label.bulkTemp' : 'label.fermTemp')} value={tempC} unit="°C"
-              min={2} max={35} step={1} onChange={setTempC} accent={accent} />
+              {...sliderRange('tempC')} step={1} onChange={setTempC} accent={accent} />
             <Help>{t('help.fermTemp')}</Help>
             <Slider label={t(split ? 'label.bulkTime' : 'label.targetTime')} value={hours} unit="h"
-              min={2} max={96} step={1} onChange={setHours} accent={accent} />
+              {...sliderRange('hours')} step={1} onChange={setHours} accent={accent} />
             <Help>{t('help.targetTime')}</Help>
             {split && (
               <>
                 <Slider label={t('label.ballTemp')} value={temp2C} unit="°C"
-                  min={2} max={35} step={1} onChange={setTemp2C} accent={tempColor(temp2C)} />
+                  {...sliderRange('temp2C')} step={1} onChange={setTemp2C} accent={tempColor(temp2C)} />
                 <Slider label={t('label.ballTime')} value={hours2} unit="h"
-                  min={0.5} max={24} step={0.5} onChange={setHours2} accent={tempColor(temp2C)}
+                  {...sliderRange('hours2')} step={0.5} onChange={setHours2} accent={tempColor(temp2C)}
                   note={t('note.totalFerment', { total: totalLabel })} />
                 <Help>{t('help.ballStage')}</Help>
               </>
@@ -2104,25 +2119,25 @@ function FermentCalculator() {
               onPick={api.pickFlour} />
             <Help>{t('help.flourPicker')}</Help>
             <Slider label={t('label.flourProtein')} value={protein} unit="%"
-              min={8} max={15} step={0.5} onChange={setProtein} accent={accent}
+              {...sliderRange('protein')} step={0.5} onChange={setProtein} accent={accent}
               note={t('note.protein', { W: fp.W, category: t(fp.categoryKey) })} />
             <Help>{t('help.flourProtein')}</Help>
             {!simple && (
               <>
                 <Slider label={t('label.pl')} value={plVal} unit=""
-                  min={0} max={100} step={1} onChange={setPlVal} accent={accent}
+                  {...sliderRange('plVal')} step={1} onChange={setPlVal} accent={accent}
                   note={pl < -0.2 ? t('note.pl.extensible') : pl > 0.2 ? t('note.pl.elastic') : t('note.pl.balanced')} />
                 <Help>{t('help.pl')}</Help>
               </>
             )}
             <SaveFlour flours={box.flours} protein={protein} plVal={plVal} onSave={api.saveFlour} />
             <Slider label={t('label.hydration')} value={hydration} unit="%"
-              min={50} max={85} step={1} onChange={setHydration} accent={accent}
+              {...sliderRange('hydration')} step={1} onChange={setHydration} accent={accent}
               note={t('note.hydration', { lo: fp.hydrLo, hi: fp.hydrHi })}
               noteColor={TONE[hVerdict.tone]} />
             <Help>{t('help.hydration')}</Help>
             <Slider label={t('label.salt')} value={salt} unit="%"
-              min={0} max={4} step={0.1} onChange={setSalt} accent={accent}
+              {...sliderRange('salt')} step={0.1} onChange={setSalt} accent={accent}
               note={t('note.salt', { saltG: r.saltGrams.toFixed(1), saltNote: salt < 1.8 ? t('note.salt.fast') : salt > 3 ? t('note.salt.slow') : t('note.salt.typical') })} />
             <Help>{t('help.salt')}</Help>
 
@@ -2130,11 +2145,11 @@ function FermentCalculator() {
               <>
                 <p className="fc-subhead">{t('subhead.mixins')}</p>
                 <Slider label={t('label.oil')} value={oilPct} unit="%"
-                  min={0} max={6} step={0.5} onChange={setOilPct} accent={accent}
+                  {...sliderRange('oilPct')} step={0.5} onChange={setOilPct} accent={accent}
                   note={oilPct === 0 ? t('note.oil.none') : t('note.oil.some', { oilG: r.oilGrams.toFixed(0) })} />
                 <Help>{t('help.oil')}</Help>
                 <Slider label={t('label.sugar')} value={sugarPct} unit="%"
-                  min={0} max={4} step={0.25} onChange={setSugarPct} accent={accent}
+                  {...sliderRange('sugarPct')} step={0.25} onChange={setSugarPct} accent={accent}
                   note={sugarPct === 0 ? t('note.sugar.none') : t('note.sugar.some', { sugarG: r.sugarGrams.toFixed(0) })} />
                 <Help>{t('help.sugar')}</Help>
               </>
@@ -2153,7 +2168,7 @@ function FermentCalculator() {
             {sourdough && (
               <>
                 <Slider label={t('label.starterStr')} value={starterStr} unit=""
-                  min={0} max={100} step={1} onChange={setStarterStr} accent={accent}
+                  {...sliderRange('starterStr')} step={1} onChange={setStarterStr} accent={accent}
                   note={starterStr < 35 ? t('note.starter.sluggish') : starterStr > 65 ? t('note.starter.vigorous') : t('note.starter.average')} />
                 <Help>{t('help.starterStr')}</Help>
                 <p className="fc-note-line" style={{ color: CONF.i }}>
@@ -2188,11 +2203,12 @@ function FermentCalculator() {
                 {pf && (
                   <>
                     <Slider label={t('label.pfPct')} value={pfPct} unit="%"
-                      min={10} max={50} step={5} onChange={setPfPct} accent={accent}
-                      note={t('note.pfPct', { flourG: Math.round(pf.flour), waterG: Math.round(pf.water), hyd: pf.hydration })} />
+                      {...sliderRange('pfPct')} step={5} onChange={setPfPct} accent={accent}
+                      note={(pf.capped ? t('note.pfCapped', { pct: Math.round(pf.pct) }) + ' · ' : '') + t('note.pfPct', { flourG: Math.round(pf.flour), waterG: Math.round(pf.water), hyd: pf.hydration })}
+                      noteColor={pf.capped ? TONE.warn : undefined} />
                     <Help>{t('help.pfPct')}</Help>
                     <Slider label={t('label.pfHours')} value={pfHours} unit="h"
-                      min={4} max={24} step={1} onChange={setPfHours} accent={accent}
+                      {...sliderRange('pfHours')} step={1} onChange={setPfHours} accent={accent}
                       note={t('note.pfHours', { room: roomTemp, lo: pf.typical[0], hi: pf.typical[1] })} />
                     <Help>{t('help.pfHours')}</Help>
                   </>
@@ -2204,10 +2220,10 @@ function FermentCalculator() {
               <>
                 <p className="fc-subhead">{t('subhead.mixing')}</p>
                 <Slider label={t('label.roomTemp')} value={roomTemp} unit="°C"
-                  min={12} max={30} step={1} onChange={setRoomTemp} accent={accent} />
+                  {...sliderRange('roomTemp')} step={1} onChange={setRoomTemp} accent={accent} />
                 <Help>{t('help.roomTemp')}</Help>
                 <Slider label={t('label.ddt')} value={ddt} unit="°C"
-                  min={18} max={28} step={0.5} onChange={setDdt} accent={accent}
+                  {...sliderRange('ddt')} step={0.5} onChange={setDdt} accent={accent}
                   note={t('note.ddt', { temp: waterTempReco, icedNote: waterTempReco <= 4 ? t('note.ddt.iced') : '' }) + ' · '
                     + t('note.ddt.band', { lo: verdicts.ddt.params.lo, hi: verdicts.ddt.params.hi, kind: t(verdicts.ddt.params.kindKey) })}
                   noteColor={verdicts.ddt.tone === 'warn' ? TONE.warn : undefined} />
@@ -2313,7 +2329,7 @@ function FermentCalculator() {
           <div className="fc-bake-grid">
             <div>
               <Slider label={t('label.ovenTemp')} value={ovenC} unit="°C"
-                min={200} max={500} step={5} onChange={setOvenC} accent={EMBER} />
+                {...sliderRange('ovenC')} step={5} onChange={setOvenC} accent={EMBER} />
               <Help>{t('help.ovenTemp')}</Help>
               <div className="fc-field">
                 <div className="fc-field-head"><span className="fc-label">{t('label.bakingSurface')}</span></div>
@@ -2364,7 +2380,7 @@ function FermentCalculator() {
                 <>
                   <p className="fc-ing-group">{t('recipe.group.pf', { name: t('preferment.' + pf.type) })}</p>
                   <ul className="fc-ing">
-                    <li><span className="nm">{t('recipe.flour')}<small>{pfPct}%</small></span><span className="amt">{Math.round(pf.flour)} g</span></li>
+                    <li><span className="nm">{t('recipe.flour')}<small>{Math.round(pf.pct)}%</small></span><span className="amt">{Math.round(pf.flour)} g</span></li>
                     <li><span className="nm">{t('recipe.water')}<small>{pf.hydration}%</small></span><span className="amt">{Math.round(pf.water)} g</span></li>
                     <li><span className="nm">{t('recipe.yeast')}<small>{t('yeast.' + yeastType)}</small></span><span className="amt">{fmtG(pf.grams)} g</span></li>
                   </ul>

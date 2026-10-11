@@ -181,16 +181,32 @@ const FLOUR_REGIONS = ["it", "us", "de", "generic"];
 // checks a stored or imported dough against exactly this, rather than
 // keeping a second opinion of its own.
 //
-// Ranges mirror the slider bounds in index.html; typed entry is clamped to
-// the same bounds, so anything inside a range is a value the UI can hold.
-const DOUGH_RANGES = {
-  tempC: [2, 35], hours: [2, 96], protein: [8, 15], plVal: [0, 100],
-  hydration: [50, 85], salt: [0, 4], oilPct: [0, 6], sugarPct: [0, 4],
-  starterStr: [0, 100], ballCount: [1, 12], ballWeight: [100, 500],
-  roomTemp: [12, 30], ddt: [18, 28], ovenC: [200, 500],
-  temp2C: [2, 35], hours2: [0.5, 24],
-  pfPct: [10, 50], pfHours: [4, 24],
+// Each number field has two ranges. `slider` is the usual working range the
+// slider spans. `limit` is everything physically possible: typed entry, a
+// link and the recipe box all accept it, and the verdicts — not the input
+// bounds — say when a value is a bad idea. Fields set with a stepper have
+// no track, so they only carry a limit.
+const FIELD_RANGES = {
+  tempC:      { slider: [2, 35],    limit: [0, 45] },
+  hours:      { slider: [2, 96],    limit: [1, 240] },
+  temp2C:     { slider: [2, 35],    limit: [0, 45] },
+  hours2:     { slider: [0.5, 24],  limit: [0.5, 72] },
+  protein:    { slider: [8, 15],    limit: [5, 20] },
+  plVal:      { slider: [0, 100],   limit: [0, 100] },
+  hydration:  { slider: [50, 85],   limit: [1, 100] },
+  salt:       { slider: [0, 4],     limit: [0, 10] },
+  oilPct:     { slider: [0, 6],     limit: [0, 30] },
+  sugarPct:   { slider: [0, 4],     limit: [0, 30] },
+  starterStr: { slider: [0, 100],   limit: [0, 100] },
+  pfPct:      { slider: [10, 50],   limit: [1, 100] },
+  pfHours:    { slider: [4, 24],    limit: [1, 72] },
+  ballCount:  { limit: [1, 100] },
+  ballWeight: { limit: [20, 2000] },
+  roomTemp:   { slider: [12, 30],   limit: [0, 45] },
+  ddt:        { slider: [18, 28],   limit: [10, 40] },
+  ovenC:      { slider: [200, 500], limit: [100, 600] },
 };
+const DOUGH_RANGES = Object.fromEntries(Object.entries(FIELD_RANGES).map(([k, r]) => [k, r.limit]));
 
 const DOUGH_ENUMS = {
   leavening:  ["commercial", "sourdough"],
@@ -587,13 +603,17 @@ function prefermentType(leavening, preferment) {
 
 // The preferment's flour, water and yeast. It ferments salt-free at room
 // temperature, so its dose scales from the type's anchor by time and Q10
-// alone; yeastMult converts IDY to the yeast type the dough uses.
-function prefermentFn(type, pfPct, pfHours, roomTemp, flour, yeastMult) {
+// alone; yeastMult converts IDY to the yeast type the dough uses. Its
+// share of the flour is capped where its water would use up the recipe's.
+function prefermentFn(type, pfPct, pfHours, roomTemp, flour, yeastMult, hydration = Infinity) {
   const def = PREFERMENT[type];
-  const pfFlour = flour * (pfPct / 100);
+  const maxPct = Math.min(100, (hydration / def.hydration) * 100);
+  const pct = Math.min(pfPct, maxPct);
+  const pfFlour = flour * (pct / 100);
   const idyPct = (def.idyPct * def.hours) / (pfHours * Math.pow(Q10, (roomTemp - PF_REF_TEMP) / 10));
   return {
     type, hydration: def.hydration, typical: def.typical, idyPct,
+    pct, capped: pct < pfPct,
     flour: pfFlour,
     water: pfFlour * (def.hydration / 100),
     grams: pfFlour * (idyPct / 100) * yeastMult,
@@ -622,7 +642,7 @@ function compute({ tempC, hours, split, temp2C, hours2, ddt, yeastType, doughWei
   } else {
     const mult = TYPE[yeastType].mult;
     idyPct = K / (profile.gasUnits * saltRate); // what the main ferment needs, % of all flour
-    if (pfType !== "straight") pf = prefermentFn(pfType, pfPct, pfHours, roomTemp, flour, mult);
+    if (pfType !== "straight") pf = prefermentFn(pfType, pfPct, pfHours, roomTemp, flour, mult, hydration);
     // PizzaBlab's calculator logic: the final dough gets the total the main
     // ferment needs minus what the preferment already carries, and nothing
     // when the preferment covers it
@@ -809,6 +829,7 @@ const __ENGINE__ = {
   OVEN_PRESETS,
   FLOUR_PRESETS,
   FLOUR_REGIONS,
+  FIELD_RANGES,
   DOUGH_RANGES,
   DOUGH_ENUMS,
   DOUGH_OPTIONAL,

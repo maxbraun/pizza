@@ -12,6 +12,7 @@ const {
   flourProfile,
   FLOUR_PRESETS,
   FLOUR_REGIONS,
+  FIELD_RANGES,
   DOUGH_RANGES,
   DOUGH_ENUMS,
   DOUGH_OPTIONAL,
@@ -1253,6 +1254,77 @@ describe('FLOUR_PRESETS', () => {
   test('the catalogue spans soft to very strong', () => {
     const cats = new Set(FLOUR_PRESETS.map(f => flourProfile(f.protein, (f.plVal - 50) / 50).categoryKey));
     assert.deepEqual([...cats].sort(), ['flour.medium', 'flour.soft', 'flour.strong', 'flour.veryStrong']);
+  });
+});
+
+describe('field ranges: slider vs typed limit', () => {
+  test('the dough contract accepts exactly the typed limits', () => {
+    assert.deepEqual(Object.keys(FIELD_RANGES).sort(), Object.keys(DOUGH_RANGES).sort());
+    for (const [k, r] of Object.entries(FIELD_RANGES)) assert.deepEqual(DOUGH_RANGES[k], r.limit, k);
+  });
+
+  test('every slider sits inside its limit', () => {
+    for (const [k, r] of Object.entries(FIELD_RANGES)) {
+      if (!r.slider) continue;
+      assert.ok(r.limit[0] <= r.slider[0] && r.slider[1] <= r.limit[1], k);
+      assert.ok(r.slider[0] < r.slider[1], k);
+    }
+  });
+
+  test('every preset stays on the sliders', () => {
+    for (const p of PIZZA_PRESETS) {
+      for (const [k, v] of Object.entries(p.set)) {
+        const r = FIELD_RANGES[k];
+        if (!r || !r.slider) continue;
+        assert.ok(v >= r.slider[0] && v <= r.slider[1], `${p.id}.${k}=${v}`);
+      }
+    }
+  });
+
+  test('every field at either end of its limit computes to finite, non-negative amounts', () => {
+    const base = { ...BASE, ballCount: 4, ballWeight: 250, split: false, temp2C: 21, hours2: 2, pfPct: 30, pfHours: 12 };
+    const variants = [{}, { preferment: 'poolish' }, { preferment: 'biga' }, { leavening: 'sourdough' }, { split: true, preferment: 'poolish' }];
+    for (const [field, r] of Object.entries(FIELD_RANGES)) {
+      for (const v of r.limit) {
+        for (const variant of variants) {
+          const inp = { ...base, ...variant, [field]: v };
+          inp.doughWeight = inp.ballCount * inp.ballWeight;
+          const M = computeAll(inp);
+          const label = `${field}=${v} ${JSON.stringify(variant)}`;
+          for (const x of [M.r.grams, M.r.levainGrams, M.profile.gasUnits, M.proof, M.bake.t, M.rise.vAt(M.profile.totalHours), M.digest]) {
+            assert.ok(Number.isFinite(x), label);
+          }
+          assert.ok(M.r.final.water >= -1e-9 && M.r.final.flour >= -1e-9 && M.r.final.yeastGrams >= 0, label);
+        }
+      }
+    }
+  });
+});
+
+describe('prefermentFn — water cap', () => {
+  test('a poolish cannot take more flour than the recipe has water for', () => {
+    const pf = prefermentFn('poolish', 100, 12, 20, 1000, 1, 60);
+    assert.equal(pf.pct, 60);
+    assert.equal(pf.capped, true);
+    assert.equal(pf.water, 600);
+  });
+
+  test('a stiff biga fits at 100% of the flour', () => {
+    const pf = prefermentFn('biga', 100, 18, 20, 1000, 1, 60);
+    assert.equal(pf.pct, 100);
+    assert.equal(pf.capped, false);
+  });
+
+  test('a capped preferment leaves the final dough with zero water, not negative', () => {
+    const r = compute({ ...BASE, preferment: 'poolish', pfPct: 100, hydration: 60 });
+    near(r.final.water, 0, 1e-9);
+    assert.equal(r.pf.capped, true);
+  });
+
+  test('inside the cap nothing changes', () => {
+    const pf = prefermentFn('poolish', 30, 12, 20, 1000, 1, 60);
+    assert.equal(pf.pct, 30);
+    assert.equal(pf.capped, false);
   });
 });
 
